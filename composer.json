@@ -1,0 +1,51 @@
+{
+    "name": "rupeshstha/core-foundation",
+    "description": "A foundational package for streamlined development, offering essential core functionality and components to accelerate project creation and enhance scalability.",
+    "keywords": [
+        "rupeshstha",
+        "core-foundation"
+    ],
+    "homepage": "https://github.com/rupeshstha/core-foundation",
+    "license": "MIT",
+    "type": "library",
+    "authors": [
+        {
+            "name": "Rupesh Shrestha",
+            "email": "rupeshshrestha9818@gmail.com",
+            "role": "Maintainer"
+        }
+    ],
+    "require": {
+        "php": "^8.1"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^6.0",
+        "phpunit/phpunit": "^9.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Rupeshstha\\CoreFoundation\\": "src"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Rupeshstha\\CoreFoundation\\Tests\\": "tests"
+        }
+    },
+    "scripts": {
+        "test": "vendor/bin/phpunit",
+        "test-coverage": "vendor/bin/phpunit --coverage-html coverage"
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Rupeshstha\\CoreFoundation\\Providers\\CoreFoundationServiceProvider"
+            ],
+            "aliases": {
+            }
+        }
+    }
+}
