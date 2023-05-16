@@ -3,6 +3,8 @@
 namespace Rupeshstha\CoreFoundation\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Rupeshstha\CoreFoundation\Contracts\StrategyContract;
+use Rupeshstha\CoreFoundation\Services\StrategyService;
 
 class CoreFoundationServiceProvider extends ServiceProvider
 {
@@ -23,5 +25,9 @@ class CoreFoundationServiceProvider extends ServiceProvider
      */
     public function register()
     {
+        $this->app->bind(
+            abstract: StrategyContract::class,
+            concrete: StrategyService::class
+        );
     }
 }

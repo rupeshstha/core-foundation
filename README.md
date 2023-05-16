@@ -16,7 +16,7 @@ composer require rupeshstha/core-foundation
 
 ## Usage
 
-Here is what this package offers to build your amazing project by uplifting heavy work. Also this package will help you to DRY your code.
+This package offers to build your amazing project by uplifting heavy work. Also this package will help you to DRY your code.
 
 #### BaseController
 Here is how it would looks like on your controller. You just need to extend BaseController
