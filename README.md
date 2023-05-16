@@ -1,10 +1,10 @@
-# Very short description of the package
+# Streamlined Foundations for Robust API
 
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/rupeshstha/core-foundation.svg?style=flat-square)](https://packagist.org/packages/rupeshstha/core-foundation)
 [![Total Downloads](https://img.shields.io/packagist/dt/rupeshstha/core-foundation.svg?style=flat-square)](https://packagist.org/packages/rupeshstha/core-foundation)
 ![GitHub Actions](https://github.com/rupeshstha/core-foundation/actions/workflows/main.yml/badge.svg)
 
-This is where your description should go. Try and limit it to a paragraph or two, and maybe throw in a mention of what PSRs you support to avoid any confusion with users and contributors.
+A foundational package for streamlined development, offering essential core functionality and components to accelerate project creation and enhance scalability.
 
 ## Installation
 
@@ -16,8 +16,38 @@ composer require rupeshstha/core-foundation
 
 ## Usage
 
+# BaseController
+Here is how it would looks like on your controller. You just need to extend BaseController 
 ```php
-// Usage description here
+use Rupeshstha/Http/Controllers/BaseController;
+
+class UserController extends BaseController
+{
+    public function __construct(
+        protected UserService $userService,
+        protected UserResource $userResource,
+        protected UserCollection $userCollection
+    ) {
+    }
+
+    public function index(Request $request): JsonResponse
+    {
+        try {
+            // Your amazing code, something like this.
+            $filterable = $request->query();
+            $users = $this->userService->index($filterable);
+        } catch (Exception $exception) {
+            return $this->handleException($exception);
+        }
+
+        return $this->successResponse(
+            message: $this->lang("fetch-success"),
+            payload: $this->userCollection->collection($users)
+        );
+    }
+}
+
+
 ```
 
 ### Testing
