@@ -4,16 +4,14 @@ namespace CoreFoundation\Traits;
 
 use Illuminate\Support\Facades\Event;
 
-trait HasEvents
+trait HasEvent
 {
     protected ?string $eventPrefix = null;
     protected bool $eventDispatch = true;
 
     /**
-     *
      * @param string $eventKey
      * @param mixed $data
-     * @param boolean $restrictEventPrefix
      *
      * @return void
      */

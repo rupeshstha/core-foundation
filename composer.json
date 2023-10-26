@@ -11,7 +11,7 @@
     "authors": [
         {
             "name": "Rupesh Shrestha",
-            "email": "rupeshshrestha9818@gmail.com",
+            "email": "contact@rupeshstha.com.np",
             "role": "Maintainer"
         }
     ],
@@ -24,12 +24,12 @@
     },
     "autoload": {
         "psr-4": {
-            "Rupeshstha\\CoreFoundation\\": "src"
+            "CoreFoundation\\": "src"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Rupeshstha\\CoreFoundation\\Tests\\": "tests"
+            "CoreFoundation\\Tests\\": "tests"
         }
     },
     "scripts": {
@@ -39,12 +39,19 @@
     "config": {
         "sort-packages": true
     },
+    "support": {
+        "email": "contact@rupeshstha.com.np",
+        "issues":"https://github.com/rupeshstha/core-foundation/issues",
+        "source":"https://github.com/rupeshstha/core-foundation",
+        "docs": "https://rupesh-shrestha.gitbook.io/core-foundation/"
+      },
     "extra": {
         "laravel": {
             "providers": [
-                "Rupeshstha\\CoreFoundation\\Providers\\CoreFoundationServiceProvider"
+                "CoreFoundation\\Providers\\CoreFoundationServiceProvider"
             ],
             "aliases": {
+
             }
         }
     }

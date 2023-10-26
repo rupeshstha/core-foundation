@@ -1,13 +1,29 @@
 <?php
 
-namespace Rupeshstha\CoreFoundation\Http\Controllers;
+namespace CoreFoundation\Http\Controllers;
 
+use Exception;
 use Illuminate\Http\Request;
+use CoreFoundation\Services\TestService;
 
-class TestController
+class TestController extends BaseController
 {
-    public function __invoke(Request $request)
+    public function __construct(
+        protected TestService $testService
+    ) {
+    }
+
+    public function test(Request $request)
     {
+        try {
+            $data = $request->all();
+            $this->testService->index();
+        } catch (Exception $exception) {
+            dd($exception);
+            return $this->handleException($exception);
+        }
+
+
         dd("asdad");
     }
 }

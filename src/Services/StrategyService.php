@@ -1,10 +1,10 @@
 <?php
 
-namespace Rupeshstha\CoreFoundation\Services;
+namespace CoreFoundation\Services;
 
 use Illuminate\Support\Collection;
 use Illuminate\Support\Fluent;
-use Rupeshstha\CoreFoundation\Contracts\StrategyContract;
+use CoreFoundation\Contracts\StrategyContract;
 
 class StrategyService implements StrategyContract
 {

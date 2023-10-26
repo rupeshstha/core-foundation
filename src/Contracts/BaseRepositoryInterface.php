@@ -1,8 +1,8 @@
 <?php
 
-namespace Rupeshstha\CoreFoundation\Contracts;
+namespace CoreFoundation\Contracts;
 
 interface BaseRepositoryInterface
 {
-    
+
 }

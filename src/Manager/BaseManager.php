@@ -1,12 +1,12 @@
 <?php
 
-namespace Rupeshstha\CoreFoundation\Manager;
+namespace CoreFoundation\Manager;
 
 use Closure;
 use Exception;
 use Illuminate\Config\Repository;
 use Illuminate\Contracts\Container\Container;
-use Rupeshstha\CoreFoundation\Contracts\ManagerContract;
+use CoreFoundation\Contracts\ManagerContract;
 use Illuminate\Support\Str;
 
 abstract class BaseManager

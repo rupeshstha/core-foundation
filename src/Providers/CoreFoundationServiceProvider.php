@@ -1,10 +1,10 @@
 <?php
 
-namespace Rupeshstha\CoreFoundation\Providers;
+namespace CoreFoundation\Providers;
 
 use Illuminate\Support\ServiceProvider;
-use Rupeshstha\CoreFoundation\Contracts\StrategyContract;
-use Rupeshstha\CoreFoundation\Services\StrategyService;
+use CoreFoundation\Contracts\StrategyContract;
+use CoreFoundation\Services\StrategyService;
 
 class CoreFoundationServiceProvider extends ServiceProvider
 {
@@ -15,7 +15,7 @@ class CoreFoundationServiceProvider extends ServiceProvider
     {
         if ($this->app->runningInConsole()) {
             $this->publishes([
-                __DIR__ . '/../config/config.php' => config_path('core-foundation.php'),
+                __DIR__ . '/../../config/core_foundation.php' => config_path('core_foundation.php'),
             ], 'config');
         }
     }
@@ -23,8 +23,17 @@ class CoreFoundationServiceProvider extends ServiceProvider
     /**
      * Register the application services.
      */
-    public function register()
+    public function register(): void
     {
+        $this->app->register(AppMonitorServiceProvider::class);
+        $this->bindServices();
+
+        $this->mergeConfigFrom(__DIR__ . '/../../config/core_foundation.php', 'core_foundation');
+    }
+
+    private function bindServices(): void
+    {
+        // services bing
         $this->app->bind(
             abstract: StrategyContract::class,
             concrete: StrategyService::class

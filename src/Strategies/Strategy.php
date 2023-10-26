@@ -1,9 +1,9 @@
 <?php
 
-namespace Rupeshstha\CoreFoundation\Strategies;
+namespace CoreFoundation\Strategies;
 
 use Illuminate\Support\Facades\Facade;
-use Rupeshstha\CoreFoundation\Contracts\StrategyContract;
+use CoreFoundation\Contracts\StrategyContract;
 
 class Strategy extends Facade
 {

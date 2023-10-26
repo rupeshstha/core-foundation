@@ -1,6 +1,6 @@
 <?php
 
-namespace Rupeshstha\CoreFoundation\Contexts;
+namespace CoreFoundation\Contexts;
 
 abstract class BaseContext
 {

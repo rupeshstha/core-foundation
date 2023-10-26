@@ -1,0 +1,78 @@
+<?php
+
+namespace CoreFoundation\Manipulators;
+
+use Illuminate\Support\Str;
+
+abstract class ObjectComposer
+{
+    protected ?array $value = [];
+
+    public function __set(string $offset, mixed $value): void
+    {
+        $this->set($offset, $value);
+    }
+
+    public function __get(string $offset): mixed
+    {
+        return $this->get($offset);
+    }
+
+    public function __call(string $method, array $arguments): mixed
+    {
+        return $this->resolveGetterSetter($method, $arguments);
+    }
+
+    public function resolveGetterSetter(string $method, array $arguments): mixed
+    {
+        if (Str::contains($method, "set")) {
+            $offset = Str::remove("set", $method);
+            $offset = Str::snake($offset);
+
+            $this->set($offset, ...$arguments);
+        } elseif (Str::contains($method, "get")) {
+            $offset = Str::remove("get", $method);
+            $offset = Str::snake($offset);
+
+            return $this->get($offset);
+        }
+
+        return null;
+    }
+
+    public function get(string $offset, mixed $default = null): mixed
+    {
+        return $this->value[$offset] ?? $default;
+    }
+
+    public function set(string $offset, mixed $value = null): self
+    {
+        $this->value[$offset] = $value;
+
+        return $this;
+    }
+
+    public function getValues(): ?array
+    {
+        return $this->value;
+    }
+
+    public function reset(): self
+    {
+        $this->value = null;
+
+        return $this;
+    }
+
+    public function only(array $attributes): array
+    {
+        $filterAttributes = [];
+        foreach ($attributes as $attribute) {
+            if (array_key_exists($attribute, $this->value)) {
+                $filterAttributes[$attribute] = $this->value[$attribute];
+            }
+        }
+
+        return $filterAttributes;
+    }
+}

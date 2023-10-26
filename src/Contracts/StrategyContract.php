@@ -1,6 +1,6 @@
 <?php
 
-namespace Rupeshstha\CoreFoundation\Contracts;
+namespace CoreFoundation\Contracts;
 
 use Illuminate\Support\Fluent;
 
