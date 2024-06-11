@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Model;
 class CacheManager extends CacheResolver
 {
     private readonly bool $isEnable;
-    private Model $model;
+    protected Model $model;
 
     public function __construct()
     {
