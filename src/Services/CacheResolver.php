@@ -10,10 +10,13 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use CoreFoundation\Traits\HasCacheable;
+use Illuminate\Database\Eloquent\Model;
 
 class CacheResolver
 {
     use HasCacheable;
+
+    private Model $model;
 
     public function generateHash(mixed ...$identifiers): string
     {
@@ -68,35 +71,40 @@ class CacheResolver
      *
      * @return array
      */
-    public function getModelRelationships(object $model): array
+    public function getModelRelationships(): array
     {
         $relationships = [];
-        $modelMethods = (new ReflectionClass($model))->getMethods(ReflectionMethod::IS_PUBLIC);
+        $modelMethods = (new ReflectionClass($this->model))->getMethods(ReflectionMethod::IS_PUBLIC);
+        $bindRelations = $this->model::getBindRelations();
 
+        // Checks relations if model class has relations on it's own class
         foreach ($modelMethods as $method) {
             if (
-                $method->class != get_class($model)
-                || !empty($method->getParameters())
-                || $method->getName() == __FUNCTION__
+                $method->class != $this->model::class
             ) {
                 continue;
             }
 
-            try {
-                $return = $method->invoke($model);
-
-                if ($return instanceof Relation) {
-                    $relationships[] = [
-                        $method->getName(),
-                        Str::snake(Str::singular($method->getName())),
-                    ];
-                }
-            } catch (Exception $exception) {
-                // do nothing
+            $return = $method->invoke($this->model);
+            if ($return instanceof Relation) {
+                $relationships[$method->getName()] = [
+                    "name" => $method->getName(),
+                    "relates_to" => $return->getRelated(),
+                ];
             }
         }
 
-        $relationships = array_unique(Arr::flatten($relationships));
+        // Checks relations that are resolved from service provider
+        foreach ($bindRelations as $method => $bindRelation) {
+            $executeClosure = $bindRelation->call($this->model, $this->model);
+            if ($executeClosure instanceof Relation) {
+                $relationships[$method] = [
+                    "name" => $method,
+                    "relates_to" => $executeClosure->getRelated(),
+                ];
+            }
+        }
+
         return $relationships;
     }
 }

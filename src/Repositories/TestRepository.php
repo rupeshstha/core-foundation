@@ -12,7 +12,6 @@ class TestRepository extends BaseRepository
     //     protected User $user
     // ) {
     //     $this->model = $user;
-
     //     parent::__construct();
     // }
 

@@ -15,7 +15,7 @@ class CacheManager extends CacheResolver
 
     public function __construct()
     {
-        $this->isEnable = config("core_foundation.cache.status", true);
+        $this->isEnable = config("core_foundation.cache.global", true);
     }
 
     public function setModel(Model $model): self
@@ -53,6 +53,7 @@ class CacheManager extends CacheResolver
         if (!$this->isEnable || !$isCached) {
             return $callback();
         }
+        dd("asdasdsa", $this->getModelRelationships($this->model));
 
         $relationalKeys = $this->resolveRelationKeys($relates);
         $backTraceMethod = Arr::last(debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT, 4));

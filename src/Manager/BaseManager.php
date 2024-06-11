@@ -7,9 +7,10 @@ use Exception;
 use Illuminate\Config\Repository;
 use Illuminate\Contracts\Container\Container;
 use CoreFoundation\Contracts\ManagerContract;
+use Illuminate\Support\Manager;
 use Illuminate\Support\Str;
 
-abstract class BaseManager
+abstract class BaseManager extends Manager
 {
     /**
      * The container instance.

@@ -3,9 +3,28 @@
 return [
 	"repository" => [
         "pagination" => 25,
-		"cache" => [
-            "status" => true,
-            ""
+        "indexing" => [
+            "cache" => [
+                "driver" => "cache",
+                "status" => true,
+            ],
+            "algolia" => [
+                "driver" => "algolia",
+                "status" => true,
+            ]
         ],
 	],
+    /**
+     * Global caching status
+     */
+    "cache" => [
+        "global" => env("CORE_CACHE_GLOBAL", true),
+        "repository" => env("CORE_CACHE_REPOSITORY", true),
+        "cache_repository_methods" => [
+            "fetchAll",
+            "fetch"
+        ],
+        "cache_prefix" => env("APP_NAME"),
+        "cache_ttl" => env("CORE_CACHE_TTL", 20),
+    ],
 ];

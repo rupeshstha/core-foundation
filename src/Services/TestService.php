@@ -11,7 +11,7 @@ class TestService extends BaseService
     ) {
     }
 
-    public function index(array $filterable = [], array $relationship = [])
+    public function index(array $filterable = [], array $relationship = ["user"])
     {
         $data = $this->testRepository->fetchAll($filterable, $relationship);
         dd($data);

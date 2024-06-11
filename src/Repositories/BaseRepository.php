@@ -10,16 +10,14 @@ use CoreFoundation\Exceptions\ModelNotInstantiableException;
 use CoreFoundation\Services\CacheManager;
 use CoreFoundation\Services\ModelFilterable;
 use CoreFoundation\Traits\HasEvent;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Pagination\Paginator;
 
 abstract class BaseRepository implements BaseRepositoryInterface
 {
     use HasEvent;
 
-    protected ?Model $model = null; // @todo Remove default value it is only for backward compatibility.
-
-    // protected ?Application $app = null;
-    // protected ?ModelFilterable $modelFilterable = null;
-    // protected CacheManager $cacheManager = null;
+    protected Model $model;
 
     protected string $tableName;
 
@@ -28,48 +26,32 @@ abstract class BaseRepository implements BaseRepositoryInterface
     protected int $cacheTTl = 60; // 60 min
 
     public function __construct(
-        protected ?Application $app = null, // @todo Remove default value it is only for backward compatibility.
-        protected ?CacheManager $cacheManager = null, // @todo Remove default value it is only for backward compatibility.
-        protected ?ModelFilterable $modelFilterable = null // @todo Remove default value it is only for backward compatibility.
+        protected Application $app,
+        protected CacheManager $cacheManager,
+        protected ModelFilterable $modelFilterable
     ) {
         $this->register();
     }
 
     /**
-     * @todo Make it abstract function.
-     *
-     * Made it function for backward compatibility.
+     * This method will set the repository model.
      *
      * @return string
      */
-    protected function setModel(): string
-    {
-        return $this->model::class;
-    }
+    abstract protected function setModel(): string;
 
     /**
      * Registers model repository.
      *
      * It is necessary to initialize this function before any repository action.
      *
-     * To change default value override this method.
-     *
      * @return void
      */
     private function register(): void
     {
-        /**
-         * @todo Remove if condition after removing backward compatibility.
-         */
-        if (!$this->app) {
-            $this->app = Application::getInstance();
-            $this->cacheManager = $this->app->make(CacheManager::class);
-            $this->modelFilterable = $this->app->make(ModelFilterable::class);
-        }
-
-        if (!$this->model) {
-            $modelInstance = $this->app->make($this->setModel());
-        }
+        $modelInstance = !isset($this->model)
+            ? $this->app->make($this->setModel())
+            : null;
 
         throw_unless(
             condition: $modelInstance instanceof Model,
@@ -90,7 +72,7 @@ abstract class BaseRepository implements BaseRepositoryInterface
     {
     }
 
-    public function fetchAll(array $filterable = [], array $relationship = []): Collection
+    public function fetchAll(array $filterable = [], array $relationship = []): Collection|Paginator
     {
         $this->boot();
 
@@ -105,10 +87,10 @@ abstract class BaseRepository implements BaseRepositoryInterface
         $fetched = $this->cacheManager->make(
             relates: $relationship,
             callback: function () use ($filterable, $relationship) {
-                $rows = $this->model::query();
-                if ($relationship) {
-                    $rows->with($relationship);
-                }
+                $rows = $this->model::query()
+                    ->when($relationship, function (Builder $query) use ($relationship) {
+                        $query->with($relationship);
+                    });
                 return $this->modelFilterable->getFiltered($rows, $filterable, $relationship);
             },
             identifier: [$filterable, $relationship]
