@@ -12,6 +12,7 @@ use CoreFoundation\Services\ModelFilterable;
 use CoreFoundation\Traits\HasEvent;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\Paginator;
+use Illuminate\Support\Arr;
 
 abstract class BaseRepository implements BaseRepositoryInterface
 {
@@ -21,9 +22,11 @@ abstract class BaseRepository implements BaseRepositoryInterface
 
     protected string $tableName;
 
-    protected int $perPage = 25;
-    protected bool $isCached = true;
-    protected int $cacheTTl = 60; // 60 min
+    protected int $perPage;
+    protected bool $isCached;
+    protected int $cacheTTl; // 60 min
+    protected array $cacheAllowedMethods = [];
+    protected array $coreConfig = [];
 
     public function __construct(
         protected Application $app,
@@ -61,6 +64,9 @@ abstract class BaseRepository implements BaseRepositoryInterface
         $this->model = $modelInstance;
         $this->tableName = $this->model->getTable();
         $this->cacheManager->setModel($this->model);
+        $this->coreConfig = config("core_foundation");
+
+        $this->cacheAllowedMethods = Arr::get($this->coreConfig, "cache.cache_repository_methods");
     }
 
     /**
@@ -74,8 +80,6 @@ abstract class BaseRepository implements BaseRepositoryInterface
 
     public function fetchAll(array $filterable = [], array $relationship = []): Collection|Paginator
     {
-        $this->boot();
-
         $this->eventDispatch(
             eventKey: "fetch-all.before",
             data: [
@@ -93,7 +97,8 @@ abstract class BaseRepository implements BaseRepositoryInterface
                     });
                 return $this->modelFilterable->getFiltered($rows, $filterable, $relationship);
             },
-            identifier: [$filterable, $relationship]
+            isCached: in_array(__FUNCTION__, $this->cacheAllowedMethods),
+            identifier: [$filterable, $relationship],
         );
 
         $this->eventDispatch(
