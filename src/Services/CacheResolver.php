@@ -16,7 +16,7 @@ class CacheResolver
 {
     use HasCacheable;
 
-    private Model $model;
+    protected Model $model;
 
     public function generateHash(mixed ...$identifiers): string
     {
