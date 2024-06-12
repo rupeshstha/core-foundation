@@ -58,7 +58,9 @@ abstract class BaseRepository implements BaseRepositoryInterface
 
         throw_unless(
             condition: $modelInstance instanceof Model,
-            exception: new ModelNotInstantiableException("Class {$this->setModel()} must be an instance of Illuminate\\Database\\Eloquent\\Model")
+            exception: new ModelNotInstantiableException(
+                message: "Class {$this->setModel()} must be an instance of Illuminate\\Database\\Eloquent\\Model"
+            )
         );
 
         $this->model = $modelInstance;

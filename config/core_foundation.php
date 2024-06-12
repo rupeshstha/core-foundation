@@ -1,5 +1,8 @@
 <?php
 
+use App\Models\Role;
+use App\Models\User;
+
 return [
 	"repository" => [
         "pagination" => 25,
@@ -27,4 +30,28 @@ return [
         "cache_prefix" => env("APP_NAME"),
         "cache_ttl" => env("CORE_CACHE_TTL", 20),
     ],
+    /**
+     * Search engine
+     */
+    "search" => [
+        "default" => "database",
+        /*
+        |--------------------------------------------------------------------------
+        | Models for indexing
+        |--------------------------------------------------------------------------
+        |
+        | The model listed here will be used to create/populate the indexes.
+        | You can provide your own model here to run them all on the same
+        | search engine.
+        |
+        */
+        "models" => [
+            User::class,
+            Role::class,
+        ],
+        "prefix" => env("CORE_INDEX_PREFIX", "core_foundation"),
+        "engine_map" => [
+            User::class => "database"
+        ]
+    ]
 ];
