@@ -42,4 +42,27 @@ trait Searchable
             ? static::$searchable[static::class]
             : [];
     }
+
+    /**
+     * Get the name of the index associated with the model.
+     *
+     * @return string
+     */
+    public function searchableAs(): string
+    {
+        return $this->getTable();
+    }
+
+    public function searchableUsing()
+    {
+        $engines = config('core_foundation.search.engine_map', []);
+
+        if (isset($engines[self::class])) {
+            return app(EngineManager::class)->engine(
+                $engines[self::class]
+            );
+        }
+
+        return app(EngineManager::class)->engine();
+    }
 }
