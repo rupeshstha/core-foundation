@@ -6,6 +6,5 @@ class BasePresenter
 {
     public function __construct()
     {
-
     }
 }
