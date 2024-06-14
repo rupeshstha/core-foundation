@@ -2,6 +2,7 @@
 
 namespace CoreFoundation\Manipulators;
 
+use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 
 abstract class ObjectComposer
@@ -52,7 +53,7 @@ abstract class ObjectComposer
         return $this;
     }
 
-    public function getValues(): ?array
+    public function toArray(): array
     {
         return $this->value;
     }
@@ -66,13 +67,11 @@ abstract class ObjectComposer
 
     public function only(array $attributes): array
     {
-        $filterAttributes = [];
-        foreach ($attributes as $attribute) {
-            if (array_key_exists($attribute, $this->value)) {
-                $filterAttributes[$attribute] = $this->value[$attribute];
-            }
-        }
+        return Arr::only($this->value, $attributes);
+    }
 
-        return $filterAttributes;
+    public function except(string|array $attributes): array
+    {
+        return Arr::except($this->value, $attributes);
     }
 }
