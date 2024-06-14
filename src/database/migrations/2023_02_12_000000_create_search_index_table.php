@@ -21,13 +21,11 @@ return new class extends Migration
             }
 
             $table->index(["key", "index"]);
-            $table->index(["key", "index", "field"]);
-
             $table->timestamps();
         });
     }
 
-    public function down()
+    public function down(): void
     {
         Schema::dropIfExists('search_index');
     }
