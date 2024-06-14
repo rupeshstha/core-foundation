@@ -4,6 +4,9 @@ use App\Models\Role;
 use App\Models\User;
 
 return [
+    /**
+     * Todo: make different config file but merge to same config key
+     */
 	"repository" => [
         "pagination" => 25,
         "indexing" => [
@@ -19,6 +22,8 @@ return [
 	],
     /**
      * Global caching status
+     *
+     * Todo: make different config file but merge to same config key
      */
     "cache" => [
         "global" => env("CORE_CACHE_GLOBAL", true),
@@ -30,11 +35,16 @@ return [
         "cache_prefix" => env("APP_NAME"),
         "cache_ttl" => env("CORE_CACHE_TTL", 20),
     ],
+
     /**
      * Search engine
+     *
+     * Todo: make different config file but merge to same config key
      */
     "search" => [
-        "default" => "database",
+        "default" => env("CORE_SEARCH_ENGINE", "database"),
+        "prefix" => env("CORE_INDEX_PREFIX", "core_foundation"),
+
         /*
         |--------------------------------------------------------------------------
         | Models for indexing
@@ -49,7 +59,6 @@ return [
             User::class,
             Role::class,
         ],
-        "prefix" => env("CORE_INDEX_PREFIX", "core_foundation"),
         "engine_map" => [
             User::class => "database"
         ]
