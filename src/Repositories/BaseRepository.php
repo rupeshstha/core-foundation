@@ -27,7 +27,7 @@ abstract class BaseRepository implements BaseRepositoryInterface
 
     protected int $perPage;
     protected bool $isCached;
-    protected int $cacheTTl; // 60 min
+    protected int $cacheTTl;
     protected array $cacheAllowedMethods = [];
     protected array $coreConfig = [];
 
