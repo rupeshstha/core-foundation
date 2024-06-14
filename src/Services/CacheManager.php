@@ -53,9 +53,8 @@ class CacheManager extends CacheResolver
         if (!$this->isEnable || !$isCached) {
             return $callback();
         }
-        dd("asdasdsa", $this->getModelRelationships($this->model));
 
-        $relationalKeys = $this->resolveRelationKeys($relates);
+        $relationalKeys = $this->getModelRelationships($this->model); //$this->resolveRelationKeys($relates);
         $backTraceMethod = Arr::last(debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT, 4));
         $identifier[] = [
             "parent_method_name" =>  $backTraceMethod["function"],
