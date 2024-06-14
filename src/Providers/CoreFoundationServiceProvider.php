@@ -26,6 +26,8 @@ class CoreFoundationServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->register(AppMonitorServiceProvider::class);
+        $this->app->register(LicensingServiceProvider::class);
+
         $this->bindServices();
 
         $this->mergeConfigFrom(__DIR__ . '/../../config/core_foundation.php', 'core_foundation');
