@@ -4,6 +4,10 @@ namespace CoreFoundation\Licensing;
 
 use Illuminate\Support\Facades\Http;
 
+/**
+ * TODO make a different package and manage license from there.
+ * @see License
+ */
 class LicenseManager
 {
     protected static $host = 'https://rupeshstha.com.np';

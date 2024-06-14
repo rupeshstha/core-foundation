@@ -2,9 +2,13 @@
 
 namespace CoreFoundation\Licensing;
 
+/**
+ * TODO make a different package and manage license from there.
+ * @see License
+ */
 class Utils
 {
-    public static function getDomain($url)
+    public static function getDomain(string $url): string
     {
         $host = parse_url($url, PHP_URL_HOST);
         $path = parse_url($url, PHP_URL_PATH);

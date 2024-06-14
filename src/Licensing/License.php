@@ -4,6 +4,9 @@ namespace CoreFoundation\Licensing;
 
 use Illuminate\Support\Str;
 
+/**
+ * TODO make a different package and manage license from there.
+ */
 class License
 {
     const INVALID = 0;
