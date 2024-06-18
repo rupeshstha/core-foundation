@@ -61,15 +61,12 @@ Total (total time before sending out the response)
 
 Once the package is successfully installed, you can see your timing information in the developer tools of your browser. Here's an example from Chrome:
 
-![CleanShot 2024-03-18 at 13 48 53@2x](https://github.com/beyondcode/laravel-server-timing/assets/26432041/adea40e4-5c34-4aee-9fb7-ad6bac40addc)
 
 ## Adding additional measurements
 
 If you want to provide additional measurements, you can use the start and stop methods. If you do not explicitly stop a measured event, the event will automatically be stopped once the middleware receives your response. This can be useful if you want to measure the time your Blade views take to compile.
 
 ```php
-use BeyondCode\ServerTiming\Facades\ServerTiming;
-
 ServerTiming::start('Running expensive task');
 
 // Take a nap
