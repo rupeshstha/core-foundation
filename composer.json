@@ -21,8 +21,8 @@
         "laravel/scout": "^9.4|^10.0"
     },
     "require-dev": {
-        "orchestra/testbench": "^6.0",
-        "phpunit/phpunit": "^9.0",
+        "orchestra/testbench": "^8.0",
+        "phpunit/phpunit": "^10.0.7",
         "symfony/stopwatch": "^6.4"
     },
     "autoload": {
