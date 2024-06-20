@@ -96,14 +96,16 @@ You can also use the Server-Timing middleware to only set textual information wi
 ```php
 ServerTiming::addMetric('User: '.$user->id);
 ```
+# Coding Preference
+How do i prefer writing code?
+Well, I prefer to write code under PSR-12 standard but in some case i have my own preferences.
 
-### My way of coding standard
-Here i have shared how i will code.... will explain here in future
+## How it looks like after using this package.
 
 #### BaseController
-Here is how it would looks like on your controller. You just need to extend BaseController
+Here is how it would looks like on your controller. You just need to extend `CoreFoundation/Http/Controllers/BaseController::class`
 ```php
-use Rupeshstha/Http/Controllers/BaseController;
+use CoreFoundation/Http/Controllers/BaseController;
 
 class UserController extends BaseController
 {
@@ -133,222 +135,56 @@ class UserController extends BaseController
 
 ```
 #### BaseRequest
-All the validation 
-
-
-### Coding Preference
-How do i prefer writing code?
-Well, I prefer to write code under PSR-12 standard but in some case i have my own preferences.
-#### My Coding practice
-
-- Variable and function names should always be in the camel case.
-- use illuminate's response class for HTTP code.
-    ```php
-    use Illuminate\Http\Response;
-
-    Response::HTTP_CREATED;
-    ```
-- If we multi-lined the function params then it should declare type hinting.
-  - If there are more than 3 prams then they should be multi-lined.
-  - (Prefered multi-lined with type hinting if there are more than 2 parameters to fulfill).
-    * NOTE::This is conditional.
-- Leave an extra line at the end of the file (PSR-12).
-- Use a double quote for string if you need to concat variables. ie
-    ```php
-    $fullName = "{$fistName} {$lastName}";
-    ```
-    ```php
-    class SomeMagicClass
+Write your own validation on your own request class. You just need to extend `CoreFoundation\Http\Requests\BaseRequest::class`
+```php
+class YourAmazingCodeRequest extends BaseRequest
+{
+    public function store(): array
     {
-        public function doSomeMagic(string $method, array $parameter): object
-        {
-            return $this->driver()->{$method}(...$parameter);
-        }
+        return [
+            "code" => ["required", "unique:users,code"],
+            "name" => ["required"]
+        ];
     }
-    ```
 
-    - NOTE::Strictly add parenthesis `{}` on variable.
-  - (Prefered double quote on a string to maintain consistency).
-- multiline if condition if there is more than one condition.
-  - Format example:
-
-  ```php
-  if (
-    !isset($data["zip_code"])
-    && !$data["use_zip_range"]
-  ) {
-    $data["zip_code"] = "*";
-  } elseif (
-    // conditions
-    && // conditions
-  ) {
-    //code..
-  } else {
-    //code..
-  }
-  ```
-- modelkey in the repository name is separated with `"."` full stop.
-- There should not be a comma at the end of the parameter on methods.
-  - A comma is only strictly used on the last of the array index.
-- Do not use `__()` it for translations.
-  * Do's
-    ```php
-    trans("core::app.core.response.user.invalid-password", ["name" => "User"]);
-    ```
-  * Don't
-    ```php
-    __("core::app.core.response.user.invalid-password", ["name" => "User"]);
-    ```
-  * Preferred to use trait ResponseMessage.
-  ```php
-  class SomeMagicClass
-  {
-    use ResponseMessage;
-
-    public function doSomeMagic(): string
+    public function update(): array
     {
-        //some magic code...
-        return $this->lang("fetch.success", ["name" => "User"]);
+        $userId = $this->route()->parameter("user");
+        $storeRules = $this->store();
+
+        $rules = array_merge($storeRules, [
+            "code" => ["sometimes", "unique:application_methods,code,{$userId}"],
+        ]);
+
+        return $rules;
     }
-  }
-  ```
-
-## Config
-
-- The config file should strictly follow proper naming convention
-    - Config file name should use `_` as seperator and lower case, ie `"attribute_types.php"`
-- It should be binded in service provider on boot method.
-- It should be publishable.
-- Format example
-  ```php
-  public function registerConfig(): void
-  {
-    // To publish config file, this is necessary for packaging.
-    $this->publishes([
-      module_path($this->moduleName, "Config/strategy.php") => $this->getConfigPath("stragtegy"),
-    ], "strategy");
-
-    // To add or merge config file.
-    $this->mergeConfigFrom(
-      path: module_path($this->moduleName, "Config/strategy.php"),
-      key: "strategy"
-    );
-  }
-  ```
-
-## Routes
-
-- All the groups ie middleware, prefix, name should be written as functions.
-- Do not add `"/"` at first URL
-  - Do's
-  ```php
-  Route::get("me", [ProfileController::class, "me"])->name("me")
-
-  // prefixed then need /
-  Route::prefix("me")
-    ->name("me")
-    ->group(function () {
-      Route::get("/", [AccountController::class, "show"])
-        ->name("me.show");
-      Route::put("/", [AccountController::class, "update"])
-        ->name("me.update");
-    }
-  );
-  ```
-  - Don't
-  ```php
-  Route::get("/me", [ProfileController::class, "myProfile"])->name("me.profile");
-
-  Route::prefix("me")
-    ->name("me")
-    ->group(function () {
-      Route::get("", [AccountController::class, "show"])
-        ->name("me.show");
-      Route::put("", [AccountController::class, "update"])
-        ->name("me.update");
-    }
-  );
-  ```
-
-## Classes
-
-- Construct DI should be multi-lined.
-- If the class is made then it should specify its functionality with proper naming convention and folder structure.
-
-## Controllers
-
-- Methods should strictly have a try-catch.
-- Catch block should return handleException method.
-    ```php
-    try {
-        // some magic code
-    } catch (Exception $exception) {
-        return $this->handleException($exception);
-    }
-    ```
-- After a try-catch block, it should always return JsonResponse.
-  - Format example:
-
-  ```php
-  return $this->successResponse(
-    message: $this->lang("fetch-success", ["email" => $user->email]),
-    responseCode: Response::HTTP_OK
-  );
-  ```
-- It should always extend BaseController.
-    ```php
-    public function __construct(
-        protected UserService $userService,
-        protected UserResource $userResource,
-        protected UserCollection $userCollection
-    ) {
-    }
-    ```
-
-## Models
-
-- Add attributes for searchable/filtrable.
-    ```php
-    public static function searchable(): array
-    {
-        return [];
-    }
-    ```
-- Relations should be declared with proper formatting.
-  - It should be in camel case.
-  - It should always have a return type.
-    - Format example:
-
-    ```php
-    public function user(): BelongsTo
-    {
-        return $this->belongsTo(
-            related: User::class,
-            foreignKey: "user_id",
-        );
-    }
-    ```
-
+}
+```
 ## Repositories
+This package offers repository pattern to your project natively. You don't have to worry about the cache and filterable when using offered methods. If you wish to have your own method and implement cache then you should consider to use CacheManager.
+```php
+// bind repo in service container
+$this->app->singleton(
+    abstract: UserRepositoryInterface::class,
+    concrete: UserRepository::class
+);
 
-- It should always extends BaseRepository and implements its own interface.
-  - Interfaces should bind in RepositoryServiceProvider
-    - format example
+class UserRepository extends BaseRepository implements UserRepositoryInterface
+{
+    protected function setModel(): string
+    {
+        return User::class;
+    }
+}
 
-    ```php
-    $this->app->singleton(
-        abstract: UserRepositoryInterface::class,
-        concrete: UserRepository::class
-    );
-    ```
-  - NOTE::Every module should have its own RepositoryServiceProvider
-  - The interface should always extends BaseRepositoryInterface.
+interface UserRepositoryInterface extends BaseRepositoryInterface
+{
+}
+
+```
 
 ## Service Classes
-
-- It should always extends BaseService
-- All the business logic should be written in these classes.
-
+This package offices service patterns. You can write business logic in your service class. If your application follows EDD then it will make your life easier. It provides bunch of methods that resolves and factories your classes.
 
 
 ### Testing
