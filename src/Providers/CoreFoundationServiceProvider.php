@@ -5,8 +5,10 @@ namespace CoreFoundation\Providers;
 use CoreFoundation\Console\GenerateFactoryCommand;
 use CoreFoundation\Contracts\StrategyContract;
 use CoreFoundation\Facades\Services\ServerTimingFacadeService;
+use CoreFoundation\Listeners\RepositoryEventListener;
 use CoreFoundation\Services\StrategyService;
 use CoreFoundation\Services\TestFacadeDoc;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 
 class CoreFoundationServiceProvider extends ServiceProvider
@@ -19,7 +21,11 @@ class CoreFoundationServiceProvider extends ServiceProvider
         if ($this->app->runningInConsole()) {
             $this->publishes([
                 __DIR__.'/../../config/core_foundation.php' => config_path('core_foundation.php'),
-            ], 'config');
+            ], 'core_foundation');
+
+            $this->publishes([
+                __DIR__.'/../../config/interceptors.php' => config_path('interceptors.php'),
+            ], 'interceptors');
         }
     }
 
@@ -33,6 +39,7 @@ class CoreFoundationServiceProvider extends ServiceProvider
 
         $this->bindServices();
         $this->mergeConfigFrom(__DIR__ . '/../../config/core_foundation.php', 'core_foundation');
+        $this->mergeConfigFrom(__DIR__ . '/../../config/interceptors.php', 'interceptors');
 
         // TODO feature is incomplete.
         // $this->app->singleton("doc", TestFacadeDoc::class);
@@ -46,6 +53,8 @@ class CoreFoundationServiceProvider extends ServiceProvider
         $this->app->singleton(ServerTimingFacadeService::class, function ($app) {
             return new ServerTimingFacadeService(new \Symfony\Component\Stopwatch\Stopwatch());
         });
+
+        Event::listen("index.before", RepositoryEventListener::class);
     }
 
     private function bindServices(): void
