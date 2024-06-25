@@ -37,7 +37,7 @@ class TestService extends BaseService
             eventKey: "jpt-asd.asdasd.asdaqweqwe.index.before",
             data: $mutableData
         );
-
+        dd("asdasd");
         $filterable = $mutableData->get("filterable");
         $relationship = $mutableData->get("relationship");
         dd($filterable, $relationship, $this->testRepository);
