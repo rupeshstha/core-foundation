@@ -7,7 +7,7 @@ use Illuminate\Support\Str;
 
 abstract class ObjectComposer
 {
-    protected ?array $value = [];
+    protected array $attributes = [];
 
     public function __set(string $offset, mixed $value): void
     {
@@ -43,35 +43,35 @@ abstract class ObjectComposer
 
     public function get(string $offset, mixed $default = null): mixed
     {
-        return $this->value[$offset] ?? $default;
+        return $this->attributes[$offset] ?? $default;
     }
 
     public function set(string $offset, mixed $value = null): self
     {
-        $this->value[$offset] = $value;
+        $this->attributes[$offset] = $value;
 
         return $this;
     }
 
     public function toArray(): array
     {
-        return $this->value;
+        return $this->attributes;
     }
 
     public function reset(): self
     {
-        $this->value = null;
+        $this->attributes = [];
 
         return $this;
     }
 
     public function only(array $attributes): array
     {
-        return Arr::only($this->value, $attributes);
+        return Arr::only($this->attributes, $attributes);
     }
 
     public function except(string|array $attributes): array
     {
-        return Arr::except($this->value, $attributes);
+        return Arr::except($this->attributes, $attributes);
     }
 }
