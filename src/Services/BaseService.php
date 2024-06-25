@@ -4,6 +4,7 @@ namespace CoreFoundation\Services;
 
 use Exception;
 use CoreFoundation\Traits\HasEvent;
+use CoreFoundation\Traits\HasFactory;
 use CoreFoundation\Traits\HasCacheable;
 use Illuminate\Support\Facades\Validator;
 use CoreFoundation\Manipulators\ObjectMutable;
@@ -13,6 +14,7 @@ abstract class BaseService
 {
     use HasCacheable;
     use HasEvent;
+    use HasFactory;
 
     protected ObjectMutable $objectMutable;
 

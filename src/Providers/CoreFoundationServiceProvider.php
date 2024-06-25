@@ -6,8 +6,10 @@ use CoreFoundation\Console\GenerateFactoryCommand;
 use CoreFoundation\Contracts\StrategyContract;
 use CoreFoundation\Facades\Services\ServerTimingFacadeService;
 use CoreFoundation\Listeners\RepositoryEventListener;
+use CoreFoundation\Services\InterceptTestService;
 use CoreFoundation\Services\StrategyService;
 use CoreFoundation\Services\TestFacadeDoc;
+use CoreFoundation\Services\TestService;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 
@@ -55,6 +57,11 @@ class CoreFoundationServiceProvider extends ServiceProvider
         });
 
         Event::listen("index.before", RepositoryEventListener::class);
+
+        TestService::setFactory(InterceptTestService::class);
+        TestService::setFactoryCondition(InterceptTestService::class, function () {
+            return true;
+        });
     }
 
     private function bindServices(): void
