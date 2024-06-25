@@ -97,6 +97,74 @@ You can also use the Server-Timing middleware to only set textual information wi
 ```php
 ServerTiming::addMetric('User: '.$user->id);
 ```
+## Design Patterns
+
+### Factory design pattern
+This package provides you factory design pattern natively. If you wish to use factory pattern then you can do it on you service class.
+You just need to extend `CoreFoundation\Services\BaseService::class`
+```php
+class UserService extends BaseService
+{
+    public function index(array $filterable = [], array $relationship = []): object
+    {
+        // 
+    }
+}
+```
+### How to use it?
+```php
+    $users = $this->userService->factory()->index($filterable);
+```
+
+### But how do it factories through class?
+You need to define factories in service provider.
+```php
+    TestService::setFactory(CustomUserService::class);
+```
+You also need to define conditions to factory desired class. For that you have flexibility to cross between class.
+
+#### Closure method
+This is needed when you want to globally set desired class.
+```php
+class AppServiceProvider extends ServiceProvider
+{
+    public function register()
+    {
+        UserService::setFactoryCondition(CustomUserService::class, function () {
+            return app()->isProduction(); // return true/false
+        });
+    }
+}
+```
+#### Custom method
+This is could be your own business logic. when you need to add your own dynamic conditions.
+```php
+class AppServiceProvider extends ServiceProvider
+{
+    public function register()
+    {
+        $this->app->singleton("custom.user.service", CustomUserConditionService::class); // binds "custom.user.service" key to service container.
+        UserService::setFactoryCondition(CustomUserService::class, "custom.user.service");
+    }
+}
+
+class CustomUserConditionService implements \CoreFoundation\Contracts\BaseFactoryConditionInterface
+{
+    public function __construct(
+        //
+    ) {
+    }
+
+    public function handle(): bool
+    {
+        // your custom logic
+
+        return true;
+    }
+}
+```
+
+
 # Coding Preference
 How do i prefer writing code?
 Well, I prefer to write code under PSR-12 standard but in some case i have my own preferences.
