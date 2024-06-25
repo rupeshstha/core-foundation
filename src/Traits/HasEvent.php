@@ -49,8 +49,8 @@ trait HasEvent
              * Its better if we separate before, after and around event dispatch method instead. 🤔
              * At this point i also don't see how other dev gonna follow this concept.
              */
-            $lastKeyAfterDot = substr($eventKey, $dotPosition + 1);
-            $interceptedObject = resolve($interceptor["interceptTo"], $previousInstance);
+            $lastKeyAfterDot = ucfirst(substr($eventKey, $dotPosition + 1));
+            $interceptedObject = resolve($interceptor["interceptTo"], [$previousInstance]);
             $data = is_array($data) ? $data : [$data];
             $interceptedObject->{$previousFunction.$lastKeyAfterDot}(array_merge($previousArguments, $data));
         }
