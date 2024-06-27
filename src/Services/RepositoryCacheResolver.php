@@ -2,8 +2,11 @@
 
 namespace CoreFoundation\Services;
 
+use Closure;
 use ReflectionClass;
 use ReflectionMethod;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Str;
 use CoreFoundation\Entities\BaseModel;
 use CoreFoundation\Traits\HasCacheable;
 use Illuminate\Database\Eloquent\Relations\Relation;
@@ -72,8 +75,6 @@ class RepositoryCacheResolver
     /**
      * Returns model defined relation table names.
      *
-     * @param object $model
-     *
      * @return array
      */
     public function getModelRelationships(): array
@@ -86,4 +87,25 @@ class RepositoryCacheResolver
 
         return $modelRelationships;
     }
+
+    public function resolveRelationKeys(array $relations): array
+    {
+        $passedRelationTags = [];
+        foreach ($relations as $key => $relation) {
+            if ($relation instanceof Closure) {
+                $relation = $key;
+            }
+
+            $nestedRelationKeys = explode(".", $relation);
+            $relationTags = array_map(fn ($nestedRelationKey) => Str::snake(Str::singular($nestedRelationKey)),
+                $nestedRelationKeys
+            );
+
+            $passedRelationTags[] = $relationTags;
+        }
+
+        $data = Arr::flatten($passedRelationTags);
+        return $data;
+    }
+
 }

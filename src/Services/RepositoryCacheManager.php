@@ -4,6 +4,7 @@ namespace CoreFoundation\Services;
 
 use Closure;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
 use CoreFoundation\Entities\BaseModel;
 
@@ -53,7 +54,10 @@ class RepositoryCacheManager extends RepositoryCacheResolver
             return $callback();
         }
 
-        $relationalKeys = $this->getModelRelationships($this->model);
+        $modelRelations = $this->getModelRelationships($this->model);
+        $relates = $this->resolveRelationKeys($relates);
+        $relationalKeys = array_unique(array_merge($modelRelations, $relates));
+
         $backTraceMethod = Arr::last(debug_backtrace(limit: 4));
 
         $identifier[] = [
@@ -78,7 +82,7 @@ class RepositoryCacheManager extends RepositoryCacheResolver
     {
         $taggable = $this->model->getTable();
 
-        $this->flushTagCache([$taggable]);
+        $this->flushTagCache([$taggable, Str::singular($taggable)]);
 
         Log::info(
             message: "Cache_Invalidate:",
