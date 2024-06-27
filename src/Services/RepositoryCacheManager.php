@@ -82,7 +82,7 @@ class RepositoryCacheManager extends RepositoryCacheResolver
     {
         $taggable = $this->model->getTable();
 
-        $this->flushTagCache([$taggable, Str::singular($taggable)]);
+        $this->flushTagCache([$taggable, Str::snake(Str::singular($taggable))]);
 
         Log::info(
             message: "Cache_Invalidate:",

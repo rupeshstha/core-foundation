@@ -79,7 +79,10 @@ class RepositoryCacheResolver
      */
     public function getModelRelationships(): array
     {
-        if (! isset(static::$resolvedRelationKeys[$this->model::class])) {
+        if (
+            ! isset(static::$resolvedRelationKeys[$this->model::class])
+            || ! app()->isProduction() // When app is in development mode you need to check model relations every time.
+        ) {
             $this->setModelRelationship();
         }
 
@@ -97,8 +100,9 @@ class RepositoryCacheResolver
             }
 
             $nestedRelationKeys = explode(".", $relation);
-            $relationTags = array_map(fn ($nestedRelationKey) => Str::snake(Str::singular($nestedRelationKey)),
-                $nestedRelationKeys
+            $relationTags = array_map(
+                callback: fn ($nestedRelationKey) => Str::snake(Str::singular($nestedRelationKey)),
+                array: $nestedRelationKeys
             );
 
             $passedRelationTags[] = $relationTags;
