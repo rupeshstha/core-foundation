@@ -17,7 +17,7 @@ composer require rupeshstha/core-foundation
 ## Usage
 
 This package offers to build your amazing project by uplifting heavy work. Also this package will help you to DRY your code.
-You can always check ![Official Documentation](https://rupesh-shrestha.gitbook.io/core-foundation) for detail information.
+You can always check (https://rupesh-shrestha.gitbook.io/core-foundation) for detail information.
 
 ### Application Performance Monitoring (APM)
 This package also offers basic but must needed APM.
