@@ -43,6 +43,7 @@ class CoreFoundationServiceProvider extends ServiceProvider
         $this->mergeConfigFrom(__DIR__ . '/../../config/core_foundation.php', 'core_foundation');
         $this->mergeConfigFrom(__DIR__ . '/../../config/interceptors.php', 'interceptors');
 
+        include_once __DIR__ . '/../Helpers/helpers.php';
         // TODO feature is incomplete.
         // $this->app->singleton("doc", TestFacadeDoc::class);
 
@@ -56,12 +57,12 @@ class CoreFoundationServiceProvider extends ServiceProvider
             return new ServerTimingFacadeService(new \Symfony\Component\Stopwatch\Stopwatch());
         });
 
-        Event::listen("index.before", RepositoryEventListener::class);
+        // Event::listen("index.before", RepositoryEventListener::class);
 
-        TestService::setFactory(InterceptTestService::class);
-        TestService::setFactoryCondition(InterceptTestService::class, function () {
-            return true;
-        });
+        // TestService::setFactory(InterceptTestService::class);
+        // TestService::setFactoryCondition(InterceptTestService::class, function () {
+        //     return true;
+        // });
     }
 
     private function bindServices(): void
