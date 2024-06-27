@@ -2,26 +2,24 @@
 
 namespace CoreFoundation\Repositories;
 
+use Illuminate\Support\Arr;
+use CoreFoundation\Traits\HasEvent;
+use Illuminate\Pagination\Paginator;
+use CoreFoundation\Entities\BaseModel;
 use Illuminate\Foundation\Application;
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Builder;
+use CoreFoundation\Services\ModelFilterable;
 use Illuminate\Database\Eloquent\Collection;
+use CoreFoundation\Manipulators\ObjectMutable;
+use CoreFoundation\Services\RepositoryCacheManager;
 use CoreFoundation\Contracts\BaseRepositoryInterface;
 use CoreFoundation\Exceptions\ModelNotInstantiableException;
-use CoreFoundation\Services\CacheManager;
-use CoreFoundation\Services\ModelFilterable;
-use CoreFoundation\Traits\HasEvent;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Pagination\Paginator;
-use Illuminate\Support\Arr;
 
-/**
- * TODO:: singleton repository instances.
- */
 abstract class BaseRepository implements BaseRepositoryInterface
 {
     use HasEvent;
 
-    protected Model $model;
+    protected BaseModel $model;
 
     protected string $tableName;
 
@@ -33,8 +31,9 @@ abstract class BaseRepository implements BaseRepositoryInterface
 
     public function __construct(
         protected Application $app,
-        protected CacheManager $cacheManager,
-        protected ModelFilterable $modelFilterable
+        protected RepositoryCacheManager $cacheManager,
+        protected ModelFilterable $modelFilterable,
+        protected ObjectMutable $objectMutable,
     ) {
         $this->register();
     }
@@ -58,9 +57,9 @@ abstract class BaseRepository implements BaseRepositoryInterface
             : null;
 
         throw_unless(
-            condition: $modelInstance instanceof Model,
+            condition: $modelInstance instanceof BaseModel,
             exception: new ModelNotInstantiableException(
-                message: "Class {$this->setModel()} must be an instance of Illuminate\\Database\\Eloquent\\Model"
+                message: "Class {$this->setModel()} must be an instance of CoreFoundation\\Entities\\BaseModel"
             )
         );
 
@@ -70,28 +69,15 @@ abstract class BaseRepository implements BaseRepositoryInterface
         $this->coreConfig = config("core_foundation");
 
         $this->cacheAllowedMethods = Arr::get($this->coreConfig, "cache.cache_repository_methods");
+        $this->eventPrefix = class_basename($this);
+        $this->eventDispatch = true;
     }
 
-    /**
-     * In every repository base function call before method will be called.
-     *
-     * @return void
-     */
-    protected function before(): void
-    {
-    }
-
-    /**
-     * In every successful repository base function call after method will be called.
-     *
-     * @return void
-     */
-    protected function after(): void
-    {
-    }
-
-    public function fetchAll(array $filterable = [], array $relationship = []): Collection|Paginator
-    {
+    public function fetchAll(
+        array $filterable = [],
+        array $relationship = [],
+        array $columns = ['*']
+    ): Collection|Paginator {
         $this->eventDispatch(
             eventKey: "fetch-all.before",
             data: [
@@ -102,8 +88,9 @@ abstract class BaseRepository implements BaseRepositoryInterface
 
         $fetched = $this->cacheManager->make(
             relates: $relationship,
-            callback: function () use ($filterable, $relationship) {
+            callback: function () use ($filterable, $relationship, $columns) {
                 $rows = $this->model::query()
+                    ->select($columns)
                     ->when($relationship, function (Builder $query) use ($relationship) {
                         $query->with($relationship);
                     });
