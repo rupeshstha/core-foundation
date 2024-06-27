@@ -2,7 +2,6 @@
 
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/rupeshstha/core-foundation.svg?style=flat-square)](https://packagist.org/packages/rupeshstha/core-foundation)
 [![Total Downloads](https://img.shields.io/packagist/dt/rupeshstha/core-foundation.svg?style=flat-square)](https://packagist.org/packages/rupeshstha/core-foundation)
-![GitHub Actions](https://github.com/rupeshstha/core-foundation/actions/workflows/main.yml/badge.svg)
 
 A foundational package for streamlined development, offering essential core functionality and components to accelerate project creation and enhance scalability. This package is built keeping on mind laravel octane, It fully supports laravel octane.
 
