@@ -3,7 +3,7 @@
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/rupeshstha/core-foundation.svg?style=flat-square)](https://packagist.org/packages/rupeshstha/core-foundation)
 [![Total Downloads](https://img.shields.io/packagist/dt/rupeshstha/core-foundation.svg?style=flat-square)](https://packagist.org/packages/rupeshstha/core-foundation)
 
-[![https://rupesh-shrestha.gitbook.io/core-foundation/?ref=github](https://raw.githubusercontent.com/rupeshstha/core-foundation/main/artifacts/Images/core-foundation-cover.jpg?token=GHSAT0AAAAAACTNJTDMULHWVQNEO2LL547AZT6GEAQ)](https://rupesh-shrestha.gitbook.io/core-foundation?ref=github)
+[![https://rupesh-shrestha.gitbook.io/core-foundation/?ref=github](https://github.com/rupeshstha/core-foundation/blob/main/artifacts/Images/core-foundation-cover.jpg?raw=true)](https://rupesh-shrestha.gitbook.io/core-foundation?ref=github)
 
 
 
