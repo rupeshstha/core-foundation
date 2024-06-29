@@ -1,4 +1,4 @@
-name: Installation 
+name: Installation
 
 on:
   push:
@@ -31,9 +31,6 @@ jobs:
 
     - name: Install dependencies
       run: composer install --prefer-dist --no-progress
-
-    # Add a test script to composer.json, for instance: "test": "vendor/bin/phpunit"
-    # Docs: https://getcomposer.org/doc/articles/scripts.md
 
     - name: Run Test case
       run: composer test
