@@ -13,11 +13,7 @@ class ValidateFilterableRequest extends BaseRequest
             "sort_by" => "sometimes",
             "sort_order" => "sometimes|in:asc,desc",
             "q" => "sometimes|string",
-            "filter" => "sometimes|array",
-            "filter.*.filter_by" => "required|string",
-            "filter.*.value" => "required_with:filter.*.filter_by",
-            "get_trashed" => "sometimes|boolean",
-            "get_only_trashed" => "sometimes|boolean",
+            "filters" => "sometimes|array",
         ];
     }
 
