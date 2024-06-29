@@ -18,6 +18,7 @@ class RepositoryCacheResolver
     protected BaseModel $model;
 
     protected static array $resolvedRelationKeys = [];
+    protected static array $cacheModelInstances = []; // TODO: reduce model object initializations. Maintain singleton when searching relation through Reflection and executing Closure.
 
     /**
      * Search all the relation binded to a model and sets to $resolvedRelationKeys property.
