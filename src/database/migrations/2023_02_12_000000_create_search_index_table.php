@@ -17,7 +17,7 @@ return new class extends Migration
             $table->text('content');
 
             if (DB::getDriverName() !== 'sqlite') {
-                $table->fullText('content');
+                $table->fullText(['content', 'key']);
             }
 
             $table->index(["key", "index"]);
