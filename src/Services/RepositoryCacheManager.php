@@ -6,26 +6,26 @@ use Closure;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Database\Eloquent\Model;
+use CoreFoundation\Entities\BaseModel;
 
-class CacheManager extends CacheResolver
+class RepositoryCacheManager extends RepositoryCacheResolver
 {
     private readonly bool $isEnable;
-    protected Model $model;
+    protected BaseModel $model;
 
     public function __construct()
     {
         $this->isEnable = config("core_foundation.cache.global", true);
     }
 
-    public function setModel(Model $model): self
+    public function setModel(BaseModel $model): self
     {
         $this->model = $model;
 
         return $this;
     }
 
-    public function getModel(): Model
+    public function getModel(): BaseModel
     {
         return $this->model;
     }
@@ -54,15 +54,20 @@ class CacheManager extends CacheResolver
             return $callback();
         }
 
-        $relationalKeys = $this->getModelRelationships($this->model); //$this->resolveRelationKeys($relates);
-        $backTraceMethod = Arr::last(debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT, 4));
+        $modelRelations = $this->getModelRelationships($this->model);
+        $relates = $this->resolveRelationKeys($relates);
+        $relationalKeys = array_unique(array_merge($modelRelations, $relates));
+
+        $backTraceMethod = Arr::last(debug_backtrace(limit: 4));
+
         $identifier[] = [
             "parent_method_name" =>  $backTraceMethod["function"],
-            "argument" => $backTraceMethod["args"]
+            "argument" => $backTraceMethod["args"],
+            "relation_keys" => $relationalKeys,
         ];
 
-        $hash = $this->generateHash($identifier, $relationalKeys);
-        $tags = $this->generateCacheTags($this->model->getTable(), $relationalKeys);
+        $hash = md5(json_encode($identifier));
+        $tags = array_merge([$this->model->getTable()], $relationalKeys);
 
         $data = $this->storeTagCache(
             tags: $tags,
@@ -75,8 +80,9 @@ class CacheManager extends CacheResolver
 
     public function flushAllCache(): void
     {
-        $taggable = Str::snake(Str::singular($this->model->getTable()));
-        $this->flushTagCache([$taggable]);
+        $taggable = $this->model->getTable();
+
+        $this->flushTagCache([$taggable, Str::snake(Str::singular($taggable))]);
 
         Log::info(
             message: "Cache_Invalidate:",

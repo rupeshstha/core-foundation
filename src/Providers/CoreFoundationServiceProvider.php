@@ -28,6 +28,10 @@ class CoreFoundationServiceProvider extends ServiceProvider
             $this->publishes([
                 __DIR__.'/../../config/interceptors.php' => config_path('interceptors.php'),
             ], 'interceptors');
+
+            $this->loadMigrationsFrom([
+                __DIR__ . '/../database/migrations'
+            ]);
         }
     }
 
