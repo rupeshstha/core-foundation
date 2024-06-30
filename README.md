@@ -3,7 +3,7 @@
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/rupeshstha/core-foundation.svg?style=flat-square)](https://packagist.org/packages/rupeshstha/core-foundation)
 [![Total Downloads](https://img.shields.io/packagist/dt/rupeshstha/core-foundation.svg?style=flat-square)](https://packagist.org/packages/rupeshstha/core-foundation)
 
-[![https://rupesh-shrestha.gitbook.io/core-foundation/?ref=github](https://github.com/rupeshstha/core-foundation/blob/main/artifacts/Images/core-foundation-cover.jpg?raw=true)](https://rupesh-shrestha.gitbook.io/core-foundation?ref=github)
+[![https://core-foundation-doc.rupeshstha.com.np/?ref=github](https://github.com/rupeshstha/core-foundation/blob/main/artifacts/Images/core-foundation-cover.jpg?raw=true)](https://core-foundation-doc.rupeshstha.com.np/?ref=github)
 
 
 
@@ -20,7 +20,7 @@ composer require rupeshstha/core-foundation
 ## Usage
 
 This package offers to build your amazing project by uplifting heavy work. Also this package will help you to DRY your code.
-You can always check (https://rupesh-shrestha.gitbook.io/core-foundation) for detail information.
+You can always check (https://core-foundation-doc.rupeshstha.com.np/) for detail information.
 
 ## Design Patterns
 
@@ -33,9 +33,39 @@ You just need to extend `CoreFoundation\Services\BaseService::class`
 ```php
 class UserService extends BaseService
 {
-    public function index(array $filterable = [], array $relationship = []): object
+    public function __construct(
+        protected UserRepositoryInterface $userRepository,
+        protected ObjectMutable $objectMutable
+    ) {
+    }
+
+    public function index(array $filterable = [], array $relationship = []): Collection|Paginator
     {
-        // 
+        $mutableBeforeData = $this->objectMutable->create([
+            "filterable" => $filterable,
+            "relationship" => $relationship
+        ]);
+
+        $this->interceptorEventDispatch(
+            eventKey: "index.before",
+            data: $mutableBeforeData
+        );
+
+        $filterable = $mutableBeforeData->get("filterable");
+        $relationship = $mutableBeforeData->get("relationship");
+
+        $users = $this->userRepository->fetchAll($filterable, $relationship);
+
+        $this->objectMutable->create([
+            "users" => $users,
+        ]);
+
+        $this->interceptorEventDispatch(
+            eventKey: "index.after",
+            data: $mutableAfterData
+        );
+
+        return $mutableAfterData->get("users");
     }
 }
 ```
