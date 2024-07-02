@@ -154,7 +154,7 @@ class ModelFilterable
     private function pagination(Builder $builder, array $requestFilters = []): Collection|Paginator
     {
         $perPage = (int) ($requestFilters["per_page"] ?? 25);
-        $paginate = $requestFilters["no_paginate"] ?? false;
+        $paginate = (bool) ($requestFilters["no_paginate"] ?? false);
         $resources = !$paginate
             ? $builder->paginate($perPage)->appends(request()->except("page"))
             : $builder->get();
