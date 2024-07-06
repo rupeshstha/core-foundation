@@ -3,6 +3,7 @@
 namespace CoreFoundation\Providers;
 
 use CoreFoundation\Console\GenerateFactoryCommand;
+use CoreFoundation\Console\WatchQueryCommand;
 use CoreFoundation\Contracts\StrategyContract;
 use CoreFoundation\Facades\Services\ServerTimingFacadeService;
 use CoreFoundation\Listeners\RepositoryEventListener;
@@ -31,6 +32,10 @@ class CoreFoundationServiceProvider extends ServiceProvider
 
             $this->loadMigrationsFrom([
                 __DIR__ . '/../database/migrations'
+            ]);
+
+            $this->commands([
+                WatchQueryCommand::class,
             ]);
         }
     }

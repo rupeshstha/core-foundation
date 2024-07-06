@@ -2,11 +2,10 @@
 
 namespace CoreFoundation\Http\Controllers;
 
-use CoreFoundation\Facades\ServerTiming;
-use CoreFoundation\Services\BaseManifest;
-use CoreFoundation\Services\TestService;
 use Exception;
 use Illuminate\Http\Request;
+use CoreFoundation\Facades\ServerTiming;
+use CoreFoundation\Services\TestService;
 
 /**
  * @property TestService $baseManifest
@@ -15,16 +14,7 @@ class TestController extends BaseController
 {
     public function __construct(
         protected TestService $testService,
-        protected BaseManifest $baseManifest
     ) {
-    }
-
-    public function resolve()
-    {
-        /**
-         * @property TestService $baseManifest
-         */
-        $this->baseManifest->resolveTo();
     }
 
     public function test(Request $request)
@@ -33,7 +23,7 @@ class TestController extends BaseController
             $data = $request->all();
             // $this->baseManifest->index($data, ["user"]);
 
-            $this->testService->factory()->index($data, ["user"]);
+            $this->testService->index($data, ["user"]);
         } catch (Exception $exception) {
             dd($exception);
 

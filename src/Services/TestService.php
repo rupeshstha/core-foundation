@@ -4,6 +4,7 @@ namespace CoreFoundation\Services;
 
 use CoreFoundation\Manipulators\ObjectMutable;
 use CoreFoundation\Repositories\TestRepository;
+use Log;
 
 class TestService extends BaseService
 {
@@ -33,14 +34,41 @@ class TestService extends BaseService
         //     data: $mutableData
         // );
         // dd("asd");
-        $this->interceptorEventDispatch(
-            eventKey: "jpt-asd.asdasd.asdaqweqwe.index.before",
-            data: $mutableData
-        );
-        dd("asdasd");
+        // $this->interceptorEventDispatch(
+        //     eventKey: "jpt-asd.asdasd.asdaqweqwe.index.before",
+        //     data: $mutableData
+        // );
+        // dd("asdasd");
         $filterable = $mutableData->get("filterable");
         $relationship = $mutableData->get("relationship");
-        dd($filterable, $relationship, $this->testRepository);
+                //wip test data
+                $filters = [
+                    "__in_id" => [2,4,5,1],
+                    "__or_*" => [
+                        "__eq_slug" => "rupesh",
+                        "__in_id" => [1,2,3],
+
+                        "__and_*" => [
+                            "__eq_id" => 1,
+                            "__like_slug" => ""
+                        ],
+                    ],
+                    "__or_slug" => [
+                        "__like_slug" => ""
+                    ],
+                    "__and_*" => [
+                        "__eq_id" => 1,
+                        "__like_slug" => ""
+                    ],
+                    "__eq_users.name" => ""
+                ];
+        Log::error("asdasd", [
+            "test message",
+            "data" => [
+                $filterable
+            ]
+        ]);
+        // dd($filterable, $relationship, $this->testRepository);
         $data = $this->testRepository->fetchAll($filterable, $relationship);
         dd($data);
     }
