@@ -2,6 +2,8 @@
 
 namespace CoreFoundation\Providers;
 
+use Composer\ClassMapGenerator\ClassMapGenerator;
+use CoreFoundation\Attributes\BulkBind;
 use CoreFoundation\Console\GenerateFactoryCommand;
 use CoreFoundation\Contracts\StrategyContract;
 use CoreFoundation\Facades\Services\ServerTimingFacadeService;
@@ -12,6 +14,7 @@ use CoreFoundation\Services\TestFacadeDoc;
 use CoreFoundation\Services\TestService;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
+use ReflectionClass;
 
 class CoreFoundationServiceProvider extends ServiceProvider
 {
@@ -61,6 +64,9 @@ class CoreFoundationServiceProvider extends ServiceProvider
             return new ServerTimingFacadeService(new \Symfony\Component\Stopwatch\Stopwatch());
         });
 
+        $this->bulkBind([
+            __DIR__ . "/../Repositories" // test bulk bind
+        ]);
         // Event::listen("index.before", RepositoryEventListener::class);
 
         // TestService::setFactory(InterceptTestService::class);
@@ -76,5 +82,27 @@ class CoreFoundationServiceProvider extends ServiceProvider
             abstract: StrategyContract::class,
             concrete: StrategyService::class
         );
+    }
+
+    public function bulkBind(array $paths): void
+    {
+        foreach ($paths as $path) {
+            $classMap = ClassMapGenerator::createMap(realpath($path));
+            foreach ($classMap as $port => $_) {
+                $attributes = $this->getBindAttributes($port);
+                foreach ($attributes as $bind) {
+                    $implement = $bind->getArguments()[0] ?? null;
+                    if ($implement) {
+                        $this->app->singleton($port, $implement);
+                    }
+                }
+            }
+        }
+    }
+
+    private function getBindAttributes(string $port): array
+    {
+        $reflectionClass = new ReflectionClass($port);
+        return $reflectionClass->getAttributes(BulkBind::class);
     }
 }
