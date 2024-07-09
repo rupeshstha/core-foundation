@@ -3,10 +3,9 @@
 namespace CoreFoundation\Repositories;
 
 use App\Models\Role;
-use App\Models\User;
-use CoreFoundation\Transformers\TestResource;
+use CoreFoundation\Repositories\Interfaces\TestRepositoryInterface;
 
-class TestRepository extends BaseRepository
+class TestRepository extends BaseRepository implements TestRepositoryInterface
 {
     // public function __construct(
     //     protected User $user
