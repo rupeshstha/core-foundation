@@ -12,12 +12,15 @@ use CoreFoundation\Services\InterceptTestService;
 use CoreFoundation\Services\StrategyService;
 use CoreFoundation\Services\TestFacadeDoc;
 use CoreFoundation\Services\TestService;
+use Illuminate\Support\Benchmark;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\ServiceProvider;
 use ReflectionClass;
 
 class CoreFoundationServiceProvider extends ServiceProvider
 {
+    protected static $bindable = [];
     /**
      * Bootstrap the application services.
      */
@@ -86,14 +89,19 @@ class CoreFoundationServiceProvider extends ServiceProvider
 
     public function bulkBind(array $paths): void
     {
+        // Backup your default mailer
         foreach ($paths as $path) {
-            $classMap = ClassMapGenerator::createMap(realpath($path));
-            foreach ($classMap as $port => $_) {
-                $attributes = $this->getBindAttributes($port);
+            if (! isset(static::$bindable[$path])) {
+                static::$bindable[$path] = ClassMapGenerator::createMap(realpath($path));
+            }
+            $classMap = static::$bindable[$path];
+            foreach ($classMap as $namespace => $realPath) {
+                $attributes = $this->getBindAttributes($namespace);
+                /** @var \ReflectionAttribute $bind */
                 foreach ($attributes as $bind) {
                     $implement = $bind->getArguments()[0] ?? null;
                     if ($implement) {
-                        $this->app->singleton($port, $implement);
+                        $this->app->singleton($namespace, $implement);
                     }
                 }
             }
