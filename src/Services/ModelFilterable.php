@@ -6,7 +6,6 @@ use Closure;
 use CoreFoundation\Entities\BaseModel;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
-use CoreFoundation\Manipulators\ObjectMutable;
 use Illuminate\Contracts\Pagination\Paginator;
 use CoreFoundation\Http\Requests\ValidateFilterableRequest;
 
@@ -154,7 +153,7 @@ class ModelFilterable
     private function pagination(Builder $builder, array $requestFilters = []): Collection|Paginator
     {
         $perPage = (int) ($requestFilters["per_page"] ?? 25);
-        $paginate = $requestFilters["no_paginate"] ?? false;
+        $paginate = (bool) ($requestFilters["no_paginate"] ?? false);
         $resources = !$paginate
             ? $builder->paginate($perPage)->appends(request()->except("page"))
             : $builder->get();
