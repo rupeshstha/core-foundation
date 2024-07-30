@@ -4,9 +4,9 @@ namespace CoreFoundation\Repositories\Interfaces;
 
 use CoreFoundation\Contracts\BaseRepositoryInterface;
 use CoreFoundation\Repositories\TestRepository;
-use CoreFoundation\Attributes\BulkBind;
+use CoreFoundation\Attributes\BatchRegistrar;
 
-#[BulkBind(TestRepository::class)]
+#[BatchRegistrar(TestRepository::class)]
 interface TestRepositoryInterface extends BaseRepositoryInterface
 {
 }

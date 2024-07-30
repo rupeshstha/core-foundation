@@ -2,6 +2,9 @@
 
 namespace CoreFoundation\Attributes;
 
-class BulkBind
+/**
+ * Attribute class
+ */
+class BatchRegistrar
 {
 }

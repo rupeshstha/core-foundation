@@ -3,7 +3,7 @@
 namespace CoreFoundation\Providers;
 
 use Composer\ClassMapGenerator\ClassMapGenerator;
-use CoreFoundation\Attributes\BulkBind;
+use CoreFoundation\Attributes\BatchRegistrar;
 use CoreFoundation\Console\GenerateFactoryCommand;
 use CoreFoundation\Contracts\StrategyContract;
 use CoreFoundation\Facades\Services\ServerTimingFacadeService;
@@ -21,6 +21,7 @@ use ReflectionClass;
 class CoreFoundationServiceProvider extends ServiceProvider
 {
     protected static $bindable = [];
+
     /**
      * Bootstrap the application services.
      */
@@ -67,7 +68,7 @@ class CoreFoundationServiceProvider extends ServiceProvider
             return new ServerTimingFacadeService(new \Symfony\Component\Stopwatch\Stopwatch());
         });
 
-        $this->bulkBind([
+        $this->batchRegistrar([
             __DIR__ . "/../Repositories" // test bulk bind
         ]);
         // Event::listen("index.before", RepositoryEventListener::class);
@@ -87,14 +88,13 @@ class CoreFoundationServiceProvider extends ServiceProvider
         );
     }
 
-    public function bulkBind(array $paths): void
+    public function batchRegistrar(array $batchRegistrarPaths): void
     {
-        // Backup your default mailer
-        foreach ($paths as $path) {
-            if (! isset(static::$bindable[$path])) {
-                static::$bindable[$path] = ClassMapGenerator::createMap(realpath($path));
+        foreach ($batchRegistrarPaths as $batchRegistrarPath) {
+            if (! isset(static::$bindable[$batchRegistrarPath])) {
+                static::$bindable[$batchRegistrarPath] = ClassMapGenerator::createMap(realpath($batchRegistrarPath));
             }
-            $classMap = static::$bindable[$path];
+            $classMap = static::$bindable[$batchRegistrarPath];
             foreach ($classMap as $namespace => $realPath) {
                 $attributes = $this->getBindAttributes($namespace);
                 /** @var \ReflectionAttribute $bind */
@@ -111,6 +111,6 @@ class CoreFoundationServiceProvider extends ServiceProvider
     private function getBindAttributes(string $port): array
     {
         $reflectionClass = new ReflectionClass($port);
-        return $reflectionClass->getAttributes(BulkBind::class);
+        return $reflectionClass->getAttributes(BatchRegistrar::class);
     }
 }
