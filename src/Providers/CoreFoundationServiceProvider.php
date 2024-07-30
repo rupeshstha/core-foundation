@@ -2,6 +2,8 @@
 
 namespace CoreFoundation\Providers;
 
+use Composer\ClassMapGenerator\ClassMapGenerator;
+use CoreFoundation\Attributes\BatchRegistrar;
 use CoreFoundation\Console\GenerateFactoryCommand;
 use CoreFoundation\Contracts\StrategyContract;
 use CoreFoundation\Facades\Services\ServerTimingFacadeService;
@@ -10,11 +12,16 @@ use CoreFoundation\Services\InterceptTestService;
 use CoreFoundation\Services\StrategyService;
 use CoreFoundation\Services\TestFacadeDoc;
 use CoreFoundation\Services\TestService;
+use Illuminate\Support\Benchmark;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\ServiceProvider;
+use ReflectionClass;
 
 class CoreFoundationServiceProvider extends ServiceProvider
 {
+    protected static $bindable = [];
+
     /**
      * Bootstrap the application services.
      */
@@ -61,6 +68,9 @@ class CoreFoundationServiceProvider extends ServiceProvider
             return new ServerTimingFacadeService(new \Symfony\Component\Stopwatch\Stopwatch());
         });
 
+        $this->batchRegistrar([
+            __DIR__ . "/../Repositories" // test bulk bind
+        ]);
         // Event::listen("index.before", RepositoryEventListener::class);
 
         // TestService::setFactory(InterceptTestService::class);
@@ -76,5 +86,31 @@ class CoreFoundationServiceProvider extends ServiceProvider
             abstract: StrategyContract::class,
             concrete: StrategyService::class
         );
+    }
+
+    public function batchRegistrar(array $batchRegistrarPaths): void
+    {
+        foreach ($batchRegistrarPaths as $batchRegistrarPath) {
+            if (! isset(static::$bindable[$batchRegistrarPath])) {
+                static::$bindable[$batchRegistrarPath] = ClassMapGenerator::createMap(realpath($batchRegistrarPath));
+            }
+            $classMap = static::$bindable[$batchRegistrarPath];
+            foreach ($classMap as $namespace => $realPath) {
+                $attributes = $this->getBindAttributes($namespace);
+                /** @var \ReflectionAttribute $bind */
+                foreach ($attributes as $bind) {
+                    $implement = $bind->getArguments()[0] ?? null;
+                    if ($implement) {
+                        $this->app->singleton($namespace, $implement);
+                    }
+                }
+            }
+        }
+    }
+
+    private function getBindAttributes(string $port): array
+    {
+        $reflectionClass = new ReflectionClass($port);
+        return $reflectionClass->getAttributes(BatchRegistrar::class);
     }
 }
