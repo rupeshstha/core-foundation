@@ -47,7 +47,6 @@ trait HasEvent
              * if your event name is "user.index.before", "user-role.index.before" etc
              * It will only take last key as reference to interceptor before or after event name.
              * Its better if we separate before, after and around event dispatch method instead. 🤔
-             * At this point i also don't see how other dev gonna follow this concept.
              */
             $lastKeyAfterDot = ucfirst(substr($eventKey, $dotPosition + 1));
             $interceptedObject = resolve($interceptor["interceptTo"], [$previousInstance]);
