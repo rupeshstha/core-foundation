@@ -1,0 +1,33 @@
+{
+    "typeCase": "lower",
+    "types": [
+        "ci",
+        "deps",
+        "docs",
+        "fix",
+        "style",
+        "feat",
+        "perf",
+        "refactor",
+        "git"
+    ],
+    "scopeCase": "lower",
+    "scopeRequired": false,
+    "scopes": [
+        "bug",
+        "upgrade",
+        "hotfix",
+        "refactor",
+        "typo",
+        "wip",
+        "git",
+        "php",
+        "package",
+        "laravel"
+    ],
+    "descriptionCase": "lower",
+    "descriptionEndMark": "",
+    "bodyRequired": false,
+    "bodyWrapWidth": 72,
+    "requiredFooters": []
+}
