@@ -1,0 +1,61 @@
+{
+    "commit-msg": {
+        "enabled": true,
+        "actions": [{
+            "action": "\\Ramsey\\CaptainHook\\ValidateConventionalCommit",
+            "options": {
+                "configFile": "./conventional-commits.json"
+            }
+        }]
+    },
+    "pre-push": {
+        "enabled": true,
+        "actions": [{
+            "action": "./phplinter",
+            "options": [],
+            "conditions": []
+        }]
+    },
+    "pre-commit": {
+        "enabled": true,
+        "actions": [{
+            "action": "\\CaptainHook\\App\\Hook\\PHP\\Action\\Linting",
+            "options": [],
+            "conditions": []
+        },
+        {
+            "action": "./phplinter",
+            "conditions": [],
+            "options": []
+        }]
+    },
+    "prepare-commit-msg": {
+        "enabled": true,
+        "actions": [{
+            "action": "\\Ramsey\\CaptainHook\\PrepareConventionalCommit",
+            "options": {
+                "configFile": "./conventional-commits.json"
+            }
+        }]
+    },
+    "post-commit": {
+        "enabled": true,
+        "actions": []
+    },
+    "post-merge": {
+        "enabled": true,
+        "actions": []
+    },
+    "post-checkout": {
+        "enabled": true,
+        "actions": []
+    },
+    "post-rewrite": {
+        "enabled": true,
+        "actions": []
+    },
+    "post-change": {
+        "enabled": true,
+        "actions": []
+    }
+}
