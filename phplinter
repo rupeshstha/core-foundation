@@ -1,3 +1,9 @@
+#!/usr/bin/env bash
+
+# get bash colors and styles here:
+# http://misc.flogisoft.com/bash/tip_colors_and_formatting
+
+
 C_RESET='\e[0m'
 C_RED='\e[31m'
 C_GREEN='\e[32m'
