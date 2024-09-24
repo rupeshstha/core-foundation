@@ -20,8 +20,12 @@
         "composer/class-map-generator": "^1.3"
     },
     "require-dev": {
+        "captainhook/captainhook": "^5.23",
+        "captainhook/plugin-composer": "^5.3",
+        "laravel/pint": "^1.18",
         "orchestra/testbench": "^8.0",
         "phpunit/phpunit": "^10.0.7",
+        "ramsey/conventional-commits": "^1.5",
         "symfony/stopwatch": "^6.4"
     },
     "autoload": {
@@ -39,7 +43,11 @@
         "test-coverage": "vendor/bin/phpunit --coverage-html coverage"
     },
     "config": {
-        "sort-packages": true
+        "sort-packages": true,
+        "captainhook/plugin-composer": true,
+        "allow-plugins": {
+            "captainhook/plugin-composer": true
+        }
     },
     "support": {
         "email": "contact@rupeshstha.com.np",
@@ -56,6 +64,9 @@
             "aliases": {
 
             }
+        },
+        "ramsey/conventional-commits": {
+            "configFile": "./conventional-commits.json"
         }
     }
 }
