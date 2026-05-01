@@ -56,8 +56,7 @@
     "extra": {
         "laravel": {
             "providers": [
-                "CoreFoundation\\Providers\\CoreFoundationServiceProvider",
-                "CoreFoundation\\Providers\\LicensingServiceProvider"
+                "CoreFoundation\\Providers\\CoreFoundationServiceProvider"
             ],
             "aliases": {
 

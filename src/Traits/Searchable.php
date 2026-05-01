@@ -45,17 +45,4 @@ trait Searchable
     {
         return $this->getTable();
     }
-
-    public function searchableUsing()
-    {
-        $engines = config('core_foundation.search.engine_map', []);
-
-        if (isset($engines[self::class])) {
-            return app(EngineManager::class)->engine(
-                $engines[self::class]
-            );
-        }
-
-        return app(EngineManager::class)->engine();
-    }
 }
