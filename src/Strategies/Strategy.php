@@ -2,8 +2,8 @@
 
 namespace CoreFoundation\Strategies;
 
-use Illuminate\Support\Facades\Facade;
 use CoreFoundation\Contracts\StrategyContract;
+use Illuminate\Support\Facades\Facade;
 
 class Strategy extends Facade
 {

@@ -2,6 +2,4 @@
 
 namespace CoreFoundation\Contexts;
 
-abstract class BaseContext
-{
-}
+abstract class BaseContext {}

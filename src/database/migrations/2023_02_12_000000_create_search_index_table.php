@@ -20,7 +20,7 @@ return new class extends Migration
                 $table->fullText(['content', 'key']);
             }
 
-            $table->index(["key", "index"]);
+            $table->index(['key', 'index']);
             $table->timestamps();
         });
     }

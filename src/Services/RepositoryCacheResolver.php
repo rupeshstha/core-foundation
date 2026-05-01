@@ -3,13 +3,13 @@
 namespace CoreFoundation\Services;
 
 use Closure;
-use ReflectionClass;
-use ReflectionMethod;
-use Illuminate\Support\Arr;
-use Illuminate\Support\Str;
 use CoreFoundation\Entities\BaseModel;
 use CoreFoundation\Traits\HasCacheable;
 use Illuminate\Database\Eloquent\Relations\Relation;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Str;
+use ReflectionClass;
+use ReflectionMethod;
 
 class RepositoryCacheResolver
 {
@@ -18,12 +18,11 @@ class RepositoryCacheResolver
     protected BaseModel $model;
 
     protected static array $resolvedRelationKeys = [];
+
     protected static array $cacheModelInstances = []; // TODO: reduce model object initializations. Maintain singleton when searching relation through Reflection and executing Closure.
 
     /**
      * Search all the relation binded to a model and sets to $resolvedRelationKeys property.
-     *
-     * @return void
      */
     private function setModelRelationship(): void
     {
@@ -36,7 +35,7 @@ class RepositoryCacheResolver
         foreach ($modelMethods as $method) {
             if (
                 $method->class != $this->model::class
-                || !empty($method->getParameters())
+                || ! empty($method->getParameters())
                 || $method->getName() == __FUNCTION__
             ) {
                 continue;
@@ -46,9 +45,9 @@ class RepositoryCacheResolver
             if ($return instanceof Relation) {
                 $relatesTo = $return->getRelated();
                 $relationships[$method->getName()] = [
-                    "name" => $method->getName(),
-                    "table_name" => $relatesTo->getTable(),
-                    "relates_to" => $relatesTo,
+                    'name' => $method->getName(),
+                    'table_name' => $relatesTo->getTable(),
+                    'relates_to' => $relatesTo,
                 ];
 
                 $relationshipTableNames[] = $relatesTo->getTable();
@@ -61,9 +60,9 @@ class RepositoryCacheResolver
             if ($executeClosure instanceof Relation) {
                 $relatesTo = $executeClosure->getRelated();
                 $relationships[$method] = [
-                    "name" => $method,
-                    "table_name" => $relatesTo->getTable(),
-                    "relates_to" => $relatesTo,
+                    'name' => $method,
+                    'table_name' => $relatesTo->getTable(),
+                    'relates_to' => $relatesTo,
                 ];
 
                 $relationshipTableNames[] = $relatesTo->getTable();
@@ -75,8 +74,6 @@ class RepositoryCacheResolver
 
     /**
      * Returns model defined relation table names.
-     *
-     * @return array
      */
     public function getModelRelationships(): array
     {
@@ -100,7 +97,7 @@ class RepositoryCacheResolver
                 $relation = $key;
             }
 
-            $nestedRelationKeys = explode(".", $relation);
+            $nestedRelationKeys = explode('.', $relation);
             $relationTags = array_map(
                 callback: fn ($nestedRelationKey) => Str::snake(Str::singular($nestedRelationKey)),
                 array: $nestedRelationKeys
@@ -110,7 +107,7 @@ class RepositoryCacheResolver
         }
 
         $data = Arr::flatten($passedRelationTags);
+
         return $data;
     }
-
 }

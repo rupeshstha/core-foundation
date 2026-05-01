@@ -3,7 +3,10 @@
 namespace CoreFoundation\Services;
 
 use CoreFoundation\Entities\SearchIndex;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Collection;
+use Illuminate\Support\LazyCollection;
 use Laravel\Scout\Builder;
 use Laravel\Scout\Engines\Engine;
 
@@ -130,7 +133,7 @@ class DatabaseEngine extends Engine
      * Pluck and return the primary keys of the given results.
      *
      * @param  mixed  $results
-     * @return \Illuminate\Support\Collection
+     * @return Collection
      */
     public function mapIds($results)
     {
@@ -142,7 +145,7 @@ class DatabaseEngine extends Engine
      *
      * @param  mixed  $results
      * @param  string  $key
-     * @return \Illuminate\Support\Collection
+     * @return Collection
      */
     public function mapIdsFrom($results, $key)
     {
@@ -155,7 +158,7 @@ class DatabaseEngine extends Engine
      * Map the given results to instances of the given model.
      *
      * @param  mixed  $results
-     * @param  \Illuminate\Database\Eloquent\Model  $model
+     * @param  Model  $model
      * @return \Illuminate\Database\Eloquent\Collection
      */
     public function map(Builder $builder, $results, $model)
@@ -180,8 +183,8 @@ class DatabaseEngine extends Engine
      * Map the given results to instances of the given model via a lazy collection.
      *
      * @param  mixed  $results
-     * @param  \Illuminate\Database\Eloquent\Model  $model
-     * @return \Illuminate\Support\LazyCollection|void
+     * @param  Model  $model
+     * @return LazyCollection|void
      */
     public function lazyMap(Builder $builder, $results, $model)
     {
@@ -202,7 +205,7 @@ class DatabaseEngine extends Engine
     /**
      * Flush all of the model's records from the engine.
      *
-     * @param  \Illuminate\Database\Eloquent\Model  $model
+     * @param  Model  $model
      * @return void
      */
     public function flush($model)

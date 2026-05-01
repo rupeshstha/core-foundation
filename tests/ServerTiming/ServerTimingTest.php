@@ -9,9 +9,9 @@ use Symfony\Component\Stopwatch\Stopwatch;
 class ServerTimingTest extends TestCase
 {
     /** @test */
-    public function itCanSetCustomMeasures(): void
+    public function it_can_set_custom_measures(): void
     {
-        $timing = new ServerTimingFacadeService(new Stopwatch());
+        $timing = new ServerTimingFacadeService(new Stopwatch);
         $timing->setDuration('key', 1000);
 
         $events = $timing->events();
@@ -22,9 +22,9 @@ class ServerTimingTest extends TestCase
     }
 
     /** @test */
-    public function itCanStartAndStopEvents(): void
+    public function it_can_start_and_stop_events(): void
     {
-        $timing = new ServerTimingFacadeService(new Stopwatch());
+        $timing = new ServerTimingFacadeService(new Stopwatch);
         $timing->start('key');
         sleep(1);
         $timing->stop('key');
@@ -37,9 +37,9 @@ class ServerTimingTest extends TestCase
     }
 
     /** @test */
-    public function itCanStartAndStopEventsUsingMeasure(): void
+    public function it_can_start_and_stop_events_using_measure(): void
     {
-        $timing = new ServerTimingFacadeService(new Stopwatch());
+        $timing = new ServerTimingFacadeService(new Stopwatch);
         $timing->measure('key');
         sleep(1);
         $timing->measure('key');
@@ -52,9 +52,9 @@ class ServerTimingTest extends TestCase
     }
 
     /** @test */
-    public function itCanSetMultipleEvents(): void
+    public function it_can_set_multiple_events(): void
     {
-        $timing = new ServerTimingFacadeService(new Stopwatch());
+        $timing = new ServerTimingFacadeService(new Stopwatch);
         $timing->setDuration('key_1', 1000);
         $timing->setDuration('key_2', 2000);
 
@@ -69,9 +69,9 @@ class ServerTimingTest extends TestCase
     }
 
     /** @test */
-    public function itCanSetEventsWithoutDuration(): void
+    public function it_can_set_events_without_duration(): void
     {
-        $timing = new ServerTimingFacadeService(new Stopwatch());
+        $timing = new ServerTimingFacadeService(new Stopwatch);
         $timing->addMetric('Custom Metric');
 
         $events = $timing->events();
@@ -82,9 +82,9 @@ class ServerTimingTest extends TestCase
     }
 
     /** @test */
-    public function itCanStopStartedEvents(): void
+    public function it_can_stop_started_events(): void
     {
-        $timing = new ServerTimingFacadeService(new Stopwatch());
+        $timing = new ServerTimingFacadeService(new Stopwatch);
         $timing->start('Started');
 
         $timing->stopAllUnfinishedEvents();
@@ -96,10 +96,10 @@ class ServerTimingTest extends TestCase
     }
 
     /** @test */
-    public function itCanSetDurationsWithCallables(): void
+    public function it_can_set_durations_with_callables(): void
     {
-        $timing = new ServerTimingFacadeService(new Stopwatch());
-        $timing->setDuration('callable', function() {
+        $timing = new ServerTimingFacadeService(new Stopwatch);
+        $timing->setDuration('callable', function () {
             sleep(1);
         });
 

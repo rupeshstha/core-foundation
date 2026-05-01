@@ -9,6 +9,7 @@ use Symfony\Component\HttpFoundation\Response;
 trait HasExceptionHandler
 {
     protected array $exceptionMessages = [];
+
     protected array $exceptionStatusCodes = [];
 
     public function getExceptionStatus(object $exception): int
@@ -31,11 +32,11 @@ trait HasExceptionHandler
 
         $exceptionMessage = array_merge([
             ValidationException::class => json_encode(
-                method_exists($exception, "errors")
+                method_exists($exception, 'errors')
                     ? $exception->errors()
                     : []
             ),
-            NotFoundHttpException::class => "Record not found",
+            NotFoundHttpException::class => 'Record not found',
         ], $this->exceptionMessages)[$exceptionClass] ?? $exception->getMessage();
 
         /**
@@ -44,9 +45,9 @@ trait HasExceptionHandler
          */
         if ($exception instanceof QueryException) {
             $exceptionMessage = match ($exception->errorInfo[1]) {
-                1062 => "Duplicate Entry.",
-                1451 => "Cannot delete or update a parent row.",
-                default => "Something went wrong. Please try again later",
+                1062 => 'Duplicate Entry.',
+                1451 => 'Cannot delete or update a parent row.',
+                default => 'Something went wrong. Please try again later',
             };
         }
 
@@ -95,7 +96,7 @@ trait HasExceptionHandler
         $message = $this->getExceptionMessage($exception);
         $context = $this->getExceptionContext($exception);
 
-        if (!in_array($exceptionStatusCode, $fatalExceptions)) {
+        if (! in_array($exceptionStatusCode, $fatalExceptions)) {
             Log::error(
                 message: $message,
                 context: $context
@@ -105,28 +106,25 @@ trait HasExceptionHandler
 
     /**
      * Get exception context
-     *
-     * @param  object $exception
-     * @return array
      */
     private function getExceptionContext(object $exception): array
     {
         $context = [
-            "request" => [
-                "headers" => request()->header(),
-                "parameters" => request()->query(),
-                "request_url_path" => request()->fullUrl(),
+            'request' => [
+                'headers' => request()->header(),
+                'parameters' => request()->query(),
+                'request_url_path' => request()->fullUrl(),
             ],
-            "trace" => $exception->getTrace(),
+            'trace' => $exception->getTrace(),
         ];
 
         // handle query exception
         if ($exception instanceof QueryException) {
             $context = array_merge($context, [
-                "trace" => [
-                    "sql" => $exception->getMessage(),
-                    "data" => $exception->getBindings(),
-                ]
+                'trace' => [
+                    'sql' => $exception->getMessage(),
+                    'data' => $exception->getBindings(),
+                ],
             ]);
         }
 

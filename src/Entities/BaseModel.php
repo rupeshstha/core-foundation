@@ -13,8 +13,6 @@ class BaseModel extends Model
 
     /**
      * Get resolved relations that are binded from service container.
-     *
-     * @return array
      */
     public static function getBindRelations(): array
     {

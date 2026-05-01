@@ -5,3 +5,5 @@
 .phpunit.result.cache
 ./build
 composer.lock
+.claude
+.DS_Store

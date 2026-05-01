@@ -4,6 +4,7 @@ namespace CoreFoundation\Licensing;
 
 /**
  * TODO make a different package and manage license from there.
+ *
  * @see License
  */
 class Utils
@@ -19,7 +20,7 @@ class Utils
 
         if ($host === 'localhost' || filter_var($host, FILTER_VALIDATE_IP)) {
             // IP address returned as domain
-            return $host; //* or replace with null if you don't want an IP back
+            return $host; // * or replace with null if you don't want an IP back
         }
 
         $domain_array = explode('.', str_replace('www.', '', $host));

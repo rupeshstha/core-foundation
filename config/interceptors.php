@@ -16,28 +16,28 @@ return [
     // ],
     // "interceptors" =>
     [
-        "interceptFrom" => TestService::class,
-        "interceptTo" => InterceptTestService::class,
-        "priority" => 3,
+        'interceptFrom' => TestService::class,
+        'interceptTo' => InterceptTestService::class,
+        'priority' => 3,
     ],
     [
-        "interceptFrom" => TestService::class,
-        "interceptTo" => InterceptTestService::class,
-        "priority" => 9,
+        'interceptFrom' => TestService::class,
+        'interceptTo' => InterceptTestService::class,
+        'priority' => 9,
     ],
     [
-        "interceptFrom" => TestService::class,
-        "interceptTo" => InterceptTestService::class,
-        "priority" => 2,
+        'interceptFrom' => TestService::class,
+        'interceptTo' => InterceptTestService::class,
+        'priority' => 2,
     ],
     [
-        "interceptFrom" => TestService::class,
-        "interceptTo" => InterceptTestService::class,
-        "priority" => 0,
+        'interceptFrom' => TestService::class,
+        'interceptTo' => InterceptTestService::class,
+        'priority' => 0,
     ],
     [
-        "interceptFrom" => TestService::class,
-        "interceptTo" => InterceptTestService::class,
-        "priority" => 3,
-    ]
+        'interceptFrom' => TestService::class,
+        'interceptTo' => InterceptTestService::class,
+        'priority' => 3,
+    ],
 ];

@@ -12,11 +12,10 @@ use CoreFoundation\Services\InterceptTestService;
 use CoreFoundation\Services\StrategyService;
 use CoreFoundation\Services\TestFacadeDoc;
 use CoreFoundation\Services\TestService;
-use Illuminate\Support\Benchmark;
 use Illuminate\Support\Facades\Event;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\ServiceProvider;
 use ReflectionClass;
+use Symfony\Component\Stopwatch\Stopwatch;
 
 class CoreFoundationServiceProvider extends ServiceProvider
 {
@@ -37,7 +36,7 @@ class CoreFoundationServiceProvider extends ServiceProvider
             ], 'interceptors');
 
             $this->loadMigrationsFrom([
-                __DIR__ . '/../database/migrations'
+                __DIR__.'/../database/migrations',
             ]);
         }
     }
@@ -51,10 +50,10 @@ class CoreFoundationServiceProvider extends ServiceProvider
         $this->app->register(LicensingServiceProvider::class);
 
         $this->bindServices();
-        $this->mergeConfigFrom(__DIR__ . '/../../config/core_foundation.php', 'core_foundation');
-        $this->mergeConfigFrom(__DIR__ . '/../../config/interceptors.php', 'interceptors');
+        $this->mergeConfigFrom(__DIR__.'/../../config/core_foundation.php', 'core_foundation');
+        $this->mergeConfigFrom(__DIR__.'/../../config/interceptors.php', 'interceptors');
 
-        include_once __DIR__ . '/../Helpers/helpers.php';
+        include_once __DIR__.'/../Helpers/helpers.php';
         // TODO feature is incomplete.
         // $this->app->singleton("doc", TestFacadeDoc::class);
 
@@ -63,13 +62,12 @@ class CoreFoundationServiceProvider extends ServiceProvider
         // });
         // $this->commands('command.test-factory-helper.generate');
 
-
         $this->app->singleton(ServerTimingFacadeService::class, function ($app) {
-            return new ServerTimingFacadeService(new \Symfony\Component\Stopwatch\Stopwatch());
+            return new ServerTimingFacadeService(new Stopwatch);
         });
 
         $this->batchRegistrar([
-            __DIR__ . "/../Repositories" // test bulk bind
+            __DIR__.'/../Repositories', // test bulk bind
         ]);
         // Event::listen("index.before", RepositoryEventListener::class);
 
@@ -111,6 +109,7 @@ class CoreFoundationServiceProvider extends ServiceProvider
     private function getBindAttributes(string $port): array
     {
         $reflectionClass = new ReflectionClass($port);
+
         return $reflectionClass->getAttributes(BatchRegistrar::class);
     }
 }

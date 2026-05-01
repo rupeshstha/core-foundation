@@ -2,17 +2,17 @@
 
 namespace CoreFoundation\Jobs;
 
-use Throwable;
-use Illuminate\Support\Str;
 use Illuminate\Bus\Batchable;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\Middleware\SkipIfBatchCancelled;
+use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Queue\SerializesModels;
-use Illuminate\Queue\InteractsWithQueue;
-use Illuminate\Foundation\Bus\Dispatchable;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Queue\Middleware\SkipIfBatchCancelled;
+use Illuminate\Support\Str;
+use Throwable;
 
 abstract class BaseJob implements ShouldQueue
 {
@@ -23,16 +23,17 @@ abstract class BaseJob implements ShouldQueue
     use SerializesModels;
 
     protected bool $notify = false;
+
     protected ?string $notifiableUserName = null;
 
     public function __construct()
     {
-        $this->notifiableUserName = Str::headline(Str::replace("Job", "", class_basename($this)));
+        $this->notifiableUserName = Str::headline(Str::replace('Job', '', class_basename($this)));
     }
 
     public function middleware(): array
     {
-        return [new SkipIfBatchCancelled()];
+        return [new SkipIfBatchCancelled];
     }
 
     public function failed(Throwable $exception): void
@@ -54,9 +55,9 @@ abstract class BaseJob implements ShouldQueue
         Log::error(
             message: $exception->getMessage(),
             context: [
-                "trace_line" => $exception->getLine(),
-                "trace_file" => $exception->getFile(),
-                "trace" => $exception->getTrace()
+                'trace_line' => $exception->getLine(),
+                'trace_file' => $exception->getFile(),
+                'trace' => $exception->getTrace(),
             ]
         );
     }

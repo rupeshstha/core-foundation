@@ -16,8 +16,7 @@ class TestController extends BaseController
     public function __construct(
         protected TestService $testService,
         protected BaseManifest $baseManifest
-    ) {
-    }
+    ) {}
 
     public function resolve()
     {
@@ -33,7 +32,7 @@ class TestController extends BaseController
             $data = $request->all();
             // $this->baseManifest->index($data, ["user"]);
 
-            $this->testService->factory()->index($data, ["user"]);
+            $this->testService->factory()->index($data, ['user']);
         } catch (Exception $exception) {
             dd($exception);
 
@@ -48,8 +47,8 @@ class TestController extends BaseController
         ServerTiming::start('Running expensive task');
         sleep(10);
         ServerTiming::stop('Running expensive task');
-        ServerTiming::addMetric('User: '."adsasd");
+        ServerTiming::addMetric('User: '.'adsasd');
 
-        throw new Exception("not found");
+        throw new Exception('not found');
     }
 }

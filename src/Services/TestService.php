@@ -24,8 +24,8 @@ class TestService extends BaseService
     public function index(array $filterable = [], array $relationship = ['user'])
     {
         $mutableData = $this->objectMutable->create([
-            "filterable" => $filterable,
-            "relationship" => $relationship,
+            'filterable' => $filterable,
+            'relationship' => $relationship,
         ]);
 
         // $this->eventDispatch(
@@ -34,19 +34,16 @@ class TestService extends BaseService
         // );
         // dd("asd");
         $this->interceptorEventDispatch(
-            eventKey: "jpt-asd.asdasd.asdaqweqwe.index.before",
+            eventKey: 'jpt-asd.asdasd.asdaqweqwe.index.before',
             data: $mutableData
         );
-        dd("asdasd");
-        $filterable = $mutableData->get("filterable");
-        $relationship = $mutableData->get("relationship");
+        dd('asdasd');
+        $filterable = $mutableData->get('filterable');
+        $relationship = $mutableData->get('relationship');
         dd($filterable, $relationship, $this->testRepository);
         $data = $this->testRepository->fetchAll($filterable, $relationship);
         dd($data);
     }
 
-    public function resolveTo()
-    {
-
-    }
+    public function resolveTo() {}
 }

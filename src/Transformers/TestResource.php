@@ -2,6 +2,4 @@
 
 namespace CoreFoundation\Transformers;
 
-class TestResource extends BaseResource
-{
-}
+class TestResource extends BaseResource {}

@@ -7,6 +7,7 @@ use Closure;
 trait HasFactory
 {
     protected static array $factories = [];
+
     protected static array $factoryConditions = [];
 
     public static function setFactory(string $concrete, int $priority = 0): void

@@ -7,18 +7,14 @@ use Illuminate\Support\Facades\Event;
 trait HasEvent
 {
     protected ?string $eventPrefix = null;
+
     protected bool $eventDispatch = true;
+
     protected static array $interceptors = [];
 
-    /**
-     * @param string $eventKey
-     * @param mixed $data
-     *
-     * @return void
-     */
     public function eventDispatch(string $eventKey, mixed $data = [], bool $restrictEventPrefix = false): void
     {
-        if ($this->eventPrefix && !$restrictEventPrefix) {
+        if ($this->eventPrefix && ! $restrictEventPrefix) {
             $eventKey = "{$this->eventPrefix}.{$eventKey}";
         }
 
@@ -35,10 +31,10 @@ trait HasEvent
     public function interceptorEventDispatch(string $eventKey, mixed $data = [], bool $restrictEventPrefix = false)
     {
         $backtrace = last(debug_backtrace(limit: 2));
-        $previousFunction = $backtrace["function"];
-        $previousClass = $backtrace["class"];
-        $previousInstance = $backtrace["object"];
-        $previousArguments = $backtrace["args"];
+        $previousFunction = $backtrace['function'];
+        $previousClass = $backtrace['class'];
+        $previousInstance = $backtrace['object'];
+        $previousArguments = $backtrace['args'];
 
         $interceptor = $this->getInterceptor($previousClass);
         if ($interceptor) {
@@ -49,7 +45,7 @@ trait HasEvent
              * Its better if we separate before, after and around event dispatch method instead. 🤔
              */
             $lastKeyAfterDot = ucfirst(substr($eventKey, $dotPosition + 1));
-            $interceptedObject = resolve($interceptor["interceptTo"], [$previousInstance]);
+            $interceptedObject = resolve($interceptor['interceptTo'], [$previousInstance]);
             $data = is_array($data) ? $data : [$data];
             $interceptedObject->{$previousFunction.$lastKeyAfterDot}(array_merge($previousArguments, $data));
         }
@@ -63,20 +59,21 @@ trait HasEvent
          * TODO:: Make a flexibility to add/remove interceptors from service provider. It should be in register method.
          */
         if (! count(static::$interceptors)) {
-            static::$interceptors = $interceptors = config("interceptors", []);
+            static::$interceptors = $interceptors = config('interceptors', []);
         }
         $interceptors = static::$interceptors;
 
         usort($interceptors, function (array $current, array $next) {
             $compareFrom = strcmp($current['interceptFrom'], $next['interceptFrom']);
             if ($compareFrom === 0) {
-                return $current["priority"] <=> $next["priority"];
+                return $current['priority'] <=> $next['priority'];
             }
+
             return $compareFrom;
         });
 
         foreach ($interceptors as $interceptor) {
-            if ($interceptor["interceptFrom"] === $interceptorClass) {
+            if ($interceptor['interceptFrom'] === $interceptorClass) {
                 return $interceptor;
             }
         }

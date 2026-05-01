@@ -4,12 +4,14 @@ namespace CoreFoundation\Console;
 
 use DB;
 use Doctrine\DBAL\Types\Type;
-use Illuminate\Support\Str;
 use Illuminate\Console\Command;
-use Illuminate\Filesystem\Filesystem;
-use Symfony\Component\Console\Input\InputOption;
+use Illuminate\Contracts\View\Factory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
+use Illuminate\Filesystem\Filesystem;
+use Illuminate\Support\Str;
 use Symfony\Component\Console\Input\InputArgument;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
@@ -17,8 +19,8 @@ use Symfony\Component\Console\Output\OutputInterface;
  */
 class GenerateFactoryCommand extends Command
 {
-/**
-     * @var Filesystem $files
+    /**
+     * @var Filesystem
      */
     protected $files;
 
@@ -34,7 +36,7 @@ class GenerateFactoryCommand extends Command
      */
     protected $dir = 'app';
 
-    /** @var \Illuminate\Contracts\View\Factory */
+    /** @var Factory */
     protected $view;
 
     /**
@@ -52,16 +54,10 @@ class GenerateFactoryCommand extends Command
     /**
      * @var array
      */
-    protected $properties = array();
+    protected $properties = [];
 
-    /**
-     * @var
-     */
     protected $force;
 
-    /**
-     * @param Filesystem $files
-     */
     public function __construct(Filesystem $files, $view)
     {
         parent::__construct();
@@ -84,10 +80,10 @@ class GenerateFactoryCommand extends Command
             $models = $this->loadModels($this->argument('model'));
 
             foreach ($models as $model) {
-                $filename = 'database/factories/' . class_basename($model) . 'Factory.php';
+                $filename = 'database/factories/'.class_basename($model).'Factory.php';
 
-                if ($this->files->exists($filename) && !$this->force) {
-                    $this->line('<fg=yellow>Model factory exists, use --force to overwrite:</fg=yellow> ' . $filename);
+                if ($this->files->exists($filename) && ! $this->force) {
+                    $this->line('<fg=yellow>Model factory exists, use --force to overwrite:</fg=yellow> '.$filename);
 
                     continue;
                 }
@@ -100,9 +96,9 @@ class GenerateFactoryCommand extends Command
 
                 $written = $this->files->put($filename, $result);
                 if ($written !== false) {
-                    $this->line('<info>Model factory created:</info> ' . $filename);
+                    $this->line('<info>Model factory created:</info> '.$filename);
                 } else {
-                    $this->line('<error>Failed to create model factory:</error> ' . $filename);
+                    $this->line('<error>Failed to create model factory:</error> '.$filename);
                 }
             }
         } catch (\Throwable $th) {
@@ -111,7 +107,6 @@ class GenerateFactoryCommand extends Command
         }
     }
 
-
     /**
      * Get the console command arguments.
      *
@@ -119,9 +114,9 @@ class GenerateFactoryCommand extends Command
      */
     protected function getArguments()
     {
-        return array(
-            array('model', InputArgument::OPTIONAL | InputArgument::IS_ARRAY, 'Which models to include', array()),
-        );
+        return [
+            ['model', InputArgument::OPTIONAL | InputArgument::IS_ARRAY, 'Which models to include', []],
+        ];
     }
 
     /**
@@ -139,13 +134,14 @@ class GenerateFactoryCommand extends Command
 
     protected function generateFactory($model)
     {
-        $output = '<?php' . "\n\n";
+        $output = '<?php'."\n\n";
 
         $this->properties = [];
-        if (!class_exists($model)) {
+        if (! class_exists($model)) {
             if ($this->output->getVerbosity() >= OutputInterface::VERBOSITY_VERBOSE) {
                 $this->error("Unable to find '$model' class");
             }
+
             return false;
         }
 
@@ -153,7 +149,7 @@ class GenerateFactoryCommand extends Command
             // handle abstract classes, interfaces, ...
             $reflectionClass = new \ReflectionClass($model);
 
-            if (!$reflectionClass->isSubclassOf('Illuminate\Database\Eloquent\Model')) {
+            if (! $reflectionClass->isSubclassOf('Illuminate\Database\Eloquent\Model')) {
                 return false;
             }
 
@@ -161,7 +157,7 @@ class GenerateFactoryCommand extends Command
                 $this->comment("Loading model '$model'");
             }
 
-            if (!$reflectionClass->IsInstantiable()) {
+            if (! $reflectionClass->IsInstantiable()) {
                 // ignore abstract class or interface
                 return false;
             }
@@ -173,40 +169,38 @@ class GenerateFactoryCommand extends Command
 
             $output .= $this->createFactory($model);
         } catch (\Exception $e) {
-            $this->error("Exception: " . $e->getMessage() . "\nCould not analyze class $model.");
+            $this->error('Exception: '.$e->getMessage()."\nCould not analyze class $model.");
         }
 
         return $output;
     }
 
-
     protected function loadModels($models = [])
     {
-        if (!empty($models)) {
+        if (! empty($models)) {
             return array_map(function ($name) {
                 if (strpos($name, '\\') !== false) {
                     return $name;
                 }
 
                 return str_replace(
-                    [DIRECTORY_SEPARATOR, basename($this->laravel->path()) . '\\'],
+                    [DIRECTORY_SEPARATOR, basename($this->laravel->path()).'\\'],
                     ['\\', $this->laravel->getNamespace()],
-                    $this->dir . DIRECTORY_SEPARATOR . $name
+                    $this->dir.DIRECTORY_SEPARATOR.$name
                 );
             }, $models);
         }
 
-
         $dir = base_path($this->dir);
-        if (!file_exists($dir)) {
+        if (! file_exists($dir)) {
             return [];
         }
 
         return array_map(function (\SplFIleInfo $file) {
             return str_replace(
-                [DIRECTORY_SEPARATOR, basename($this->laravel->path()) . '\\'],
+                [DIRECTORY_SEPARATOR, basename($this->laravel->path()).'\\'],
                 ['\\', $this->laravel->getNamespace()],
-                $file->getPath() . DIRECTORY_SEPARATOR . basename($file->getFilename(), '.php')
+                $file->getPath().DIRECTORY_SEPARATOR.basename($file->getFilename(), '.php')
             );
         }, $this->files->allFiles($this->dir));
     }
@@ -214,24 +208,24 @@ class GenerateFactoryCommand extends Command
     /**
      * Load the properties from the database table.
      *
-     * @param \Illuminate\Database\Eloquent\Model $model
+     * @param  Model  $model
      */
     protected function getPropertiesFromTable($model)
     {
-        $table = $model->getConnection()->getTablePrefix() . $model->getTable();
+        $table = $model->getConnection()->getTablePrefix().$model->getTable();
         $schema = $model->getConnection()->getDoctrineSchemaManager($table);
         $databasePlatform = $schema->getDatabasePlatform();
         // $databasePlatform->registerDoctrineTypeMapping('enum', 'customEnum');
 
         $platformName = $databasePlatform->getName();
-        $customTypes = $this->laravel['config']->get("ide-helper.custom_db_types.{$platformName}", array());
+        $customTypes = $this->laravel['config']->get("ide-helper.custom_db_types.{$platformName}", []);
         foreach ($customTypes as $yourTypeName => $doctrineTypeName) {
             $databasePlatform->registerDoctrineTypeMapping($yourTypeName, $doctrineTypeName);
         }
 
         $database = null;
         if (strpos($table, '.')) {
-            list($database, $table) = explode('.', $table);
+            [$database, $table] = explode('.', $table);
         }
 
         $columns = $schema->listTableColumns($table, $database);
@@ -244,11 +238,11 @@ class GenerateFactoryCommand extends Command
                 } else {
                     $type = $column->getType()->getName();
                 }
-                if (!($model->incrementing && $model->getKeyName() === $name) &&
+                if (! ($model->incrementing && $model->getKeyName() === $name) &&
                     $name !== $model::CREATED_AT &&
                     $name !== $model::UPDATED_AT
                 ) {
-                    if (!method_exists($model, 'getDeletedAtColumn') || (method_exists($model, 'getDeletedAtColumn') && $name !== $model->getDeletedAtColumn())) {
+                    if (! method_exists($model, 'getDeletedAtColumn') || (method_exists($model, 'getDeletedAtColumn') && $name !== $model->getDeletedAtColumn())) {
                         $this->setProperty($name, $type, $table);
                     }
                 }
@@ -256,16 +250,15 @@ class GenerateFactoryCommand extends Command
         }
     }
 
-
     /**
-     * @param \Illuminate\Database\Eloquent\Model $model
+     * @param  Model  $model
      */
     protected function getPropertiesFromMethods($model)
     {
         $methods = get_class_methods($model);
 
         foreach ($methods as $method) {
-            if (!Str::startsWith($method, 'get') && !method_exists('Illuminate\Database\Eloquent\Model', $method)) {
+            if (! Str::startsWith($method, 'get') && ! method_exists('Illuminate\Database\Eloquent\Model', $method)) {
                 // Use reflection to inspect the code, based on Illuminate/Support/SerializableClosure.php
                 $reflection = new \ReflectionMethod($model, $method);
                 $file = new \SplFileObject($reflection->getFileName());
@@ -279,11 +272,11 @@ class GenerateFactoryCommand extends Command
                 $begin = strpos($code, 'function(');
                 $code = substr($code, $begin, strrpos($code, '}') - $begin + 1);
                 foreach (['belongsTo'] as $relation) {
-                    $search = '$this->' . $relation . '(';
+                    $search = '$this->'.$relation.'(';
                     if ($pos = stripos($code, $search)) {
                         $relationObj = $model->$method();
                         if ($relationObj instanceof Relation) {
-                            $this->setProperty($relationObj->getForeignKeyName(), 'factory(' . get_class($relationObj->getRelated()) . '::class)');
+                            $this->setProperty($relationObj->getForeignKeyName(), 'factory('.get_class($relationObj->getRelated()).'::class)');
                         }
                     }
                 }
@@ -292,8 +285,8 @@ class GenerateFactoryCommand extends Command
     }
 
     /**
-     * @param string $name
-     * @param string|null $type
+     * @param  string  $name
+     * @param  string|null  $type
      */
     protected function setProperty($name, $type = null, $table = null)
     {
@@ -304,7 +297,7 @@ class GenerateFactoryCommand extends Command
         }
 
         $fakeableTypes = [
-            'enum' => '$faker->randomElement(' . $this->enumValues($table, $name) . ')',
+            'enum' => '$faker->randomElement('.$this->enumValues($table, $name).')',
             'string' => '$faker->word',
             'text' => '$faker->text',
             'date' => '$faker->date()',
@@ -317,7 +310,7 @@ class GenerateFactoryCommand extends Command
             'smallint' => '$faker->randomNumber()',
             'decimal' => '$faker->randomFloat()',
             'float' => '$faker->randomFloat()',
-            'boolean' => '$faker->boolean'
+            'boolean' => '$faker->boolean',
         ];
 
         $fakeableNames = [
@@ -372,21 +365,20 @@ class GenerateFactoryCommand extends Command
     public static function enumValues($table, $name)
     {
         if ($table === null) {
-            return "[]";
+            return '[]';
         }
 
-        $type = DB::table($table)->select(DB::raw('SHOW COLUMNS FROM ' . $table . ' WHERE Field = "' . $name . '"'));
+        $type = DB::table($table)->select(DB::raw('SHOW COLUMNS FROM '.$table.' WHERE Field = "'.$name.'"'));
 
         preg_match_all("/'([^']+)'/", $type, $matches);
 
-        $values = isset($matches[1]) ? $matches[1] : array();
+        $values = isset($matches[1]) ? $matches[1] : [];
 
-        return "['" . implode("', '", $values) . "']";
+        return "['".implode("', '", $values)."']";
     }
 
-
     /**
-     * @param string $class
+     * @param  string  $class
      * @return string
      */
     protected function createFactory($class)

@@ -13,8 +13,6 @@ trait Searchable
 
     /**
      * Add searchable table columns.
-     *
-     * @return array
      */
     public static function searchable(): array
     {
@@ -32,9 +30,6 @@ trait Searchable
 
     /**
      * Get all the additionally bind searchable.
-     *
-     * @return array
-     *
      */
     public static function getAdditionalSearchable(): array
     {
@@ -45,8 +40,6 @@ trait Searchable
 
     /**
      * Get the name of the index associated with the model.
-     *
-     * @return string
      */
     public function searchableAs(): string
     {

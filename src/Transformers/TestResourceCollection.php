@@ -2,6 +2,4 @@
 
 namespace CoreFoundation\Transformers;
 
-class TestResourceCollection extends BaseCollection
-{
-}
+class TestResourceCollection extends BaseCollection {}

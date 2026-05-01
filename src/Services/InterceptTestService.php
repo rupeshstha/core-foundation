@@ -6,11 +6,10 @@ class InterceptTestService
 {
     public function __construct(
         protected TestService $testService
-    ) {
-    }
+    ) {}
 
     public function index()
     {
-        dd("adsasdadad");
+        dd('adsasdadad');
     }
 }

@@ -3,19 +3,20 @@
 namespace CoreFoundation\Services;
 
 use Closure;
-use Illuminate\Support\Arr;
-use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Log;
 use CoreFoundation\Entities\BaseModel;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class RepositoryCacheManager extends RepositoryCacheResolver
 {
     private readonly bool $isEnable;
+
     protected BaseModel $model;
 
     public function __construct()
     {
-        $this->isEnable = config("core_foundation.cache.global", true);
+        $this->isEnable = config('core_foundation.cache.global', true);
     }
 
     public function setModel(BaseModel $model): self
@@ -32,10 +33,6 @@ class RepositoryCacheManager extends RepositoryCacheResolver
 
     /**
      * Set cache status
-     *
-     * @param boolean $enable
-     *
-     * @return self
      */
     public function setCacheStatus(bool $enable = true): self
     {
@@ -46,11 +43,11 @@ class RepositoryCacheManager extends RepositoryCacheResolver
 
     public function make(
         array $relates = [],
-        Closure $callback = null,
+        ?Closure $callback = null,
         bool $isCached = true,
         mixed ...$identifier
     ): mixed {
-        if (!$this->isEnable || !$isCached) {
+        if (! $this->isEnable || ! $isCached) {
             return $callback();
         }
 
@@ -61,9 +58,9 @@ class RepositoryCacheManager extends RepositoryCacheResolver
         $backTraceMethod = Arr::last(debug_backtrace(limit: 4));
 
         $identifier[] = [
-            "parent_method_name" =>  $backTraceMethod["function"],
-            "argument" => $backTraceMethod["args"],
-            "relation_keys" => $relationalKeys,
+            'parent_method_name' => $backTraceMethod['function'],
+            'argument' => $backTraceMethod['args'],
+            'relation_keys' => $relationalKeys,
         ];
 
         $hash = md5(json_encode($identifier));
@@ -85,9 +82,9 @@ class RepositoryCacheManager extends RepositoryCacheResolver
         $this->flushTagCache([$taggable, Str::snake(Str::singular($taggable))]);
 
         Log::info(
-            message: "Cache_Invalidate:",
+            message: 'Cache_Invalidate:',
             context: [
-                "triggered_from" => $taggable,
+                'triggered_from' => $taggable,
             ]
         );
     }

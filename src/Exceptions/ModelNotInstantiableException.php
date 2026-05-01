@@ -2,6 +2,4 @@
 
 namespace CoreFoundation\Exceptions;
 
-class ModelNotInstantiableException extends BaseException
-{
-}
+class ModelNotInstantiableException extends BaseException {}

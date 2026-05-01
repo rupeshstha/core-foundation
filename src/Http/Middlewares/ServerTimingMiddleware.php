@@ -3,9 +3,9 @@
 namespace CoreFoundation\Http\Middlewares;
 
 use Closure;
-use Illuminate\Support\Str;
-use Illuminate\Http\Request;
 use CoreFoundation\Facades\Services\ServerTimingFacadeService;
+use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class ServerTimingMiddleware
 {
@@ -51,7 +51,8 @@ class ServerTimingMiddleware
         if (defined('LARAVEL_START')) {
             return LARAVEL_START;
         }
-        return $_SERVER["REQUEST_TIME_FLOAT"] ?? microtime(true);
+
+        return $_SERVER['REQUEST_TIME_FLOAT'] ?? microtime(true);
     }
 
     protected function generateHeaders(): string
@@ -63,11 +64,11 @@ class ServerTimingMiddleware
 
             $header .= "{$eventNameSlug};desc=\"{$eventName}\";";
 
-            if (!is_null($duration)) {
+            if (! is_null($duration)) {
                 $header .= "dur={$duration}";
             }
 
-            $header .= ", ";
+            $header .= ', ';
         }
 
         return $header;

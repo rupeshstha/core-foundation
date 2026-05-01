@@ -1,5 +1,3 @@
 <?php
 
-interface ContextContract
-{
-}
+interface ContextContract {}

@@ -13,11 +13,6 @@ trait ModelFillables
 
     /**
      * This method will add model fillable. Fillable array should always be in index array.
-     *
-     * @param array $fillable
-     *
-     * @return void
-     *
      */
     public static function addFillable(array $fillable = []): void
     {
@@ -30,9 +25,6 @@ trait ModelFillables
 
     /**
      * Get all the additionally bind fillable.
-     *
-     * @return array
-     *
      */
     public static function getAdditionalFillable(): array
     {

@@ -10,7 +10,9 @@ use Illuminate\Support\Str;
 class License
 {
     const INVALID = 0;
+
     const DEVELOPMENT = 1;
+
     const UNLICENSED = 2;
 
     public string $id;
@@ -36,6 +38,7 @@ class License
 
             if (method_exists($this, $setter)) {
                 $this->{$setter}($value);
+
                 continue;
             }
 

@@ -7,12 +7,12 @@ use Symfony\Component\Stopwatch\Stopwatch;
 class ServerTimingFacadeService
 {
     protected array $finishedEvents = [];
+
     protected array $startedEvents = [];
 
     public function __construct(
         protected Stopwatch $stopwatch
-    ) {
-    }
+    ) {}
 
     public function addMetric(string $metric): self
     {

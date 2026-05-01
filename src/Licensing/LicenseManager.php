@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Http;
 
 /**
  * TODO make a different package and manage license from there.
+ *
  * @see License
  */
 class LicenseManager

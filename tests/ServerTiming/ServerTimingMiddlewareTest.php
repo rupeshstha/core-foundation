@@ -12,16 +12,16 @@ use Symfony\Component\Stopwatch\Stopwatch;
 class ServerTimingMiddlewareTest extends TestCase
 {
     /** @test */
-    public function itAddServerTimingHeader(): void
+    public function it_add_server_timing_header(): void
     {
         $request = new Request;
 
-        $timing = new ServerTimingFacadeService(new Stopwatch());
+        $timing = new ServerTimingFacadeService(new Stopwatch);
 
         $middleware = new ServerTimingMiddleware($timing);
 
         $response = $middleware->handle($request, function ($req) {
-            return new Response();
+            return new Response;
         });
 
         $this->assertArrayHasKey('server-timing', $response->headers->all());

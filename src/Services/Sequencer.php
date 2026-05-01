@@ -2,6 +2,4 @@
 
 namespace CoreFoundation\Services;
 
-class Sequencer
-{
-}
+class Sequencer {}

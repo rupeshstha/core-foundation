@@ -26,13 +26,13 @@ abstract class ObjectComposer
 
     public function resolveGetterSetter(string $method, array $arguments): mixed
     {
-        if (Str::contains($method, "set")) {
-            $offset = Str::remove("set", $method);
+        if (Str::contains($method, 'set')) {
+            $offset = Str::remove('set', $method);
             $offset = Str::snake($offset);
 
             $this->set($offset, ...$arguments);
-        } elseif (Str::contains($method, "get")) {
-            $offset = Str::remove("get", $method);
+        } elseif (Str::contains($method, 'get')) {
+            $offset = Str::remove('get', $method);
             $offset = Str::snake($offset);
 
             return $this->get($offset);

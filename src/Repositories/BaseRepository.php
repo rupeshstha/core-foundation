@@ -2,17 +2,17 @@
 
 namespace CoreFoundation\Repositories;
 
-use Illuminate\Support\Arr;
-use CoreFoundation\Traits\HasEvent;
-use CoreFoundation\Entities\BaseModel;
-use Illuminate\Foundation\Application;
-use Illuminate\Database\Eloquent\Builder;
-use CoreFoundation\Services\ModelFilterable;
-use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Contracts\Pagination\Paginator;
-use CoreFoundation\Services\RepositoryCacheManager;
 use CoreFoundation\Contracts\BaseRepositoryInterface;
+use CoreFoundation\Entities\BaseModel;
 use CoreFoundation\Exceptions\ModelNotInstantiableException;
+use CoreFoundation\Services\ModelFilterable;
+use CoreFoundation\Services\RepositoryCacheManager;
+use CoreFoundation\Traits\HasEvent;
+use Illuminate\Contracts\Pagination\Paginator;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Foundation\Application;
+use Illuminate\Support\Arr;
 
 abstract class BaseRepository implements BaseRepositoryInterface
 {
@@ -21,6 +21,7 @@ abstract class BaseRepository implements BaseRepositoryInterface
     protected BaseModel $model;
 
     protected array $coreConfig = [];
+
     protected array $cacheAllowedMethods = [];
 
     public function __construct(
@@ -33,15 +34,11 @@ abstract class BaseRepository implements BaseRepositoryInterface
 
     /**
      * This method will set the repository model.
-     *
-     * @return string
      */
     abstract protected function setModel(): string;
 
     /**
      * Registers model repository.
-     *
-     * @return void
      */
     private function register(): void
     {
@@ -62,9 +59,9 @@ abstract class BaseRepository implements BaseRepositoryInterface
 
         $this->model = $modelInstance;
         $this->cacheManager->setModel($this->model);
-        $this->coreConfig = config("core_foundation");
+        $this->coreConfig = config('core_foundation');
 
-        $this->cacheAllowedMethods = Arr::get($this->coreConfig, "cache.cache_repository_methods");
+        $this->cacheAllowedMethods = Arr::get($this->coreConfig, 'cache.cache_repository_methods');
         $this->eventPrefix = $this->model->getTable();
         $this->eventDispatch = true;
     }
@@ -75,10 +72,10 @@ abstract class BaseRepository implements BaseRepositoryInterface
         array $columns = ['*']
     ): Collection|Paginator {
         $this->eventDispatch(
-            eventKey: "fetch-all.before",
+            eventKey: 'fetch-all.before',
             data: [
-                "request" => $filterable,
-                "relationship" => $relationship,
+                'request' => $filterable,
+                'relationship' => $relationship,
             ]
         );
 
@@ -89,6 +86,7 @@ abstract class BaseRepository implements BaseRepositoryInterface
                     ->when($relationship, function (Builder $query) use ($relationship) {
                         $query->with($relationship);
                     });
+
                 return $this->modelFilterable
                     ->setModel($this->model)
                     ->getFiltered($rows, $filterable, $relationship);
@@ -98,7 +96,7 @@ abstract class BaseRepository implements BaseRepositoryInterface
         );
 
         $this->eventDispatch(
-            eventKey: "fetch-all.after",
+            eventKey: 'fetch-all.after',
             data: $fetched
         );
 

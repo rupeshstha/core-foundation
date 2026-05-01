@@ -2,6 +2,4 @@
 
 namespace CoreFoundation\Contracts;
 
-interface BaseRepositoryInterface
-{
-}
+interface BaseRepositoryInterface {}

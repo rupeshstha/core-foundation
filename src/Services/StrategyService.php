@@ -2,9 +2,9 @@
 
 namespace CoreFoundation\Services;
 
+use CoreFoundation\Contracts\StrategyContract;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Fluent;
-use CoreFoundation\Contracts\StrategyContract;
 
 class StrategyService implements StrategyContract
 {
@@ -15,22 +15,22 @@ class StrategyService implements StrategyContract
 
     private function getStrategy(): Collection
     {
-        return collect(config("strategy"));
+        return collect(config('strategy'));
     }
 
     public function get(string $type, ?string $identifier): Fluent
     {
         $strategies = $this->getStrategy();
-        $strategy = $strategies->where("type", $type)
-            ->sortBy("priority", descending: true)
-            ->where("identifier", $identifier)
+        $strategy = $strategies->where('type', $type)
+            ->sortBy('priority', descending: true)
+            ->where('identifier', $identifier)
             ->first();
 
-        if (!$strategy) {
-            $strategy = $strategies->where("type", $type)
-            ->sortBy("priority", descending: true)
-            ->where("default", true)
-            ->first();
+        if (! $strategy) {
+            $strategy = $strategies->where('type', $type)
+                ->sortBy('priority', descending: true)
+                ->where('default', true)
+                ->first();
         }
 
         return $this->hydrate($strategy ?? []);
