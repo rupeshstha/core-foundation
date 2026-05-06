@@ -6,6 +6,7 @@ use Composer\ClassMapGenerator\ClassMapGenerator;
 use CoreFoundation\Attributes\BatchRegistrar;
 use CoreFoundation\Facades\Services\ServerTimingFacadeService;
 use Illuminate\Support\ServiceProvider;
+use ReflectionAttribute;
 use ReflectionClass;
 use Symfony\Component\Stopwatch\Stopwatch;
 
@@ -55,9 +56,7 @@ class CoreFoundationServiceProvider extends ServiceProvider
         ]);
     }
 
-    private function bindServices(): void
-    {
-    }
+    private function bindServices(): void {}
 
     public function batchRegistrar(array $batchRegistrarPaths): void
     {
@@ -68,7 +67,7 @@ class CoreFoundationServiceProvider extends ServiceProvider
             $classMap = static::$bindable[$batchRegistrarPath];
             foreach ($classMap as $namespace => $realPath) {
                 $attributes = $this->getBindAttributes($namespace);
-                /** @var \ReflectionAttribute $bind */
+                /** @var ReflectionAttribute $bind */
                 foreach ($attributes as $bind) {
                     $implement = $bind->getArguments()[0] ?? null;
                     if ($implement) {

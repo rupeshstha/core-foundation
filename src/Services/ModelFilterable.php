@@ -80,13 +80,13 @@ class ModelFilterable
             // TODO: refactor to simpler version.
             // Handles nested where conditions.
             if (
-                $filterIdentifier == '__or_'
+                $filterIdentifier === '__or_'
             ) {
                 $builder->orWhere(function (Builder $query) use ($filterValue) {
                     $this->buildFilterableQuery($query, $filterValue);
                 });
             } elseif (
-                $filterIdentifier == '__and_'
+                $filterIdentifier === '__and_'
             ) {
                 $builder->where(function (Builder $query) use ($filterValue) {
                     $this->buildFilterableQuery($query, $filterValue);
@@ -94,7 +94,7 @@ class ModelFilterable
             }
 
             // It will only filter column based on defined searchable columns on model.
-            if (! in_array($column, $this->model::searchable())) {
+            if (! in_array($column, $this->model::searchable(), true)) {
                 continue;
             }
 

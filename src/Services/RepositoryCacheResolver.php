@@ -34,9 +34,9 @@ class RepositoryCacheResolver
         // Checks relations if model class has relations on it's own class.
         foreach ($modelMethods as $method) {
             if (
-                $method->class != $this->model::class
+                $method->class !== $this->model::class
                 || ! empty($method->getParameters())
-                || $method->getName() == __FUNCTION__
+                || $method->getName() === __FUNCTION__
             ) {
                 continue;
             }

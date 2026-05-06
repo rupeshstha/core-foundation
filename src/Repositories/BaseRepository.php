@@ -91,7 +91,7 @@ abstract class BaseRepository implements BaseRepositoryInterface
                     ->setModel($this->model)
                     ->getFiltered($rows, $filterable, $relationship);
             },
-            isCached: in_array(__FUNCTION__, $this->cacheAllowedMethods),
+            isCached: in_array(__FUNCTION__, $this->cacheAllowedMethods, true),
             identifier: [$filterable, $relationship],
         );
 

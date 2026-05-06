@@ -46,9 +46,9 @@ abstract class BaseRequest extends FormRequest
     {
         $rules = [];
 
-        if (in_array($this->method(), ['PUT', 'PATCH'])) {
+        if (in_array($this->method(), ['PUT', 'PATCH'], true)) {
             $rules = $this->update();
-        } elseif ($this->method() == 'POST') {
+        } elseif ($this->method() === 'POST') {
             $rules = $this->store();
         }
 

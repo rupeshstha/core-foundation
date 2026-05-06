@@ -33,9 +33,8 @@ trait Searchable
      */
     public static function getAdditionalSearchable(): array
     {
-        return isset(static::$searchable[static::class])
-            ? static::$searchable[static::class]
-            : [];
+        return static::$searchable[static::class]
+            ?? [];
     }
 
     /**

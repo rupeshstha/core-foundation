@@ -56,7 +56,7 @@ trait HasExceptionHandler
 
     private function getDefaultExceptionCode(object $exception): int
     {
-        $defaultResponseCode = $exception->getCode() != 0
+        $defaultResponseCode = $exception->getCode() !== 0
             ? $exception->getCode()
             : Response::HTTP_INTERNAL_SERVER_ERROR;
 
@@ -96,7 +96,7 @@ trait HasExceptionHandler
         $message = $this->getExceptionMessage($exception);
         $context = $this->getExceptionContext($exception);
 
-        if (! in_array($exceptionStatusCode, $fatalExceptions)) {
+        if (! in_array($exceptionStatusCode, $fatalExceptions, true)) {
             Log::error(
                 message: $message,
                 context: $context

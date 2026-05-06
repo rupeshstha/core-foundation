@@ -28,8 +28,7 @@ trait ModelFillables
      */
     public static function getAdditionalFillable(): array
     {
-        return isset(static::$additionalFillable[static::class])
-            ? static::$additionalFillable[static::class]
-            : [];
+        return static::$additionalFillable[static::class]
+            ?? [];
     }
 }
