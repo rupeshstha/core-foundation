@@ -36,12 +36,4 @@ trait Searchable
         return static::$searchable[static::class]
             ?? [];
     }
-
-    /**
-     * Get the name of the index associated with the model.
-     */
-    public function searchableAs(): string
-    {
-        return $this->getTable();
-    }
 }
