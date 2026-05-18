@@ -3,9 +3,9 @@
 namespace CoreFoundation\Http\Middlewares;
 
 use Closure;
-use CoreFoundation\Facades\Services\ServerTimingFacadeService;
-use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Http\Request;
+use CoreFoundation\Facades\Services\ServerTimingFacadeService;
 
 class ServerTimingMiddleware
 {

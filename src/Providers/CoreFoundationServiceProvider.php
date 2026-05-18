@@ -2,13 +2,13 @@
 
 namespace CoreFoundation\Providers;
 
-use Composer\ClassMapGenerator\ClassMapGenerator;
-use CoreFoundation\Attributes\BatchRegistrar;
-use CoreFoundation\Facades\Services\ServerTimingFacadeService;
-use Illuminate\Support\ServiceProvider;
-use ReflectionAttribute;
 use ReflectionClass;
+use ReflectionAttribute;
+use Illuminate\Support\ServiceProvider;
 use Symfony\Component\Stopwatch\Stopwatch;
+use CoreFoundation\Attributes\BatchRegistrar;
+use Composer\ClassMapGenerator\ClassMapGenerator;
+use CoreFoundation\Facades\Services\ServerTimingFacadeService;
 
 class CoreFoundationServiceProvider extends ServiceProvider
 {

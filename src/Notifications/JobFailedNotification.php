@@ -21,6 +21,6 @@ class JobFailedNotification extends Notification
     {
         return (new SlackMessage)
             ->error()
-            ->content('Job failed: ' . $this->exception->getMessage());
+            ->content('Job failed: '.$this->exception->getMessage());
     }
 }

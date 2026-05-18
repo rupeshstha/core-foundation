@@ -2,12 +2,12 @@
 
 namespace CoreFoundation\Tests\ServerTiming;
 
-use CoreFoundation\Facades\Services\ServerTimingFacadeService;
-use CoreFoundation\Http\Middlewares\ServerTimingMiddleware;
 use Illuminate\Http\Request;
 use Orchestra\Testbench\TestCase;
-use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Stopwatch\Stopwatch;
+use Symfony\Component\HttpFoundation\Response;
+use CoreFoundation\Http\Middlewares\ServerTimingMiddleware;
+use CoreFoundation\Facades\Services\ServerTimingFacadeService;
 
 class ServerTimingMiddlewareTest extends TestCase
 {

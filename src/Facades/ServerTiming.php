@@ -2,8 +2,8 @@
 
 namespace CoreFoundation\Facades;
 
-use CoreFoundation\Facades\Services\ServerTimingFacadeService;
 use Illuminate\Support\Facades\Facade;
+use CoreFoundation\Facades\Services\ServerTimingFacadeService;
 
 class ServerTiming extends Facade
 {

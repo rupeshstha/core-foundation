@@ -1,7 +1,7 @@
 <?php
 
-use CoreFoundation\Services\InterceptTestService;
 use CoreFoundation\Services\TestService;
+use CoreFoundation\Services\InterceptTestService;
 
 return [
     // /**

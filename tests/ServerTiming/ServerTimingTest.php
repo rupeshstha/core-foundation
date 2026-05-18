@@ -2,9 +2,9 @@
 
 namespace CoreFoundation\Tests\ServerTiming;
 
-use CoreFoundation\Facades\Services\ServerTimingFacadeService;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Stopwatch\Stopwatch;
+use CoreFoundation\Facades\Services\ServerTimingFacadeService;
 
 class ServerTimingTest extends TestCase
 {

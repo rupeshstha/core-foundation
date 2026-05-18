@@ -2,17 +2,18 @@
 
 namespace CoreFoundation\Traits;
 
+use Override;
 use Illuminate\Support\Facades\Notification;
 
 trait HasNotification
 {
-    #[\Override]
+    #[Override]
     protected function shouldNotify(bool $notify = true): bool
     {
         return $notify;
     }
 
-    #[\Override]
+    #[Override]
     protected function notifiables(): array|object|null
     {
         return null;

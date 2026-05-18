@@ -2,8 +2,8 @@
 
 namespace CoreFoundation\Entities;
 
-use CoreFoundation\Traits\ModelFillables;
 use Illuminate\Database\Eloquent\Model;
+use CoreFoundation\Traits\ModelFillables;
 
 class BaseModel extends Model
 {

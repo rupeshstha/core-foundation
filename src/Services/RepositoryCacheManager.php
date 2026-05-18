@@ -3,10 +3,10 @@
 namespace CoreFoundation\Services;
 
 use Closure;
-use CoreFoundation\Entities\BaseModel;
 use Illuminate\Support\Arr;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Log;
+use CoreFoundation\Entities\BaseModel;
 
 class RepositoryCacheManager extends RepositoryCacheResolver
 {

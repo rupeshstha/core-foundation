@@ -3,8 +3,8 @@
 namespace CoreFoundation\Notifications;
 
 use CoreFoundation\Jobs\BaseJob;
-use Illuminate\Notifications\Messages\SlackMessage;
 use Illuminate\Notifications\Notification;
+use Illuminate\Notifications\Messages\SlackMessage;
 
 class JobStartedNotification extends Notification
 {
@@ -21,6 +21,6 @@ class JobStartedNotification extends Notification
     {
         return (new SlackMessage)
             ->info()
-            ->content(class_basename($this->job) . ' Job has started.');
+            ->content(class_basename($this->job).' Job has started.');
     }
 }

@@ -2,32 +2,32 @@
 
 namespace CoreFoundation\Jobs;
 
-use CoreFoundation\Notifications\JobCompletedNotification;
-use CoreFoundation\Notifications\JobFailedNotification;
-use CoreFoundation\Notifications\JobStartedNotification;
-use CoreFoundation\Traits\HasNotification;
+use Throwable;
+use Illuminate\Support\Str;
 use Illuminate\Bus\Batchable;
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Foundation\Bus\Dispatchable;
-use Illuminate\Notifications\Notification;
-use Illuminate\Queue\InteractsWithQueue;
-use Illuminate\Queue\Middleware\SkipIfBatchCancelled;
-use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Queue\SerializesModels;
+use Illuminate\Queue\InteractsWithQueue;
+use CoreFoundation\Traits\HasNotification;
+use Illuminate\Notifications\Notification;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Queue\Middleware\SkipIfBatchCancelled;
+use CoreFoundation\Notifications\JobFailedNotification;
+use CoreFoundation\Notifications\JobStartedNotification;
+use CoreFoundation\Notifications\JobCompletedNotification;
 use Illuminate\Support\Facades\Notification as NotificationFacade;
-use Illuminate\Support\Str;
-use Throwable;
 
 abstract class BaseJob implements ShouldQueue
 {
     use Batchable;
-    use Queueable;
     use Dispatchable;
     use HasNotification;
-    use SerializesModels;
     use InteractsWithQueue;
+    use Queueable;
+    use SerializesModels;
 
     public function middleware(): array
     {
@@ -72,7 +72,7 @@ abstract class BaseJob implements ShouldQueue
     protected function setLogs(Throwable $exception): void
     {
         Log::error(
-            message: $this->errorMessageUniqueKey() . '| ' . $exception->getMessage(),
+            message: $this->errorMessageUniqueKey().'| '.$exception->getMessage(),
             context: [
                 [
                     'trace_line' => $exception->getLine(),

@@ -2,17 +2,17 @@
 
 namespace CoreFoundation\Repositories;
 
-use CoreFoundation\Contracts\BaseRepositoryInterface;
-use CoreFoundation\Entities\BaseModel;
-use CoreFoundation\Exceptions\ModelNotInstantiableException;
-use CoreFoundation\Services\ModelFilterable;
-use CoreFoundation\Services\RepositoryCacheManager;
-use CoreFoundation\Traits\HasEvent;
-use Illuminate\Contracts\Pagination\Paginator;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Foundation\Application;
 use Illuminate\Support\Arr;
+use CoreFoundation\Traits\HasEvent;
+use CoreFoundation\Entities\BaseModel;
+use Illuminate\Foundation\Application;
+use Illuminate\Database\Eloquent\Builder;
+use CoreFoundation\Services\ModelFilterable;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Contracts\Pagination\Paginator;
+use CoreFoundation\Services\RepositoryCacheManager;
+use CoreFoundation\Contracts\BaseRepositoryInterface;
+use CoreFoundation\Exceptions\ModelNotInstantiableException;
 
 abstract class BaseRepository implements BaseRepositoryInterface
 {

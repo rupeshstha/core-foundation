@@ -3,13 +3,13 @@
 namespace CoreFoundation\Services;
 
 use Closure;
+use ReflectionClass;
+use ReflectionMethod;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Str;
 use CoreFoundation\Entities\BaseModel;
 use CoreFoundation\Traits\HasCacheable;
 use Illuminate\Database\Eloquent\Relations\Relation;
-use Illuminate\Support\Arr;
-use Illuminate\Support\Str;
-use ReflectionClass;
-use ReflectionMethod;
 
 class RepositoryCacheResolver
 {

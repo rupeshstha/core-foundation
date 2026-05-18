@@ -4,10 +4,10 @@ namespace CoreFoundation\Services;
 
 use Closure;
 use CoreFoundation\Entities\BaseModel;
-use CoreFoundation\Http\Requests\ValidateFilterableRequest;
-use Illuminate\Contracts\Pagination\Paginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Contracts\Pagination\Paginator;
+use CoreFoundation\Http\Requests\ValidateFilterableRequest;
 
 class ModelFilterable
 {

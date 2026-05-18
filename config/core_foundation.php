@@ -1,9 +1,9 @@
 <?php
 
-use CoreFoundation\Notifications\JobCompletedNotification;
+use Illuminate\Support\Facades\Notification;
 use CoreFoundation\Notifications\JobFailedNotification;
 use CoreFoundation\Notifications\JobStartedNotification;
-use Illuminate\Support\Facades\Notification;
+use CoreFoundation\Notifications\JobCompletedNotification;
 
 return [
     /**
@@ -54,6 +54,6 @@ return [
                 'channel' => env('CORE_NOTIFY_CHANNEL', 'slack'),
                 'route' => env('CORE_NOTIFY_ROUTE', config('services.slack.webhook')),
             ],
-        ]
+        ],
     ],
 ];
