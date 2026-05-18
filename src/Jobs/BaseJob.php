@@ -2,38 +2,39 @@
 
 namespace CoreFoundation\Jobs;
 
+use CoreFoundation\Notifications\JobCompletedNotification;
+use CoreFoundation\Notifications\JobFailedNotification;
+use CoreFoundation\Notifications\JobStartedNotification;
+use CoreFoundation\Traits\HasNotification;
 use Illuminate\Bus\Batchable;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Notifications\Notification;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\Middleware\SkipIfBatchCancelled;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Notification as NotificationFacade;
 use Illuminate\Support\Str;
 use Throwable;
 
 abstract class BaseJob implements ShouldQueue
 {
     use Batchable;
-    use Dispatchable;
-    use InteractsWithQueue;
     use Queueable;
+    use Dispatchable;
+    use HasNotification;
     use SerializesModels;
-
-    protected bool $notify = false;
-
-    protected ?string $notifiableUserName = null;
-
-    public function __construct()
-    {
-        $this->notifiableUserName = Str::headline(Str::replace('Job', '', class_basename($this)));
-    }
+    use InteractsWithQueue;
 
     public function middleware(): array
     {
-        return [new SkipIfBatchCancelled];
+        return [
+            new SkipIfBatchCancelled,
+            ...$this->bindMiddlewares(),
+        ];
     }
 
     public function failed(Throwable $exception): void
@@ -41,24 +42,110 @@ abstract class BaseJob implements ShouldQueue
         // send notification
         $this->rollbackPreviousTransactions();
         $this->setLogs($exception);
+        $this->sendNotification($exception);
     }
 
-    final public function rollbackPreviousTransactions(): void
+    protected function bindMiddlewares(): array
+    {
+        return [];
+    }
+
+    protected function rollbackPreviousTransactions(): void
     {
         if (DB::transactionLevel() > 0) {
             DB::rollBack();
         }
     }
 
-    final public function setLogs(Throwable $exception): void
+    protected function errorMessageUniqueKey(): string
+    {
+        return Str::slug(class_basename($this));
+    }
+
+    protected function errorContext(Throwable $exception): array
+    {
+        return [
+            'trace' => $exception->getTrace(),
+        ];
+    }
+
+    protected function setLogs(Throwable $exception): void
     {
         Log::error(
-            message: $exception->getMessage(),
+            message: $this->errorMessageUniqueKey() . '| ' . $exception->getMessage(),
             context: [
-                'trace_line' => $exception->getLine(),
-                'trace_file' => $exception->getFile(),
-                'trace' => $exception->getTrace(),
+                [
+                    'trace_line' => $exception->getLine(),
+                    'trace_file' => $exception->getFile(),
+                ],
+                ...$this->errorContext($exception),
             ]
         );
+    }
+
+    protected function shouldNotify(bool $notify = false): bool
+    {
+        return $notify;
+    }
+
+    protected function additionalNotifiables(): array
+    {
+        return [];
+    }
+
+    final protected function notifiables(): array|object|null
+    {
+        return [
+            NotificationFacade::route(
+                channel: config('core_foundation.notifications.jobs.notifiables.channel'),
+                route: config('core_foundation.notifications.jobs.notifiables.route')
+            ),
+            ...$this->additionalNotifiables(),
+        ];
+    }
+
+    final protected function sendNotification(Throwable $exception): void
+    {
+        if ($this->shouldNotify()) {
+            // send notification
+            $this->dispatchNotification(fn () => $this->failedNotification($exception));
+        }
+    }
+
+    final protected function notifyStarted(): void
+    {
+        $this->dispatchNotification(fn () => $this->startedNotification());
+    }
+
+    final protected function notifyCompleted(): void
+    {
+        $this->dispatchNotification(fn () => $this->completedNotification());
+    }
+
+    /**
+     * Notification to send when the job fails.
+     * Triggered automatically by Laravel via failed() — no call needed.
+     */
+    protected function failedNotification(Throwable $exception): ?Notification
+    {
+        return new JobFailedNotification($exception);
+    }
+
+    /**
+     * Notification to send when the job starts.
+     * Trigger manually: call $this->notifyStarted() inside handle().
+     */
+    protected function startedNotification(): ?Notification
+    {
+        return new JobStartedNotification($this);
+    }
+
+    /**
+     * Notification to send when the job completes successfully.
+     * Trigger manually: call $this->notifyCompleted() inside handle().
+     */
+    protected function completedNotification(): ?Notification
+    {
+        return new JobCompletedNotification($this);
     }
 }

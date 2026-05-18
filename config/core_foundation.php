@@ -1,7 +1,9 @@
 <?php
 
-use App\Models\Role;
-use App\Models\User;
+use CoreFoundation\Notifications\JobCompletedNotification;
+use CoreFoundation\Notifications\JobFailedNotification;
+use CoreFoundation\Notifications\JobStartedNotification;
+use Illuminate\Support\Facades\Notification;
 
 return [
     /**
@@ -37,30 +39,21 @@ return [
     ],
 
     /**
-     * Search engine
-     *
-     * Todo: make different config file but merge to same config key
+     * Notifications
      */
-    'search' => [
-        'default' => env('CORE_SEARCH_ENGINE', 'database'),
-        'prefix' => env('CORE_INDEX_PREFIX', 'core_foundation'),
-
-        /*
-        |--------------------------------------------------------------------------
-        | Models for indexing
-        |--------------------------------------------------------------------------
-        |
-        | The model listed here will be used to create/populate the indexes.
-        | You can provide your own model here to run them all on the same
-        | search engine.
-        |
-        */
-        'models' => [
-            User::class,
-            Role::class,
-        ],
-        'engine_map' => [
-            User::class => 'database',
-        ],
+    'notifications' => [
+        'channel' => env('CORE_NOTIFY_CHANNEL', 'slack'),
+        /**
+         * Before changing notification channel, Change jobs channel dependencies.
+         */
+        'jobs' => [
+            'failed' => JobFailedNotification::class,
+            'started' => JobStartedNotification::class,
+            'completed' => JobCompletedNotification::class,
+            'notifiables' => [
+                'channel' => env('CORE_NOTIFY_CHANNEL', 'slack'),
+                'route' => env('CORE_NOTIFY_ROUTE', config('services.slack.webhook')),
+            ],
+        ]
     ],
 ];

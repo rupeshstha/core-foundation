@@ -18,6 +18,7 @@
     "require": {
         "php": "^8.3|^8.4",
         "composer/class-map-generator": "^1.7",
+        "laravel/slack-notification-channel": "^3.8",
         "symfony/stopwatch": "^8.0"
     },
      "require-dev": {
@@ -47,6 +48,8 @@
             "pestphp/pest-plugin": true
         }
     },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
     "support": {
         "email": "contact@rupeshstha.com.np",
         "issues":"https://github.com/rupeshstha/core-foundation/issues",
