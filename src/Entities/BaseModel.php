@@ -66,10 +66,10 @@ use CoreFoundation\Traits\Models\ModelScopeable;
  * ┌─────────────────────────────────────────────────────────────────────────────┐
  * │ INTROSPECTION                                                               │
  * │                                                                             │
- * │   Order::getAdditionalFillable()   // fields added by modules              │
- * │   Order::getAdditionalCasts()      // casts added by modules               │
+ * │   Order::getAdditionalFillable()   // fields added by modules               │
+ * │   Order::getAdditionalCasts()      // casts added by modules                │
  * │   Order::getBindRelations()        // relations added by modules            │
- * │   Order::getAdditionalScopes()     // global scopes added by modules       │
+ * │   Order::getAdditionalScopes()     // global scopes added by modules        │
  * └─────────────────────────────────────────────────────────────────────────────┘
  */
 abstract class BaseModel extends Model

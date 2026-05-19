@@ -20,10 +20,10 @@
         "composer/class-map-generator": "^1.7",
         "illuminate/database": "*",
         "illuminate/support": "*",
-        "laravel/slack-notification-channel": "^3.8",
-        "symfony/stopwatch": "^8.0"
+        "laravel/slack-notification-channel": "^3.8"
     },
      "require-dev": {
+        "symfony/stopwatch": "^8.0",
         "laravel/boost": "^1.8",
         "laravel/pint": "^1.29",
         "orchestra/testbench": "^8.37",

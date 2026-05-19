@@ -2,11 +2,12 @@
 
 namespace CoreFoundation\Services;
 
+use CoreFoundation\Manipulators\BaseDataObject;
 use CoreFoundation\Traits\HasEvent;
 use CoreFoundation\Traits\HasFactory;
 use CoreFoundation\Traits\HasPipeline;
 use CoreFoundation\Traits\HasCacheable;
-use CoreFoundation\Manipulators\ObjectMutable;
+use CoreFoundation\Manipulators\BaseDataObject;
 
 /**
  * BaseService
@@ -31,11 +32,11 @@ use CoreFoundation\Manipulators\ObjectMutable;
  * │   {                                                                         │
  * │       protected ?string $eventPrefix = 'order';                             │
  * │                                                                             │
- * │       public function place(ObjectMutable $data): ObjectMutable             │
+ * │       public function place(BaseDataObject $data): BaseDataObject             │
  * │       {                                                                     │
  * │           return $this->throughPipes('place', $data, function ($data) {     │
  * │               $order  = Order::create($data->toArray());                    │
- * │               $result = ObjectMutable::from($order->toArray());             │
+ * │               $result = BaseDataObject::from($order->toArray());             │
  * │                                                                             │
  * │               $this->bustCache(['orders']);                                 │
  * │               $this->dispatch('placed', $result);                           │
@@ -60,7 +61,7 @@ use CoreFoundation\Manipulators\ObjectMutable;
  * │           private readonly NotifyBuyerAction  $notifyBuyer,                 │
  * │       ) {}                                                                  │
  * │                                                                             │
- * │       public function place(ObjectMutable $data): ObjectMutable             │
+ * │       public function place(BaseDataObject $data): BaseDataObject             │
  * │       {                                                                     │
  * │           return $this->throughPipes('place', $data, function ($data) {     │
  * │               $result = $this->placeOrder->execute($data);                  │
@@ -86,7 +87,7 @@ use CoreFoundation\Manipulators\ObjectMutable;
  * │                                                                             │
  * │   class ValidateInventoryPipe                                               │
  * │   {                                                                         │
- * │       public function handle(ObjectMutable $data, Closure $next): mixed     │
+ * │       public function handle(BaseDataObject $data, Closure $next): mixed     │
  * │       {                                                                     │
  * │           // before                                                         │
  * │           if (! $this->inStock($data->get('product_id'))) {                 │
@@ -139,18 +140,18 @@ abstract class BaseService
     }
 
     // =========================================================================
-    // ObjectMutable factory — available to all services
+    // BaseDataObject factory — available to all services
     // =========================================================================
 
     /**
-     * Instantiate an ObjectMutable data carrier.
-     * Keeps service methods free of ObjectMutable import statements.
+     * Instantiate an BaseDataObject data carrier.
+     * Keeps service methods free of BaseDataObject import statements.
      *
      *   $data  = $this->data($request->validated());  // input carrier
      *   $result = $this->data();                       // empty result carrier
      */
-    final protected function data(array $input = []): ObjectMutable
+    final protected function data(array $input = []): BaseDataObject
     {
-        return ObjectMutable::from($input);
+        return BaseDataObject::fromArray($input);
     }
 }
