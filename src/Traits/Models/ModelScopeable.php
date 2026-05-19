@@ -1,6 +1,6 @@
 <?php
 
-namespace CoreFoundation\Traits;
+namespace CoreFoundation\Traits\Models;
 
 use Illuminate\Database\Eloquent\Scope;
 

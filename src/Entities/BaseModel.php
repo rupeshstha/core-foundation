@@ -3,10 +3,10 @@
 namespace CoreFoundation\Entities;
 
 use Illuminate\Database\Eloquent\Model;
-use CoreFoundation\Traits\ModelCastables;
-use CoreFoundation\Traits\ModelFillables;
-use CoreFoundation\Traits\ModelRelatable;
-use CoreFoundation\Traits\ModelScopeable;
+use CoreFoundation\Traits\Models\ModelCastables;
+use CoreFoundation\Traits\Models\ModelFillables;
+use CoreFoundation\Traits\Models\ModelRelatable;
+use CoreFoundation\Traits\Models\ModelScopeable;
 
 /**
  * BaseModel

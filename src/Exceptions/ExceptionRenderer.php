@@ -92,7 +92,6 @@ class ExceptionRenderer
 
             return response()->json([
                 'message' => 'Record not found.',
-                'errors' => [],
             ], Response::HTTP_NOT_FOUND);
         });
 
@@ -104,7 +103,6 @@ class ExceptionRenderer
 
             return response()->json([
                 'message' => 'Not found.',
-                'errors' => [],
             ], Response::HTTP_NOT_FOUND);
         });
 
@@ -116,7 +114,6 @@ class ExceptionRenderer
 
             return response()->json([
                 'message' => 'Method not allowed.',
-                'errors' => [],
             ], Response::HTTP_METHOD_NOT_ALLOWED);
         });
 
@@ -128,7 +125,6 @@ class ExceptionRenderer
 
             return response()->json([
                 'message' => 'Unauthenticated.',
-                'errors' => [],
             ], Response::HTTP_UNAUTHORIZED);
         });
 
@@ -140,7 +136,6 @@ class ExceptionRenderer
 
             return response()->json([
                 'message' => 'This action is unauthorized.',
-                'errors' => [],
             ], Response::HTTP_FORBIDDEN);
         });
 
@@ -152,7 +147,6 @@ class ExceptionRenderer
 
             return response()->json([
                 'message' => static::resolveQueryMessage($e),
-                'errors' => [],
             ], Response::HTTP_BAD_REQUEST);
         });
 
@@ -164,7 +158,6 @@ class ExceptionRenderer
 
             return response()->json([
                 'message' => $e->getMessage() ?: Response::$statusTexts[$e->getStatusCode()] ?? 'Error.',
-                'errors' => [],
             ], $e->getStatusCode());
         });
 

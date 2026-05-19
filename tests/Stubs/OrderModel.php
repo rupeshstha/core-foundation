@@ -85,7 +85,9 @@ class ActiveSubscriptionScope implements Scope
     public function apply(Builder $builder, Model $model): void
     {
         // Only return orders that have an active subscription
-        $builder->whereHas('subscription', fn ($q) => $q->where('status', 'active')
+        $builder->whereHas(
+            'subscription',
+            fn ($q) => $q->where('status', 'active')
         );
     }
 }

@@ -22,7 +22,7 @@ class ValidateFilterableRequest extends BaseRequest
         return [
             'per_page.numeric' => 'Per page count must be a number.',
             'page.numeric' => 'Page must be a number.',
-            'sort_order.in' => "Order must be 'asc' or 'desc'.",
+            'sort_order.in' => 'Order must be \'asc\' or \'desc\'.',
             'q.string' => 'Search query must be a string.',
             'filter_by.string' => 'Filter by must be a string.',
         ];

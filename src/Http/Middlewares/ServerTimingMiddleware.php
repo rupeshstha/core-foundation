@@ -3,74 +3,141 @@
 namespace CoreFoundation\Http\Middlewares;
 
 use Closure;
-use Illuminate\Support\Str;
+use CoreFoundation\DevTools\ServerTiming\ServerTimingService;
 use Illuminate\Http\Request;
-use CoreFoundation\Facades\Services\ServerTimingFacadeService;
+use Symfony\Component\HttpFoundation\Response;
 
+/**
+ * ServerTimingMiddleware
+ *
+ * Injects the W3C Server-Timing header into every response when enabled.
+ * Must be placed as early as possible in the middleware stack to capture
+ * the most accurate bootstrap time.
+ *
+ * ┌─────────────────────────────────────────────────────────────────────────────┐
+ * │ SETUP — Laravel 11+ (bootstrap/app.php)                                     │
+ * │                                                                             │
+ * │   ->withMiddleware(function (Middleware $middleware) {                       │
+ * │       $middleware->prepend(ServerTimingMiddleware::class);                   │
+ * │   })                                                                        │
+ * │                                                                             │
+ * │ SETUP — Laravel 10 (app/Http/Kernel.php)                                    │
+ * │                                                                             │
+ * │   protected $middleware = [                                                 │
+ * │       \CoreFoundation\Http\Middlewares\ServerTimingMiddleware::class,        │
+ * │       // ...                                                                 │
+ * │   ];                                                                        │
+ * └─────────────────────────────────────────────────────────────────────────────┘
+ *
+ * ┌─────────────────────────────────────────────────────────────────────────────┐
+ * │ OCTANE                                                                      │
+ * │                                                                             │
+ * │ Safe to use with Octane. The ServiceProvider binds ServerTimingService as   │
+ * │ a SCOPED singleton, so it is re-created on every Octane request. The        │
+ * │ middleware re-resolves the service from the container on each request,      │
+ * │ so it always gets the fresh scoped instance.                                │
+ * └─────────────────────────────────────────────────────────────────────────────┘
+ */
 class ServerTimingMiddleware
 {
-    protected mixed $start;
+    /**
+     * The microtime at which this request reached the middleware stack.
+     * Used to calculate elapsed time from the perspective of this middleware.
+     */
+    private readonly float $middlewareStart;
 
-    public function __construct(
-        protected ServerTimingFacadeService $timing
-    ) {
-        $this->start = $this->getRequestStartTime();
+    public function __construct()
+    {
+        $this->middlewareStart = microtime(true);
     }
 
-    public function handle(Request $request, Closure $next): mixed
+    public function handle(Request $request, Closure $next): Response
     {
-        if (app()->isProduction()) {
+        if (! $this->isEnabled()) {
             return $next($request);
         }
+        // Re-resolve per request — critical for Octane scoped binding correctness.
+        /** @var ServerTimingService $timing */
+        $timing = app(ServerTimingService::class);
 
-        $this->timing->setDuration('Bootstrap', $this->getElapsedTimeInMs());
+        // Bootstrap = time from LARAVEL_START (or server request time) to
+        // the point this middleware first runs. Captures autoloading, booting,
+        // service provider registration, and early middleware.
+        $timing->record('Bootstrap', $this->getBootstrapDurationMs(), 'Bootstrap');
 
-        $this->timing->start('App');
+        // App = time spent inside the application stack (controllers, services, etc.)
+        $timing->start('App', 'Application');
 
-        /** @var Response $response */
         $response = $next($request);
 
-        $this->timing->stop('App');
+        $timing->stop('App');
 
-        $this->timing->stopAllUnfinishedEvents();
+        // Flush any developer measurements that were started but never stopped.
+        $timing->flush();
 
-        $this->timing->setDuration('Total', $this->getElapsedTimeInMs());
+        // Total = full wall-clock time from the server's perspective.
+        $timing->record('Total', $this->getElapsedMs($this->getRequestStartTime()), 'Total');
 
-        $response->headers->set('Server-Timing', $this->generateHeaders());
+        $headerValue = $timing->toHeaderValue();
+
+        if (! empty($headerValue)) {
+            $response->headers->set('Server-Timing', $headerValue);
+        }
 
         return $response;
     }
 
-    protected function getElapsedTimeInMs(): float
+    // =========================================================================
+    // Internals
+    // =========================================================================
+
+    /**
+     * Whether Server-Timing is enabled for the current environment.
+     * Reads from config/server-timing.php.
+     */
+    private function isEnabled(): bool
     {
-        return (microtime(true) - $this->start) * 1000;
+        if (! config('server-timing.enabled', true)) {
+            return false;
+        }
+
+        $environments = config('server-timing.environments', []);
+
+        // Empty array = enabled in all environments.
+        if (empty($environments)) {
+            return true;
+        }
+
+        return app()->environment($environments);
     }
 
-    protected function getRequestStartTime(): string|float|null
+    /**
+     * The time LARAVEL_START was defined — i.e. the very first line of public/index.php.
+     * Falls back to $_SERVER['REQUEST_TIME_FLOAT'] then microtime(true).
+     */
+    private function getRequestStartTime(): float
     {
         if (defined('LARAVEL_START')) {
             return LARAVEL_START;
         }
 
-        return $_SERVER['REQUEST_TIME_FLOAT'] ?? microtime(true);
+        return $_SERVER['REQUEST_TIME_FLOAT'] ?? $this->middlewareStart;
     }
 
-    protected function generateHeaders(): string
+    /**
+     * Time elapsed from the given start point to right now, in milliseconds.
+     */
+    private function getElapsedMs(float $start): float
     {
-        $header = '';
+        return (microtime(true) - $start) * 1000;
+    }
 
-        foreach ($this->timing->events() as $eventName => $duration) {
-            $eventNameSlug = Str::slug($eventName);
-
-            $header .= "{$eventNameSlug};desc=\"{$eventName}\";";
-
-            if (! is_null($duration)) {
-                $header .= "dur={$duration}";
-            }
-
-            $header .= ', ';
-        }
-
-        return $header;
+    /**
+     * Bootstrap duration = from LARAVEL_START to when this middleware first ran.
+     * This captures autoloading, booting, and all early middleware overhead.
+     */
+    private function getBootstrapDurationMs(): float
+    {
+        return ($this->middlewareStart - $this->getRequestStartTime()) * 1000;
     }
 }

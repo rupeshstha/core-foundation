@@ -100,7 +100,10 @@ class ModelFilterable
 
             $this->applyFilterQuery($filterIdentifier)
                 ->call(
-                    $this, $builder, $column, $filterValue
+                    $this,
+                    $builder,
+                    $column,
+                    $filterValue
                 );
         }
     }
