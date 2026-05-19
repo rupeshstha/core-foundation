@@ -15,9 +15,6 @@ use Illuminate\Notifications\Notification;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\Middleware\SkipIfBatchCancelled;
-use CoreFoundation\Notifications\JobFailedNotification;
-use CoreFoundation\Notifications\JobStartedNotification;
-use CoreFoundation\Notifications\JobCompletedNotification;
 use Illuminate\Support\Facades\Notification as NotificationFacade;
 
 abstract class BaseJob implements ShouldQueue
@@ -128,7 +125,13 @@ abstract class BaseJob implements ShouldQueue
      */
     protected function failedNotification(Throwable $exception): ?Notification
     {
-        return new JobFailedNotification($exception);
+        /** @var Notification $failedNotificationClass */
+        $failedNotificationClass = config('core_foundation.notifications.jobs.failed');
+        if (! $failedNotificationClass) {
+            return null;
+        }
+
+        return new $failedNotificationClass($this, $exception);
     }
 
     /**
@@ -137,7 +140,13 @@ abstract class BaseJob implements ShouldQueue
      */
     protected function startedNotification(): ?Notification
     {
-        return new JobStartedNotification($this);
+        /** @var Notification $startedNotificationClass */
+        $startedNotificationClass = config('core_foundation.notifications.jobs.started');
+        if (! $startedNotificationClass) {
+            return null;
+        }
+
+        return new $startedNotificationClass($this);
     }
 
     /**
@@ -146,6 +155,12 @@ abstract class BaseJob implements ShouldQueue
      */
     protected function completedNotification(): ?Notification
     {
-        return new JobCompletedNotification($this);
+        /** @var Notification $completedNotificationClass */
+        $completedNotificationClass = config('core_foundation.notifications.jobs.completed');
+        if (! $completedNotificationClass) {
+            return null;
+        }
+
+        return new $completedNotificationClass($this);
     }
 }

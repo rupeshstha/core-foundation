@@ -18,6 +18,7 @@
     "require": {
         "php": "^8.3|^8.4",
         "composer/class-map-generator": "^1.7",
+        "illuminate/database": "*",
         "illuminate/support": "*",
         "laravel/slack-notification-channel": "^3.8",
         "symfony/stopwatch": "^8.0"

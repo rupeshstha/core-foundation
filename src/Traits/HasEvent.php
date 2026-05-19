@@ -4,80 +4,98 @@ namespace CoreFoundation\Traits;
 
 use Illuminate\Support\Facades\Event;
 
+/**
+ * HasEvent
+ *
+ * Namespaced, pub/sub event dispatch for service classes.
+ * Wraps Laravel's Event facade with a domain prefix convention so events
+ * from different services never collide and are easy to trace in logs.
+ *
+ * This trait is ONLY for pub/sub notification (fire-and-forget).
+ * For before/after execution hooks that modify data, see HasPipeline.
+ *
+ * ┌─────────────────────────────────────────────────────────────────────────────┐
+ * │ SETUP                                                                       │
+ * │                                                                             │
+ * │   class OrderService extends BaseService                                    │
+ * │   {                                                                         │
+ * │       protected ?string $eventPrefix = 'order';                             │
+ * │   }                                                                         │
+ * │                                                                             │
+ * │ DISPATCH                                                                    │
+ * │                                                                             │
+ * │   $this->dispatch('placed', $result);         // fires: 'order.placed'      │
+ * │   $this->dispatch('cancelled', $result);      // fires: 'order.cancelled'   │
+ * │   $this->dispatch('system.alert', $d, false); // fires: 'system.alert'      │
+ * │                                               // (prefix bypassed)          │
+ * │                                                                             │
+ * │ SUPPRESS (bulk operations, imports, seeding):                               │
+ * │                                                                             │
+ * │   $this->withoutEvents(function () {                                        │
+ * │       foreach ($orders as $order) {                                         │
+ * │           $this->place($order); // no events fired                          │
+ * │       }                                                                     │
+ * │   });                                                                       │
+ * │                                                                             │
+ * │ LISTEN (in EventServiceProvider):                                           │
+ * │                                                                             │
+ * │   Event::listen('order.placed', SendOrderConfirmation::class);              │
+ * │   Event::listen('order.*',      AuditOrderEvents::class);                   │
+ * └─────────────────────────────────────────────────────────────────────────────┘
+ */
 trait HasEvent
 {
+    /**
+     * Internal dispatch switch. Never set directly — use withoutEvents().
+     */
+    private bool $eventsEnabled = true;
+
+    /**
+     * Namespace prefix for all events dispatched by this service.
+     * Snake_case, domain-scoped. e.g. 'order', 'user', 'payment'.
+     * All dispatched events become: '{prefix}.{event}'
+     */
     protected ?string $eventPrefix = null;
 
-    protected bool $eventDispatch = true;
+    // =========================================================================
+    // Dispatch
+    // =========================================================================
 
-    protected static array $interceptors = [];
-
-    public function eventDispatch(string $eventKey, mixed $data = [], bool $restrictEventPrefix = false): void
+    /**
+     * Dispatch a namespaced event via Laravel's Event system.
+     *
+     * @param  string  $event  Short event name e.g. 'placed', 'cancelled'
+     * @param  mixed  $payload  Passed to all listeners
+     * @param  bool  $prefixed  False to bypass the domain prefix for this call
+     */
+    final protected function dispatch(string $event, mixed $payload = [], bool $prefixed = true): void
     {
-        if ($this->eventPrefix && ! $restrictEventPrefix) {
-            $eventKey = "{$this->eventPrefix}.{$eventKey}";
+        if (! $this->eventsEnabled) {
+            return;
         }
 
-        if ($this->eventDispatch) {
-            Event::dispatch($eventKey, $data);
-        }
+        $key = ($this->eventPrefix && $prefixed)
+            ? "{$this->eventPrefix}.{$event}"
+            : $event;
+
+        Event::dispatch($key, $payload);
     }
 
     /**
-     * This method convert code flow to interceptor design pattern.
+     * Execute a callback with all event dispatch suppressed.
+     * Dispatch state is always restored after, even on exception.
      *
-     * @return void
+     * @param  callable(): mixed  $callback
      */
-    public function interceptorEventDispatch(string $eventKey, mixed $data = [], bool $restrictEventPrefix = false)
+    final public function withoutEvents(callable $callback): mixed
     {
-        $backtrace = last(debug_backtrace(limit: 2));
-        $previousFunction = $backtrace['function'];
-        $previousClass = $backtrace['class'];
-        $previousInstance = $backtrace['object'];
-        $previousArguments = $backtrace['args'];
+        $previous = $this->eventsEnabled;
+        $this->eventsEnabled = false;
 
-        $interceptor = $this->getInterceptor($previousClass);
-        if ($interceptor) {
-            $dotPosition = strrpos($eventKey, '.');
-            /**
-             * if your event name is "user.index.before", "user-role.index.before" etc
-             * It will only take last key as reference to interceptor before or after event name.
-             * Its better if we separate before, after and around event dispatch method instead. 🤔
-             */
-            $lastKeyAfterDot = ucfirst(substr($eventKey, $dotPosition + 1));
-            $interceptedObject = resolve($interceptor['interceptTo'], [$previousInstance]);
-            $data = is_array($data) ? $data : [$data];
-            $interceptedObject->{$previousFunction.$lastKeyAfterDot}(array_merge($previousArguments, $data));
+        try {
+            return $callback();
+        } finally {
+            $this->eventsEnabled = $previous;
         }
-    }
-
-    public function getInterceptor(string $interceptorClass): ?array
-    {
-        /**
-         * Maintained static properties for performance wise.
-         *
-         * TODO:: Make a flexibility to add/remove interceptors from service provider. It should be in register method.
-         */
-        if (! count(static::$interceptors)) {
-            static::$interceptors = $interceptors = config('interceptors', []);
-        }
-        $interceptors = static::$interceptors;
-
-        usort($interceptors, function (array $current, array $next) {
-            $compareFrom = strcmp($current['interceptFrom'], $next['interceptFrom']);
-            if ($compareFrom === 0) {
-                return $current['priority'] <=> $next['priority'];
-            }
-
-            return $compareFrom;
-        });
-
-        foreach ($interceptors as $interceptor) {
-            if ($interceptor['interceptFrom'] === $interceptorClass) {
-                return $interceptor;
-            }
-        }
-
-        return null;
     }
 }

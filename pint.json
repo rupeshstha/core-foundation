@@ -14,6 +14,19 @@
         "strict_comparison": true,
         "strict_param": true,
         "ternary_to_null_coalescing": true,
+        "ordered_traits": {
+            "case_sensitive": true
+        },
+        "ordered_class_elements": {
+            "order": [
+                "use_trait",
+                "property_private",
+                "property_protected",
+                "property_public",
+                "constant",
+                "construct"
+            ]
+        },
         "ordered_imports": {
             "sort_algorithm": "length",
             "imports_order": ["class", "function", "const"]

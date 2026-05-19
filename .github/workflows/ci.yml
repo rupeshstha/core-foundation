@@ -1,0 +1,115 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - 'v[0-9]*'
+      - '!*-dev*'
+      - '!*-beta*'
+
+  pull_request:
+    branches:
+      - main
+      - 'v[0-9]*'
+      - '!*-dev*'
+      - '!*-beta*'
+
+jobs:
+
+  PHP:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { php: '8.2', laravel: '^9.0',  testbench: '^7.0',  phpstan: false, experimental: false }
+          - { php: '8.2', laravel: '^10.0', testbench: '^8.0',  phpstan: false, experimental: false }
+          - { php: '8.2', laravel: '^11.0', testbench: '^9.0',  phpstan: true,  experimental: false }
+          - { php: '8.2', laravel: '^12.0', testbench: '^10.0', phpstan: true,  experimental: false }
+          - { php: '8.3', laravel: '^10.0', testbench: '^8.0',  phpstan: false, experimental: false }
+          - { php: '8.3', laravel: '^11.0', testbench: '^9.0',  phpstan: true,  experimental: false }
+          - { php: '8.3', laravel: '^12.0', testbench: '^10.0', phpstan: true,  experimental: false }
+          - { php: '8.3', laravel: '^13.0', testbench: '^11.0', phpstan: true,  experimental: false }
+          - { php: '8.4', laravel: '^11.0', testbench: '^9.0',  phpstan: true,  experimental: false }
+          - { php: '8.4', laravel: '^12.0', testbench: '^10.0', phpstan: true,  experimental: false }
+          - { php: '8.4', laravel: '^13.0', testbench: '^11.0', phpstan: true,  experimental: false }
+          - { php: '8.5', laravel: '^12.0', testbench: '^10.0', phpstan: true,  experimental: true  }
+          - { php: '8.5', laravel: '^13.0', testbench: '^11.0', phpstan: true,  experimental: true  }
+    name: PHP ${{ matrix.php }} - Laravel ${{ matrix.laravel }}
+    continue-on-error: ${{ matrix.experimental }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: dom, curl, libxml, mbstring, zip
+          coverage: none
+
+      - name: Allow EOL/insecure framework versions in CI
+        run: composer config audit.block-insecure false
+
+      # Laravel 9/10 cells (matrix.phpstan == false): the modern dev toolchain
+      # requires Laravel 11+. Larastan 3 needs L11+; Testbench 7/8 pins PHPUnit 9
+      # which conflicts with Pest 2's PHPUnit 10. The tests use plain
+      # PHPUnit\Framework\TestCase (no Orchestra), so drop Larastan + Testbench
+      # and downgrade Pest to ^2 so the suite can install on these versions.
+      - name: Drop Larastan & Testbench (unsupported on Laravel < 11)
+        if: ${{ !matrix.phpstan }}
+        run: composer remove --dev --no-update --no-interaction larastan/larastan orchestra/testbench
+
+      # Pest 2 (PHPUnit 10) for L9/L10. symfony/polyfill-php85 provides the
+      # native-PHP-8.5 array_first() used by tests/Pest.php — the modern dev
+      # tree pulls it transitively; the stripped legacy tree does not.
+      - name: Downgrade Pest for Laravel < 11
+        if: ${{ !matrix.phpstan }}
+        run: >
+          composer require --dev --no-update --no-interaction
+          "pestphp/pest:^2.0"
+          "symfony/polyfill-php85:*"
+
+      # Pest 2 has no pest() helper; rewrite the Pest 3 bootstrap call to the
+      # Pest 2 equivalent (uses()). CI-only, ephemeral patch of tests/Pest.php.
+      - name: Patch test bootstrap for Pest 2
+        if: ${{ !matrix.phpstan }}
+        run: sed -i 's/pest()->extend(/uses(/' tests/Pest.php
+
+      - name: Pin Laravel & Testbench (Laravel 11+)
+        if: ${{ matrix.phpstan }}
+        run: >
+          composer require --no-update --no-interaction
+          "illuminate/console:${{ matrix.laravel }}"
+          "illuminate/support:${{ matrix.laravel }}"
+          "orchestra/testbench:${{ matrix.testbench }}"
+
+      # Tests exercise Routing/Container/Events; Testbench used to pull the
+      # full framework, so pin laravel/framework directly here. Its runtime
+      # deps don't pin PHPUnit, so no conflict with Pest 2.
+      - name: Pin Laravel (Laravel < 11)
+        if: ${{ !matrix.phpstan }}
+        run: >
+          composer require --no-update --no-interaction
+          "laravel/framework:${{ matrix.laravel }}"
+
+      - name: Install dependencies
+        run: composer update --prefer-dist --no-interaction --no-progress --prefer-stable -W
+
+      - name: Laravel Pint - Lint test
+        run: composer test:lint
+
+      - name: PHPStan - Static Analysis test
+        if: ${{ matrix.phpstan }}
+        run: composer test:types
+
+      - name: Pest - Unit test
+        if: ${{ matrix.phpstan }}
+        run: composer test:unit
+
+      # Pest 2 lacks the arch()->preset() API used by tests/ArchTest.php,
+      # so run only the Unit/Feature suites on Laravel 9/10.
+      - name: Pest - Unit test (Laravel < 11, no ArchTest)
+        if: ${{ !matrix.phpstan }}
+        run: ./vendor/bin/pest tests/Unit tests/Feature --order-by=random
