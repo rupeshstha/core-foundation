@@ -7,6 +7,7 @@ use CoreFoundation\Traits\Models\ModelCastables;
 use CoreFoundation\Traits\Models\ModelFillables;
 use CoreFoundation\Traits\Models\ModelRelatable;
 use CoreFoundation\Traits\Models\ModelScopeable;
+use CoreFoundation\Traits\Models\ModelSearchable;
 
 /**
  * BaseModel
@@ -78,6 +79,7 @@ abstract class BaseModel extends Model
     use ModelFillables;
     use ModelRelatable;
     use ModelScopeable;
+    use ModelSearchable;
 
     /**
      * Re-apply all externally registered global scopes after model boot.

@@ -5,9 +5,9 @@ namespace CoreFoundation\Manipulators;
 use ReflectionClass;
 use ReflectionProperty;
 use Illuminate\Support\Fluent;
+use Illuminate\Contracts\Support\Arrayable;
 use CoreFoundation\DataObjects\Attributes\Property;
 use CoreFoundation\DataObjects\Attributes\ApiResponse;
-use Illuminate\Contracts\Support\Arrayable;
 
 /**
  * BaseDataObject

@@ -3,8 +3,8 @@
 namespace CoreFoundation\Traits\Devtools;
 
 use Closure;
-use CoreFoundation\Facades\ServerTiming;
 use CoreFoundation\Traits\HasCacheable;
+use CoreFoundation\Facades\ServerTiming;
 
 /**
  * MeasuresCachePerformance
@@ -37,7 +37,7 @@ trait MeasuresCachePerformance
 {
     use HasCacheable {
         cacheForever as private parentCacheForever;
-        cacheTtl     as private parentCacheTtl;
+        cacheTtl as private parentCacheTtl;
     }
 
     /**
@@ -64,8 +64,8 @@ trait MeasuresCachePerformance
      */
     private function measuredCache(string $key, Closure $cacheCall): mixed
     {
-        $start   = microtime(true);
-        $result  = $cacheCall();
+        $start = microtime(true);
+        $result = $cacheCall();
         $elapsed = (microtime(true) - $start) * 1000;
 
         // A very fast result (< 1ms) almost always came from the cache.
@@ -74,8 +74,8 @@ trait MeasuresCachePerformance
         $hitOrMiss = $elapsed < 1.0 ? 'hit' : 'miss';
 
         ServerTiming::record(
-            name:        "cache:{$key}",
-            durationMs:  round($elapsed, 2),
+            name: "cache:{$key}",
+            durationMs: round($elapsed, 2),
             description: "Cache {$hitOrMiss}: {$key}",
         );
 

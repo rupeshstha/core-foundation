@@ -3,9 +3,9 @@
 namespace CoreFoundation\Http\Middlewares;
 
 use Closure;
-use CoreFoundation\DevTools\ServerTiming\ServerTimingService;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
+use CoreFoundation\DevTools\ServerTiming\ServerTimingService;
 
 /**
  * ServerTimingMiddleware

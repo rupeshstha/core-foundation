@@ -2,16 +2,18 @@
 
 namespace CoreFoundation\Providers;
 
-use CoreFoundation\DevTools\ServerTiming\ServerTimingService;
 use Illuminate\Support\ServiceProvider;
+use Laravel\Octane\Events\TaskReceived;
+use Laravel\Octane\Events\RequestReceived;
 use Symfony\Component\Stopwatch\Stopwatch;
+use CoreFoundation\DevTools\ServerTiming\ServerTimingService;
 
 class AppMonitorServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
         $this->mergeConfigFrom(
-            __DIR__ . '/../../Config/server-timing.php',
+            __DIR__.'/../../Config/server-timing.php',
             'server-timing',
         );
 
@@ -46,23 +48,23 @@ class AppMonitorServiceProvider extends ServiceProvider
      */
     private function registerOctaneReset(): void
     {
-        if (! class_exists(\Laravel\Octane\Events\RequestReceived::class)) {
+        if (! class_exists(RequestReceived::class)) {
             return;
         }
 
         $this->app['events']->listen(
-            \Laravel\Octane\Events\RequestReceived::class,
-            function (\Laravel\Octane\Events\RequestReceived $event): void {
+            RequestReceived::class,
+            function (RequestReceived $event): void {
                 // Re-resolve from the new request's container scope
                 $event->sandbox->make(ServerTimingService::class)->reset();
             },
         );
 
         // Also reset on task execution so job timings don't bleed into requests
-        if (class_exists(\Laravel\Octane\Events\TaskReceived::class)) {
+        if (class_exists(TaskReceived::class)) {
             $this->app['events']->listen(
-                \Laravel\Octane\Events\TaskReceived::class,
-                function (\Laravel\Octane\Events\TaskReceived $event): void {
+                TaskReceived::class,
+                function (TaskReceived $event): void {
                     $event->sandbox->make(ServerTimingService::class)->reset();
                 },
             );
@@ -80,7 +82,7 @@ class AppMonitorServiceProvider extends ServiceProvider
         }
 
         $this->publishes([
-            __DIR__ . '/../../Config/server-timing.php' => config_path('server-timing.php'),
+            __DIR__.'/../../Config/server-timing.php' => config_path('server-timing.php'),
         ], 'core-foundation-server-timing');
     }
 }

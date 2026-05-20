@@ -2,104 +2,331 @@
 
 namespace CoreFoundation\Repositories;
 
-use Illuminate\Support\Arr;
 use CoreFoundation\Traits\HasEvent;
 use CoreFoundation\Entities\BaseModel;
 use Illuminate\Foundation\Application;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
-use CoreFoundation\Services\ModelFilterable;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Contracts\Pagination\Paginator;
-use CoreFoundation\Services\RepositoryCacheManager;
-use CoreFoundation\Contracts\BaseRepositoryInterface;
-use CoreFoundation\Exceptions\ModelNotInstantiableException;
+use CoreFoundation\Repositories\Sort\SortApplicator;
+use CoreFoundation\Repositories\Cache\RepositoryCache;
+use CoreFoundation\Repositories\Filter\FilterApplicator;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use CoreFoundation\Repositories\Contracts\RepositoryContract;
+use CoreFoundation\Repositories\Exceptions\ModelNotInstantiableException;
 
-abstract class BaseRepository implements BaseRepositoryInterface
+/**
+ * BaseRepository
+ *
+ * Foundation for all Eloquent repositories. Composes:
+ *   - FilterApplicator    — operator-based query filtering
+ *   - SortApplicator      — request-driven sorting
+ *   - RepositoryCache     — tag-based cache-first strategy with smart invalidation
+ *   - HasEvent            — domain event dispatch around write operations
+ *
+ * ┌─────────────────────────────────────────────────────────────────────────────┐
+ * │ DEFINING A REPOSITORY                                                       │
+ * │                                                                             │
+ * │   class OrderRepository extends BaseRepository                              │
+ * │   {                                                                         │
+ * │       protected function setModel(): string                                 │
+ * │       {                                                                     │
+ * │           return Order::class;                                              │
+ * │       }                                                                     │
+ * │                                                                             │
+ * │       // Override searchable columns (or add on the model via $searchable)  │
+ * │       protected function searchable(): array                                │
+ * │       {                                                                     │
+ * │           return ['status', 'created_at', ...Order::getSearchable()];       │
+ * │       }                                                                     │
+ * │                                                                             │
+ * │       // Override which methods cache their results                         │
+ * │       protected function cachedMethods(): array                             │
+ * │       {                                                                     │
+ * │           return ['fetchAll', 'fetchById'];                                 │
+ * │       }                                                                     │
+ * │                                                                             │
+ * │       // Custom query (implements QueryRepositoryContract)                  │
+ * │       public function pendingOlderThan(int $days): Collection               │
+ * │       {                                                                     │
+ * │           return $this->query()                                             │
+ * │               ->where('status', 'pending')                                  │
+ * │               ->where('created_at', '<', now()->subDays($days))             │
+ * │               ->get();                                                      │
+ * │       }                                                                     │
+ * │   }                                                                         │
+ * └─────────────────────────────────────────────────────────────────────────────┘
+ *
+ * ┌─────────────────────────────────────────────────────────────────────────────┐
+ * │ EXTENDING FILTER OPERATORS (from ServiceProvider::boot())                   │
+ * │                                                                             │
+ * │   FilterApplicator::addOperator(new BetweenOperator);                       │
+ * │   Order::addSearchable(['subscription_id']);                                 │
+ * └─────────────────────────────────────────────────────────────────────────────┘
+ */
+abstract class BaseRepository implements RepositoryContract
 {
     use HasEvent;
 
     protected BaseModel $model;
 
-    protected array $coreConfig = [];
-
-    protected array $cacheAllowedMethods = [];
-
     public function __construct(
-        protected Application $app,
-        protected ModelFilterable $modelFilterable,
-        protected RepositoryCacheManager $cacheManager,
+        protected readonly Application $app,
+        protected readonly FilterApplicator $filterApplicator,
+        protected readonly SortApplicator $sortApplicator,
+        protected readonly RepositoryCache $cache,
     ) {
-        $this->register();
+        $this->boot();
     }
 
+    // =========================================================================
+    // Contract — child must implement
+    // =========================================================================
+
     /**
-     * This method will set the repository model.
+     * Return the FQCN of the model this repository manages.
      */
     abstract protected function setModel(): string;
 
+    // =========================================================================
+    // Extension points
+    // =========================================================================
+
     /**
-     * Registers model repository.
+     * Columns allowed for filtering in this repository.
+     *
+     * Default: merges the model's own $searchable with module-added columns.
+     * Override to restrict or extend per-repository.
+     *
+     * @return array<string>
      */
-    private function register(): void
+    protected function searchable(): array
     {
-        /**
-         * Singleton model instance inside service container.
-         * Reduce instantiation of same model object.
-         */
-        $this->app->singleton($this->setModel(), $this->setModel());
-
-        $modelInstance = $this->app->make($this->setModel());
-
-        throw_unless(
-            condition: $modelInstance instanceof BaseModel,
-            exception: new ModelNotInstantiableException(
-                message: "Class {$this->setModel()} must be an instance of CoreFoundation\\Entities\\BaseModel"
-            )
-        );
-
-        $this->model = $modelInstance;
-        $this->cacheManager->setModel($this->model);
-        $this->coreConfig = config('core_foundation');
-
-        $this->cacheAllowedMethods = Arr::get($this->coreConfig, 'cache.cache_repository_methods');
-        $this->eventPrefix = $this->model->getTable();
-        $this->eventDispatch = true;
+        return $this->model::getSearchable();
     }
 
+    /**
+     * Columns allowed for sorting in this repository.
+     *
+     * Default: same as searchable. Override to restrict.
+     *
+     * @return array<string>
+     */
+    protected function sortable(): array
+    {
+        return $this->searchable();
+    }
+
+    /**
+     * Repository methods whose results should be cached.
+     *
+     * Default: fetchAll and fetchById.
+     * Override to add or remove methods from the cached set.
+     *
+     * @return array<string>
+     */
+    protected function cachedMethods(): array
+    {
+        return ['fetchAll', 'fetchById'];
+    }
+
+    // =========================================================================
+    // RepositoryContract — Read
+    // =========================================================================
+
     public function fetchAll(
-        array $filterable = [],
-        array $relationship = [],
-        array $columns = ['*']
-    ): Collection|Paginator {
-        $this->eventDispatch(
-            eventKey: 'fetch-all.before',
-            data: [
-                'request' => $filterable,
-                'relationship' => $relationship,
-            ]
-        );
+        array $filters = [],
+        array $relations = [],
+        array $columns = ['*'],
+        bool $paginate = true,
+        int $perPage = 25,
+    ): Collection|LengthAwarePaginator {
+        $this->dispatch('fetch-all.before', compact('filters', 'relations'));
 
-        $fetched = $this->cacheManager->make(
-            relates: $relationship,
-            callback: function () use ($filterable, $relationship, $columns) {
-                $rows = $this->model::select($columns)
-                    ->when($relationship, function (Builder $query) use ($relationship) {
-                        $query->with($relationship);
-                    });
+        $result = $this->cache->remember(
+            model: $this->model,
+            method: __FUNCTION__,
+            filters: $filters,
+            relations: $relations,
+            columns: $columns,
+            extra: ['paginate' => $paginate, 'per_page' => $perPage],
+            shouldCache: $this->isCached(__FUNCTION__),
+            callback: function () use ($filters, $relations, $columns, $paginate, $perPage) {
+                $query = $this->model::select($columns);
 
-                return $this->modelFilterable
-                    ->setModel($this->model)
-                    ->getFiltered($rows, $filterable, $relationship);
+                if ($relations) {
+                    $query->with($relations);
+                }
+
+                $this->filterApplicator->apply($query, $filters['filters'] ?? [], $this->searchable());
+                $this->sortApplicator->apply($query, $filters['sort'] ?? [], $this->sortable());
+
+                return $paginate
+                    ? $query->paginate($perPage)->appends(request()->except('page'))
+                    : $query->get();
             },
-            isCached: in_array(__FUNCTION__, $this->cacheAllowedMethods, true),
-            identifier: [$filterable, $relationship],
         );
 
-        $this->eventDispatch(
-            eventKey: 'fetch-all.after',
-            data: $fetched
+        $this->dispatch('fetch-all.after', $result);
+
+        return $result;
+    }
+
+    public function fetchById(
+        int|string $id,
+        array $relations = [],
+        array $columns = ['*'],
+    ): ?Model {
+        $this->dispatch('fetch-by-id.before', compact('id', 'relations'));
+
+        $result = $this->cache->remember(
+            model: $this->model,
+            method: __FUNCTION__,
+            filters: [],
+            relations: $relations,
+            columns: $columns,
+            extra: ['id' => $id],
+            shouldCache: $this->isCached(__FUNCTION__),
+            callback: function () use ($id, $relations, $columns) {
+                $query = $this->model::select($columns);
+
+                if ($relations) {
+                    $query->with($relations);
+                }
+
+                return $query->find($id);
+            },
         );
 
-        return $fetched;
+        $this->dispatch('fetch-by-id.after', $result);
+
+        return $result;
+    }
+
+    // =========================================================================
+    // RepositoryContract — Write
+    // =========================================================================
+
+    public function create(array $attributes): Model
+    {
+        $this->dispatch('create.before', $attributes);
+
+        $model = $this->model::create($attributes);
+
+        // Observer handles cache invalidation by default.
+        // Call explicitly here only if the observer is not registered.
+        // $this->cache->flushModel($this->model);
+
+        $this->dispatch('create.after', $model);
+
+        return $model;
+    }
+
+    public function update(int|string $id, array $attributes): Model
+    {
+        $this->dispatch('update.before', compact('id', 'attributes'));
+
+        $model = $this->model::findOrFail($id);
+        $model->update($attributes);
+
+        // Observer handles cache invalidation by default.
+        // Call explicitly: $this->cache->flushRecord($model, $id);
+
+        $this->dispatch('update.after', $model);
+
+        return $model;
+    }
+
+    public function delete(int|string $id): bool
+    {
+        $this->dispatch('delete.before', compact('id'));
+
+        $model = $this->model::findOrFail($id);
+        $result = (bool) $model->delete();
+
+        // Observer handles cache invalidation by default.
+        // Call explicitly: $this->cache->flushModel($this->model);
+
+        $this->dispatch('delete.after', compact('id', 'result'));
+
+        return $result;
+    }
+
+    // =========================================================================
+    // RepositoryContract — Query
+    // =========================================================================
+
+    /**
+     * Return a fresh Builder for custom queries.
+     * Starting point for all domain-specific queries in concrete repositories.
+     */
+    public function query(): Builder
+    {
+        return $this->model::query();
+    }
+
+    // =========================================================================
+    // RepositoryContract — Model access
+    // =========================================================================
+
+    public function getModel(): BaseModel
+    {
+        return $this->model;
+    }
+
+    // =========================================================================
+    // Cache control — callable from concrete repositories
+    // =========================================================================
+
+    /**
+     * Bypass cache for the next call.
+     * Useful when fresh data is required regardless of cache state.
+     */
+    final protected function withoutCache(): static
+    {
+        $this->cache->disable();
+
+        return $this;
+    }
+
+    /**
+     * Manually flush all cache for this model.
+     * Call after bulk operations that bypass individual model events.
+     */
+    final protected function flushCache(): void
+    {
+        $this->cache->flushModel($this->model);
+    }
+
+    // =========================================================================
+    // Internals
+    // =========================================================================
+
+    /**
+     * Boot the repository — resolve and validate the model.
+     * Models are NOT singletons — a fresh instance per repository is correct
+     * since models carry mutable state (dirty attributes, loaded relations).
+     */
+    private function boot(): void
+    {
+        $modelClass = $this->setModel();
+
+        // Make a fresh instance — do NOT use app()->singleton() for models
+        $instance = $this->app->make($modelClass);
+
+        throw_unless(
+            condition: $instance instanceof BaseModel,
+            exception: new ModelNotInstantiableException(
+                "[{$modelClass}] must extend CoreFoundation\\Entities\\BaseModel."
+            ),
+        );
+
+        $this->model = $instance;
+        $this->eventPrefix = $this->model->getTable();
+    }
+
+    private function isCached(string $method): bool
+    {
+        return in_array($method, $this->cachedMethods(), true);
     }
 }

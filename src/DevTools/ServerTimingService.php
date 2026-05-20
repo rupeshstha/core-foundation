@@ -3,7 +3,6 @@
 namespace CoreFoundation\DevTools\ServerTiming;
 
 use Symfony\Component\Stopwatch\Stopwatch;
-use Symfony\Component\Stopwatch\StopwatchEvent;
 
 /**
  * ServerTimingService
@@ -77,7 +76,7 @@ final class ServerTimingService
      * Start a named measurement.
      * Safe to call multiple times — subsequent calls are ignored if already started.
      *
-     * @param  string       $name      Measurement name, used as the metric id
+     * @param  string  $name  Measurement name, used as the metric id
      * @param  string|null  $description  Human-readable description shown in DevTools
      */
     public function start(string $name, ?string $description = null): self
@@ -147,6 +146,7 @@ final class ServerTimingService
      * The callable's return value is passed through unchanged.
      *
      * @template T
+     *
      * @param  callable(): T  $callable
      * @return T
      */
@@ -197,9 +197,9 @@ final class ServerTimingService
     {
         // Re-create the Stopwatch to fully clear its internal state.
         // Calling reset() on an existing Stopwatch does not clear already-stopped events.
-        $this->completed    = [];
+        $this->completed = [];
         $this->descriptions = [];
-        $this->started      = [];
+        $this->started = [];
 
         // Stop any Stopwatch events that are still running to prevent
         // "Event not started" exceptions on the new Stopwatch instance.
@@ -225,7 +225,7 @@ final class ServerTimingService
         $parts = [];
 
         foreach ($this->completed as $name => $duration) {
-            $id   = $this->toMetricId($name);
+            $id = $this->toMetricId($name);
             $desc = $this->descriptions[$name] ?? $name;
 
             $part = "{$id};desc=\"{$desc}\"";

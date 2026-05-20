@@ -2,6 +2,7 @@
 
 namespace CoreFoundation\Traits\Devtools;
 
+use Closure;
 use CoreFoundation\Facades\ServerTiming;
 
 /**
@@ -50,10 +51,10 @@ trait MeasuresPerformance
      * The metric name is "{ClassName}.{hook}" e.g. "OrderService.place".
      * Falls through to the parent implementation unchanged if Server-Timing is disabled.
      */
-    final protected function throughPipes(string $hook, mixed $payload, \Closure $core): mixed
+    final protected function throughPipes(string $hook, mixed $payload, Closure $core): mixed
     {
-        $metricName  = class_basename(static::class) . '.' . $hook;
-        $description = static::class . '::' . $hook;
+        $metricName = class_basename(static::class).'.'.$hook;
+        $description = static::class.'::'.$hook;
 
         return ServerTiming::wrap($metricName, fn () => parent::throughPipes($hook, $payload, $core), $description);
     }
@@ -63,6 +64,7 @@ trait MeasuresPerformance
      * Convenience wrapper around ServerTiming::wrap() for use inside service methods.
      *
      * @template T
+     *
      * @param  callable(): T  $callable
      * @return T
      */

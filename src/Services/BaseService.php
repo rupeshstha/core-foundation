@@ -2,11 +2,11 @@
 
 namespace CoreFoundation\Services;
 
-use CoreFoundation\Manipulators\BaseDataObject;
 use CoreFoundation\Traits\HasEvent;
 use CoreFoundation\Traits\HasFactory;
 use CoreFoundation\Traits\HasPipeline;
 use CoreFoundation\Traits\HasCacheable;
+use CoreFoundation\Manipulators\BaseDataObject;
 use CoreFoundation\Manipulators\BaseDataObject;
 
 /**
