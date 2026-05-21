@@ -2,12 +2,12 @@
 
 namespace CoreFoundation\Services;
 
+use CoreFoundation\Manipulators\BaseDataObject;
+use CoreFoundation\Traits\HasCacheable;
+use CoreFoundation\Traits\HasDeferrable;
 use CoreFoundation\Traits\HasEvent;
 use CoreFoundation\Traits\HasFactory;
 use CoreFoundation\Traits\HasPipeline;
-use CoreFoundation\Traits\HasCacheable;
-use CoreFoundation\Manipulators\BaseDataObject;
-use CoreFoundation\Manipulators\BaseDataObject;
 
 /**
  * BaseService
@@ -46,7 +46,38 @@ use CoreFoundation\Manipulators\BaseDataObject;
  * │       }                                                                     │
  * │   }                                                                         │
  * └─────────────────────────────────────────────────────────────────────────────┘
- *
+ * ┌─────────────────────────────────────────────────────────────────────────────┐
+ * │ OPT-IN PERFORMANCE MEASUREMENT                                              │
+ * │                                                                             │
+ * │ Add measurement traits for production observability via Server-Timing       │
+ * │ headers. Measurements appear in browser DevTools Network tab.               │
+ * │                                                                             │
+ * │   use CoreFoundation\Traits\Devtools\MeasuresPerformance;                  │
+ * │   use CoreFoundation\Traits\Devtools\MeasuresCachePerformance;             │
+ * │                                                                             │
+ * │   class OrderService extends BaseService                                    │
+ * │   {                                                                         │
+ * │       use MeasuresPerformance;        // auto-measure throughPipes()       │
+ * │       use MeasuresCachePerformance;   // measure cache hit/miss timing     │
+ * │                                                                             │
+ * │       public function place(array $data): BaseDataObject                     │
+ * │       {                                                                     │
+ * │           // Automatically appears as "OrderService.place" in               │
+ * │           // Server-Timing headers with duration                            │
+ * │           return $this->throughPipes('place', $data, function ($data) {     │
+ * │               return $this->data(Order::create($data)->toArray());          │
+ * │           });                                                               │
+ * │       }                                                                     │
+ * │                                                                             │
+ * │       public function measure(string $name, callable $callback): mixed     │
+ * │       {                                                                     │
+ * │           // Manual measurement for arbitrary blocks                        │
+ * │           return $this->measure('expensive-op', $callback);                 │
+ * │       }                                                                     │
+ * │   }                                                                         │
+ * │                                                                             │
+ * │ Safe to use in production — no-ops when ServerTiming is disabled.          │
+ * └─────────────────────────────────────────────────────────────────────────────┘
  * ┌─────────────────────────────────────────────────────────────────────────────┐
  * │ PATTERN B — Orchestrating service (delegates to single-purpose actions)     │
  * │ Best for: complex domains, multiple consumers, high testability             │
@@ -116,6 +147,50 @@ use CoreFoundation\Manipulators\BaseDataObject;
  * │       (new OrderService)->resolvePreference()                               │
  * │   );                                                                        │
  * └─────────────────────────────────────────────────────────────────────────────┘
+ *  ADD to the existing BaseService use declarations:
+ *   use HasDeferrable;
+ *
+ * ADD to the existing BaseService imports:
+ *   use CoreFoundation\Traits\HasDeferrable;
+ *
+ * ─────────────────────────────────────────────────────────────────────────────
+ * DEFERRABLE PATTERN IN SERVICES
+ * ─────────────────────────────────────────────────────────────────────────────
+ *
+ * The standard write method pattern with defer:
+ *
+ *   public function place(array $validated): PlaceOrderData
+ *   {
+ *       return $this->throughPipes('place', $validated, function (array $data): PlaceOrderData {
+ *           // 1. Core write — must complete before response
+ *           $order  = Order::create($data);
+ *           $result = PlaceOrderData::fromArray($order->toArray());
+ *
+ *           // 2. Cache bust — deferred, user doesn't wait
+ *           $this->deferCacheBust(['orders']);
+ *
+ *           // 3. Events — immediate (listeners may have return-path deps)
+ *           $this->dispatch('placed', $result);
+ *
+ *           // 4. Non-critical side effects — deferred
+ *           $this->defer(fn () => AuditLog::record('order.placed', $order->id), 'order.audit');
+ *
+ *           return $result;
+ *       });
+ *   }
+ *
+ * ─────────────────────────────────────────────────────────────────────────────
+ * DECISION GUIDE: defer() vs dispatch() vs queue()
+ * ─────────────────────────────────────────────────────────────────────────────
+ *
+ *   defer()           Post-response, same process, no retry, milliseconds
+ *                     Use for: cache busting, audit logs, analytics
+ *
+ *   dispatch()        Immediate, same request, listeners block the response
+ *                     Use for: events where listeners affect the response
+ *
+ *   dispatch()->onQueue() Async, separate worker, retry, persistent
+ *                     Use for: email, heavy processing, anything critical
  */
 abstract class BaseService
 {
@@ -123,6 +198,7 @@ abstract class BaseService
     use HasEvent;
     use HasFactory;
     use HasPipeline;
+    use HasDeferrable;
 
     // =========================================================================
     // Container-aware static entry point

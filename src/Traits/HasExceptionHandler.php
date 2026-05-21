@@ -83,7 +83,7 @@ trait HasExceptionHandler
 
         report($exception);
 
-        logger()->error('Fatal exception in controller', [
+        logger()->error('Fatal exception: ' . $exception->getMessage(), [
             'exception_id' => $exceptionId,
             'exception' => get_class($exception),
             'message' => $exception->getMessage(),
@@ -96,7 +96,6 @@ trait HasExceptionHandler
 
         return response()->json([
             'message' => 'An unexpected error occurred. Please contact support with the exception ID.',
-            'errors' => [],
             'exception_id' => $exceptionId,
         ], Response::HTTP_INTERNAL_SERVER_ERROR);
     }

@@ -8,4 +8,5 @@ composer.lock
 .claude
 .DS_Store
 CLAUDE.md
+CLAUDE.local.md
 .docs

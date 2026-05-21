@@ -217,7 +217,7 @@ final class FilterApplicator
         array $allowedColumns,
         string $method,
     ): void {
-        $builder->$method(function (Builder $nested) use ($filters, $allowedColumns) {
+        $builder->{$method}(function (Builder $nested) use ($filters, $allowedColumns) {
             $this->apply($nested, $filters, $allowedColumns);
         });
     }
