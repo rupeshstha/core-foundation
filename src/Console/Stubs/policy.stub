@@ -1,0 +1,34 @@
+<?php
+
+namespace {{ namespace }}\Policies;
+
+use Illuminate\Auth\Access\Response;
+use CoreFoundation\Policies\BasePolicy;
+
+class {{ class }}Policy extends BasePolicy
+{
+    public function viewAny(mixed $user): Response|bool
+    {
+        return true;
+    }
+
+    public function view(mixed $user, mixed $model): Response|bool
+    {
+        return true;
+    }
+
+    public function create(mixed $user): Response|bool
+    {
+        return true;
+    }
+
+    public function update(mixed $user, mixed $model): Response|bool
+    {
+        return true;
+    }
+
+    public function delete(mixed $user, mixed $model): Response|bool
+    {
+        return true;
+    }
+}

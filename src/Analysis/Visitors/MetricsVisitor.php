@@ -2,11 +2,12 @@
 
 namespace CoreFoundation\Analysis\Visitors;
 
-use CoreFoundation\Analysis\MethodMetrics;
+use Closure;
 use PhpParser\Node;
 use PhpParser\Node\Stmt\Class_;
-use PhpParser\Node\Stmt\ClassMethod;
 use PhpParser\NodeVisitorAbstract;
+use PhpParser\Node\Stmt\ClassMethod;
+use CoreFoundation\Analysis\MethodMetrics;
 
 /**
  * MetricsVisitor
@@ -26,7 +27,8 @@ final class MetricsVisitor extends NodeVisitorAbstract
     private array $results = [];
 
     private ?string $currentClass = null;
-    private string  $currentFile  = '';
+
+    private string $currentFile = '';
 
     /**
      * AST node types that increment cyclomatic complexity.
@@ -54,8 +56,8 @@ final class MetricsVisitor extends NodeVisitorAbstract
 
     public function setFile(string $file): void
     {
-        $this->currentFile  = $file;
-        $this->results      = [];
+        $this->currentFile = $file;
+        $this->results = [];
         $this->currentClass = null;
     }
 
@@ -90,27 +92,27 @@ final class MetricsVisitor extends NodeVisitorAbstract
 
     private function computeMetrics(ClassMethod $method): MethodMetrics
     {
-        $loc        = $this->computeLoc($method);
-        $arguments  = count($method->params);
-        $ccn        = $this->computeCyclomaticComplexity($method);
+        $loc = $this->computeLoc($method);
+        $arguments = count($method->params);
+        $ccn = $this->computeCyclomaticComplexity($method);
         $smellScore = ($ccn + $arguments) * max($loc, 1);
 
         return new MethodMetrics(
-            class:                $this->currentClass ?? 'Unknown',
-            method:               $method->name->toString(),
-            visibility:           $this->resolveVisibility($method),
-            file:                 $this->currentFile,
-            loc:                  $loc,
-            arguments:            $arguments,
+            class: $this->currentClass ?? 'Unknown',
+            method: $method->name->toString(),
+            visibility: $this->resolveVisibility($method),
+            file: $this->currentFile,
+            loc: $loc,
+            arguments: $arguments,
             cyclomaticComplexity: $ccn,
-            smellScore:           $smellScore,
+            smellScore: $smellScore,
         );
     }
 
     private function computeLoc(ClassMethod $method): int
     {
         $start = $method->getStartLine();
-        $end   = $method->getEndLine();
+        $end = $method->getEndLine();
 
         if ($start === -1 || $end === -1) {
             return 0;
@@ -135,7 +137,7 @@ final class MetricsVisitor extends NodeVisitorAbstract
         return $complexity;
     }
 
-    private function walkNodes(array $nodes, \Closure $callback): void
+    private function walkNodes(array $nodes, Closure $callback): void
     {
         foreach ($nodes as $node) {
             if (! $node instanceof Node) {
@@ -158,10 +160,10 @@ final class MetricsVisitor extends NodeVisitorAbstract
     private function resolveVisibility(ClassMethod $method): string
     {
         return match (true) {
-            $method->isPublic()    => 'public',
+            $method->isPublic() => 'public',
             $method->isProtected() => 'protected',
-            $method->isPrivate()   => 'private',
-            default                => 'public',
+            $method->isPrivate() => 'private',
+            default => 'public',
         };
     }
 }

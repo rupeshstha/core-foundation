@@ -2,10 +2,10 @@
 
 namespace CoreFoundation\Console\Commands;
 
+use Illuminate\Console\Command;
 use CoreFoundation\Analysis\Analyser;
 use CoreFoundation\Analysis\Output\JsonRenderer;
 use CoreFoundation\Analysis\Output\TableRenderer;
-use Illuminate\Console\Command;
 
 /**
  * AnalyseCommand — php artisan core:analyse
@@ -57,39 +57,40 @@ class AnalyseCommand extends Command
 
     public function handle(Analyser $analyser): int
     {
-        $paths     = $this->resolvePaths();
+        $paths = $this->resolvePaths();
         $threshold = (int) ($this->option('threshold') ?? config('profiling.quality.smell_threshold', 30));
-        $limit     = (int) ($this->option('limit') ?? 30);
-        $sortBy    = (string) ($this->option('sort') ?? 'smell');
-        $format    = (string) ($this->option('format') ?? 'table');
+        $limit = (int) ($this->option('limit') ?? 30);
+        $sortBy = (string) ($this->option('sort') ?? 'smell');
+        $format = (string) ($this->option('format') ?? 'table');
         $visibility = $this->option('visibility') ?: null;
         $excludeConstructors = (bool) $this->option('exclude-constructors');
 
         if ($format === 'table') {
             $this->info('CoreFoundation Code Analyser');
-            $this->line('  Analysing: ' . implode(', ', array_map(
-                fn ($p) => str_replace(base_path() . '/', '', $p),
+            $this->line('  Analysing: '.implode(', ', array_map(
+                fn ($p) => str_replace(base_path().'/', '', $p),
                 $paths
             )));
             $this->newLine();
         }
 
         $metrics = $analyser->analyse(
-            paths:               $paths,
-            excludePaths:        config('profiling.quality.exclude', ['vendor', 'tests']),
-            sortBy:              $sortBy,
-            visibility:          $visibility,
+            paths: $paths,
+            excludePaths: config('profiling.quality.exclude', ['vendor', 'tests']),
+            sortBy: $sortBy,
+            visibility: $visibility,
             excludeConstructors: $excludeConstructors,
         );
 
         if (empty($metrics)) {
             $this->warn('  No PHP files found in the specified paths.');
+
             return self::FAILURE;
         }
 
         // Apply max filter
         if ($this->option('max') !== null) {
-            $max     = (int) $this->option('max');
+            $max = (int) $this->option('max');
             $metrics = array_filter($metrics, fn ($m) => $m->smellScore <= $max);
         }
 
@@ -142,19 +143,20 @@ class AnalyseCommand extends Command
         if (! file_exists($baselinePath)) {
             $this->warn("  Baseline file not found: {$baselinePath}");
             $this->line('  <fg=gray>Run without --baseline first to generate one.</>');
+
             return $metrics;
         }
 
-        $raw      = json_decode(file_get_contents($baselinePath), true) ?? [];
+        $raw = json_decode(file_get_contents($baselinePath), true) ?? [];
         $baseline = [];
 
         foreach ($raw as $entry) {
-            $key = ($entry['class'] ?? '') . '::' . ($entry['method'] ?? '');
+            $key = ($entry['class'] ?? '').'::'.($entry['method'] ?? '');
             $baseline[$key] = $entry['smell_score'] ?? 0;
         }
 
         $regressions = array_filter($metrics, function ($m) use ($baseline) {
-            $key          = $m->class . '::' . $m->method;
+            $key = $m->class.'::'.$m->method;
             $baselineScore = $baseline[$key] ?? null;
 
             // New method (not in baseline) or score increased = regression

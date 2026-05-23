@@ -2,11 +2,14 @@
 
 namespace CoreFoundation\Analysis;
 
-use CoreFoundation\Analysis\Visitors\MetricsVisitor;
+use Closure;
+use Throwable;
+use PhpParser\Parser;
 use PhpParser\NodeTraverser;
-use PhpParser\NodeVisitor\NameResolver;
 use PhpParser\ParserFactory;
 use Symfony\Component\Finder\Finder;
+use PhpParser\NodeVisitor\NameResolver;
+use CoreFoundation\Analysis\Visitors\MetricsVisitor;
 
 /**
  * Analyser
@@ -21,14 +24,16 @@ use Symfony\Component\Finder\Finder;
  */
 final class Analyser
 {
-    private readonly \PhpParser\Parser $parser;
-    private readonly MetricsVisitor    $visitor;
-    private readonly NodeTraverser     $traverser;
+    private readonly Parser $parser;
+
+    private readonly MetricsVisitor $visitor;
+
+    private readonly NodeTraverser $traverser;
 
     public function __construct()
     {
-        $this->parser   = (new ParserFactory)->createForHostVersion();
-        $this->visitor  = new MetricsVisitor;
+        $this->parser = (new ParserFactory)->createForHostVersion();
+        $this->visitor = new MetricsVisitor;
 
         // NameResolver resolves namespaced class names so $node->namespacedName is populated
         $this->traverser = new NodeTraverser(new NameResolver, $this->visitor);
@@ -37,19 +42,18 @@ final class Analyser
     /**
      * Analyse one or more directory paths and return all method metrics.
      *
-     * @param  array<string>  $paths         Absolute paths to analyse
+     * @param  array<string>  $paths  Absolute paths to analyse
      * @param  array<string>  $excludePaths  Directory names to exclude (e.g. ['vendor', 'tests'])
-     * @param  string         $sortBy        Column to sort by: smell, loc, arg, ccn
-     * @param  string|null    $visibility    Filter by visibility: public, protected, private, null (all)
-     * @param  bool           $excludeConstructors
+     * @param  string  $sortBy  Column to sort by: smell, loc, arg, ccn
+     * @param  string|null  $visibility  Filter by visibility: public, protected, private, null (all)
      * @return MethodMetrics[]
      */
     public function analyse(
-        array   $paths,
-        array   $excludePaths       = ['vendor', 'tests'],
-        string  $sortBy             = 'smell',
-        ?string $visibility         = null,
-        bool    $excludeConstructors = false,
+        array $paths,
+        array $excludePaths = ['vendor', 'tests'],
+        string $sortBy = 'smell',
+        ?string $visibility = null,
+        bool $excludeConstructors = false,
     ): array {
         $results = [];
 
@@ -100,7 +104,7 @@ final class Analyser
 
             try {
                 $code = file_get_contents($filePath);
-                $ast  = $this->parser->parse($code);
+                $ast = $this->parser->parse($code);
 
                 if ($ast === null) {
                     continue;
@@ -110,7 +114,7 @@ final class Analyser
                 $this->traverser->traverse($ast);
 
                 $results = array_merge($results, $this->visitor->getResults());
-            } catch (\Throwable) {
+            } catch (Throwable) {
                 // Skip unparseable files silently — don't halt the full analysis
                 continue;
             }
@@ -119,12 +123,12 @@ final class Analyser
         return $results;
     }
 
-    private function buildSorter(string $sortBy): \Closure
+    private function buildSorter(string $sortBy): Closure
     {
         return match ($sortBy) {
-            'loc'   => fn ($a, $b) => $b->loc <=> $a->loc,
-            'arg'   => fn ($a, $b) => $b->arguments <=> $a->arguments,
-            'ccn'   => fn ($a, $b) => $b->cyclomaticComplexity <=> $a->cyclomaticComplexity,
+            'loc' => fn ($a, $b) => $b->loc <=> $a->loc,
+            'arg' => fn ($a, $b) => $b->arguments <=> $a->arguments,
+            'ccn' => fn ($a, $b) => $b->cyclomaticComplexity <=> $a->cyclomaticComplexity,
             default => fn ($a, $b) => $b->smellScore <=> $a->smellScore, // 'smell'
         };
     }

@@ -1,0 +1,55 @@
+<?php
+
+namespace {{ namespace }}\Http\Controllers;
+
+use Illuminate\Http\JsonResponse;
+use CoreFoundation\Http\Controllers\BaseController;
+use {{ namespace }}\Repositories\{{ class }}Repository;
+use {{ namespace }}\Services\{{ class }}Service;
+use {{ namespace }}\Http\Requests\Store{{ class }}Request;
+use {{ namespace }}\Http\Requests\Update{{ class }}Request;
+use {{ namespace }}\Resources\{{ class }}Resource;
+use {{ namespace }}\Resources\{{ class }}Collection;
+
+class {{ class }}Controller extends BaseController
+{
+    public function __construct(
+        private readonly {{ class }}Service $service,
+        private readonly {{ class }}Repository $repository,
+    ) {}
+
+    public function index(): JsonResponse
+    {
+        return $this->success(
+            new {{ class }}Collection($this->repository->fetchAll()),
+        );
+    }
+
+    public function show(int $id): JsonResponse
+    {
+        return $this->success(
+            new {{ class }}Resource($this->repository->fetchById($id)),
+        );
+    }
+
+    public function store(Store{{ class }}Request $request): JsonResponse
+    {
+        $result = $this->service->create($request->validated());
+
+        return $this->created(new {{ class }}Resource($result));
+    }
+
+    public function update(Update{{ class }}Request $request, int $id): JsonResponse
+    {
+        $result = $this->service->update($request->validated(), $id);
+
+        return $this->success(new {{ class }}Resource($result));
+    }
+
+    public function destroy(int $id): JsonResponse
+    {
+        $this->service->delete($id);
+
+        return $this->noContent();
+    }
+}

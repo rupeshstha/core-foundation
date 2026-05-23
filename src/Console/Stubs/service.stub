@@ -1,0 +1,10 @@
+<?php
+
+namespace {{ namespace }}\Services;
+
+use CoreFoundation\Services\BaseService;
+
+class {{ class }}Service extends BaseService
+{
+    //
+}

@@ -1,0 +1,24 @@
+<?php
+
+namespace {{ namespace }}\Observers;
+
+use CoreFoundation\Observers\BaseObserver;
+
+/** @extends BaseObserver<\{{ namespace }}\Models\{{ class }}> */
+class {{ class }}Observer extends BaseObserver
+{
+    public function created(mixed $model): void
+    {
+        //
+    }
+
+    public function updated(mixed $model): void
+    {
+        //
+    }
+
+    public function deleted(mixed $model): void
+    {
+        //
+    }
+}

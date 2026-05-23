@@ -2,8 +2,8 @@
 
 namespace CoreFoundation\Providers;
 
-use Illuminate\Contracts\Support\DeferrableProvider;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Contracts\Support\DeferrableProvider;
 
 /**
  * DeferrableServiceProvider

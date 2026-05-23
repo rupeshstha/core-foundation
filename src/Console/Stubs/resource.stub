@@ -1,0 +1,16 @@
+<?php
+
+namespace {{ namespace }}\Resources;
+
+use Illuminate\Http\Request;
+use CoreFoundation\Transformers\BaseResource;
+
+class {{ class }}Resource extends BaseResource
+{
+    protected function fields(Request $request): array
+    {
+        return [
+            'id' => $this->resource->id,
+        ];
+    }
+}

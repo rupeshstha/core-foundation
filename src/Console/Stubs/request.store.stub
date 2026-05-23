@@ -1,0 +1,20 @@
+<?php
+
+namespace {{ namespace }}\Http\Requests;
+
+use CoreFoundation\Http\Requests\BaseRequest;
+
+class Store{{ class }}Request extends BaseRequest
+{
+    public function authorize(): bool
+    {
+        return true;
+    }
+
+    protected function storeRules(): array
+    {
+        return [
+            //
+        ];
+    }
+}

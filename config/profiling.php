@@ -78,7 +78,7 @@ return [
     */
 
     'thresholds' => [
-        'service'    => env('PROFILING_THRESHOLD_SERVICE', 100),    // ms
+        'service' => env('PROFILING_THRESHOLD_SERVICE', 100),    // ms
         'repository' => env('PROFILING_THRESHOLD_REPOSITORY', 50),  // ms
         'controller' => env('PROFILING_THRESHOLD_CONTROLLER', 500), // ms
     ],

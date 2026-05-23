@@ -49,20 +49,20 @@ final readonly class MethodMetrics
      */
     public function displayName(): string
     {
-        return class_basename($this->class) . '::' . $this->method;
+        return class_basename($this->class).'::'.$this->method;
     }
 
     public function toArray(): array
     {
         return [
-            'class'                => $this->class,
-            'method'               => $this->method,
-            'visibility'           => $this->visibility,
-            'file'                 => $this->file,
-            'loc'                  => $this->loc,
-            'arguments'            => $this->arguments,
+            'class' => $this->class,
+            'method' => $this->method,
+            'visibility' => $this->visibility,
+            'file' => $this->file,
+            'loc' => $this->loc,
+            'arguments' => $this->arguments,
             'cyclomatic_complexity' => $this->cyclomaticComplexity,
-            'smell_score'          => $this->smellScore,
+            'smell_score' => $this->smellScore,
         ];
     }
 }

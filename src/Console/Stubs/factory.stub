@@ -1,0 +1,18 @@
+<?php
+
+namespace Database\Factories;
+
+use {{ namespace }}\Models\{{ class }};
+use CoreFoundation\Testing\BaseFactory;
+
+class {{ class }}Factory extends BaseFactory
+{
+    protected $model = {{ class }}::class;
+
+    public function definition(): array
+    {
+        return [
+            //
+        ];
+    }
+}

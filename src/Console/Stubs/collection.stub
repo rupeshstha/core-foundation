@@ -1,0 +1,10 @@
+<?php
+
+namespace {{ namespace }}\Resources;
+
+use CoreFoundation\Transformers\BaseCollection;
+
+class {{ class }}Collection extends BaseCollection
+{
+    public string $collects = {{ class }}Resource::class;
+}

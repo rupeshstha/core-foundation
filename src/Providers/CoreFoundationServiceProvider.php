@@ -12,6 +12,7 @@ use Illuminate\Foundation\Exceptions\Handler;
 use CoreFoundation\Exceptions\ExceptionRenderer;
 use Composer\ClassMapGenerator\ClassMapGenerator;
 use Illuminate\Foundation\Configuration\Exceptions;
+use CoreFoundation\Console\Commands\MakeModuleCommand;
 use CoreFoundation\Facades\Services\ServerTimingFacadeService;
 
 class CoreFoundationServiceProvider extends ServiceProvider
@@ -38,6 +39,7 @@ class CoreFoundationServiceProvider extends ServiceProvider
 
             $this->commands([
                 GenerateApiDocs::class,
+                MakeModuleCommand::class,
             ]);
 
             $this->publishes([

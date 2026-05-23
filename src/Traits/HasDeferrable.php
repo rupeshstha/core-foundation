@@ -3,6 +3,7 @@
 namespace CoreFoundation\Traits;
 
 use Illuminate\Support\Defer\DeferredCallback;
+use Illuminate\Support\Defer\DeferredCallbackCollection;
 
 /**
  * HasDeferrable
@@ -103,14 +104,14 @@ trait HasDeferrable
      * Wraps Laravel's defer() helper with optional naming for cancellability.
      * Named callbacks can be cancelled before execution with cancelDefer().
      *
-     * @param  callable     $callback  The work to run post-response
-     * @param  string|null  $name      Optional name — allows cancellation via cancelDefer()
-     * @param  bool         $always    Run even on failed requests/jobs (default: false)
+     * @param  callable  $callback  The work to run post-response
+     * @param  string|null  $name  Optional name — allows cancellation via cancelDefer()
+     * @param  bool  $always  Run even on failed requests/jobs (default: false)
      */
     final protected function defer(
         callable $callback,
-        ?string  $name   = null,
-        bool     $always = false,
+        ?string $name = null,
+        bool $always = false,
     ): DeferredCallback {
         $deferred = defer($callback, $name, $always);
 
@@ -125,7 +126,7 @@ trait HasDeferrable
      */
     final protected function cancelDefer(string $name): void
     {
-        \Illuminate\Support\Defer\DeferredCallbackCollection::forget($name);
+        DeferredCallbackCollection::forget($name);
     }
 
     // =========================================================================
@@ -146,13 +147,13 @@ trait HasDeferrable
      * be busted for data that was never persisted.
      *
      * @param  array<string>  $tags  Cache tags to flush
-     * @param  string|null    $name  Override the deferred callback name (for cancellability)
+     * @param  string|null  $name  Override the deferred callback name (for cancellability)
      */
     final protected function deferCacheBust(
-        array   $tags,
+        array $tags,
         ?string $name = null,
     ): DeferredCallback {
-        $callbackName = $name ?? 'cache.bust.' . implode('.', $tags);
+        $callbackName = $name ?? 'cache.bust.'.implode('.', $tags);
 
         return $this->defer(
             callback: function () use ($tags) {
@@ -172,18 +173,18 @@ trait HasDeferrable
      * (e.g. listeners that write to a DB that the response reads), use
      * $this->dispatch() directly — not this method.
      *
-     * @param  string  $event    Event key (will be prefixed by eventPrefix if set)
-     * @param  mixed   $payload  Event payload
+     * @param  string  $event  Event key (will be prefixed by eventPrefix if set)
+     * @param  mixed  $payload  Event payload
      */
     final protected function deferDispatch(
         string $event,
-        mixed  $payload = [],
+        mixed $payload = [],
     ): DeferredCallback {
         return $this->defer(
             callback: function () use ($event, $payload) {
                 $this->dispatch($event, $payload);
             },
-            name: 'event.' . $event,
+            name: 'event.'.$event,
         );
     }
 
@@ -193,15 +194,14 @@ trait HasDeferrable
      * Use for cleanup operations that must run regardless of request success:
      * releasing locks, closing external connections, recording failed attempt logs.
      *
-     * @param  callable  $callback
-     * @param  string    $name     Required — always() callbacks should be named for clarity
+     * @param  string  $name  Required — always() callbacks should be named for clarity
      */
     final protected function deferAlways(callable $callback, string $name): DeferredCallback
     {
         return $this->defer(
             callback: $callback,
-            name:     $name,
-            always:   true,
+            name: $name,
+            always: true,
         );
     }
 }

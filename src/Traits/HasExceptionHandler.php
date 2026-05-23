@@ -83,7 +83,7 @@ trait HasExceptionHandler
 
         report($exception);
 
-        logger()->error('Fatal exception: ' . $exception->getMessage(), [
+        logger()->error('Fatal exception: '.$exception->getMessage(), [
             'exception_id' => $exceptionId,
             'exception' => get_class($exception),
             'message' => $exception->getMessage(),

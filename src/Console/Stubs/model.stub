@@ -1,0 +1,22 @@
+<?php
+
+namespace {{ namespace }}\Models;
+
+use CoreFoundation\Entities\BaseModel;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+
+class {{ class }} extends BaseModel
+{
+    use HasFactory;
+
+    protected $table = '{{ table }}';
+
+    protected $fillable = [];
+
+    protected $casts = [];
+
+    protected static function newFactory(): \Database\Factories\{{ class }}Factory
+    {
+        return \Database\Factories\{{ class }}Factory::new();
+    }
+}

@@ -1,0 +1,39 @@
+<?php
+
+namespace {{ namespace }}\Providers;
+
+use Illuminate\Support\Facades\Gate;
+use CoreFoundation\Providers\BaseExtensionServiceProvider;
+use {{ namespace }}\Models\{{ class }};
+use {{ namespace }}\Policies\{{ class }}Policy;
+
+class {{ class }}ServiceProvider extends BaseExtensionServiceProvider
+{
+    protected function registerBindings(): void
+    {
+        //
+    }
+
+    protected function extendModels(): void
+    {
+        //
+    }
+
+    protected function extendResources(): void
+    {
+        //
+    }
+
+    protected function extendServices(): void
+    {
+        //
+    }
+
+    public function boot(): void
+    {
+        parent::boot();
+
+        // Gate::policy({{ class }}::class, {{ class }}Policy::class);
+        // {{ class }}::observe({{ class }}Observer::class);
+    }
+}

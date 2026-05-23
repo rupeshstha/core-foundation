@@ -1,0 +1,11 @@
+<?php
+
+namespace {{ namespace }}\Repositories;
+
+use {{ namespace }}\Models\{{ class }};
+use CoreFoundation\Repositories\BaseRepository;
+
+class {{ class }}Repository extends BaseRepository
+{
+    protected string $model = {{ class }}::class;
+}

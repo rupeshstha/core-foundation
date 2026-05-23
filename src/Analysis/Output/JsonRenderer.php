@@ -2,8 +2,8 @@
 
 namespace CoreFoundation\Analysis\Output;
 
-use CoreFoundation\Analysis\MethodMetrics;
 use Illuminate\Console\Command;
+use CoreFoundation\Analysis\MethodMetrics;
 
 /**
  * JsonRenderer
@@ -19,7 +19,7 @@ final class JsonRenderer
     public function render(Command $command, array $metrics, int $threshold, int $limit): void
     {
         $filtered = array_filter($metrics, fn ($m) => $m->smellScore >= $threshold);
-        $limited  = array_slice(array_values($filtered), 0, $limit);
+        $limited = array_slice(array_values($filtered), 0, $limit);
 
         $output = array_map(fn (MethodMetrics $m) => $m->toArray(), $limited);
 

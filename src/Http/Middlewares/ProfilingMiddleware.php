@@ -3,9 +3,9 @@
 namespace CoreFoundation\Http\Middlewares;
 
 use Closure;
-use CoreFoundation\DevTools\ServerTiming\ServerTimingService;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
+use CoreFoundation\DevTools\ServerTiming\ServerTimingService;
 
 /**
  * ProfilingMiddleware
@@ -88,8 +88,8 @@ class ProfilingMiddleware
             $duration = $timing->all()['Controller'] ?? null;
             if ($duration !== null && $duration >= $threshold) {
                 $timing->record(
-                    name:        'slow-Controller',
-                    durationMs:  $duration,
+                    name: 'slow-Controller',
+                    durationMs: $duration,
                     description: "Slow controller: exceeded {$threshold}ms",
                 );
             }

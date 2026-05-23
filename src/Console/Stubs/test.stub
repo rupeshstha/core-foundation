@@ -1,0 +1,47 @@
+<?php
+
+use {{ namespace }}\Models\{{ class }};
+
+it('can list {{ modelPlural }}', function () {
+    $this->assertSuccessResponse(
+        $this->getJson('/api/{{ routePrefix }}'),
+    );
+});
+
+it('can show a {{ modelLower }}', function () {
+    ${{ modelVariable }} = {{ class }}::factory()->create();
+
+    $this->assertSuccessResponse(
+        $this->getJson("/api/{{ routePrefix }}/{${{ modelVariable }}->id}"),
+    );
+});
+
+it('validates required fields on create', function () {
+    $this->assertValidationError(
+        $this->postJson('/api/{{ routePrefix }}', []),
+    );
+});
+
+it('can create a {{ modelLower }}', function () {
+    $payload = {{ class }}::factory()->definition();
+
+    $this->assertCreatedResponse(
+        $this->postJson('/api/{{ routePrefix }}', $payload),
+    );
+});
+
+it('can update a {{ modelLower }}', function () {
+    ${{ modelVariable }} = {{ class }}::factory()->create();
+
+    $this->assertSuccessResponse(
+        $this->putJson("/api/{{ routePrefix }}/{${{ modelVariable }}->id}", []),
+    );
+});
+
+it('can delete a {{ modelLower }}', function () {
+    ${{ modelVariable }} = {{ class }}::factory()->create();
+
+    $this->assertNoContentResponse(
+        $this->deleteJson("/api/{{ routePrefix }}/{${{ modelVariable }}->id}"),
+    );
+});

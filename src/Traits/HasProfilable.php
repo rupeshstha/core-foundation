@@ -2,9 +2,11 @@
 
 namespace CoreFoundation\Traits;
 
+use ReflectionMethod;
 use CoreFoundation\Attributes\Profile;
 use CoreFoundation\Facades\ServerTiming;
-use ReflectionMethod;
+use CoreFoundation\Services\BaseService;
+use CoreFoundation\Repositories\BaseRepository;
 
 /**
  * HasProfilable
@@ -65,7 +67,7 @@ trait HasProfilable
      * Otherwise the method is called directly — zero overhead.
      *
      * @param  string  $method  The method name to call
-     * @param  array   $args    Arguments to pass
+     * @param  array  $args  Arguments to pass
      */
     final public function profile(string $method, array $args = []): mixed
     {
@@ -76,8 +78,8 @@ trait HasProfilable
         }
 
         // Resolve metric label and description from attribute or defaults
-        $label       = $attribute->label       ?? class_basename(static::class) . '.' . $method;
-        $description = $attribute->description ?? static::class . '::' . $method;
+        $label = $attribute->label ?? class_basename(static::class).'.'.$method;
+        $description = $attribute->description ?? static::class.'::'.$method;
 
         $result = ServerTiming::wrap($label, fn () => $this->$method(...$args), $description);
 
@@ -96,7 +98,7 @@ trait HasProfilable
      */
     private function resolveProfileAttribute(string $method): ?Profile
     {
-        $cacheKey = static::class . '::' . $method;
+        $cacheKey = static::class.'::'.$method;
 
         if (array_key_exists($cacheKey, static::$profileAttributeCache)) {
             return static::$profileAttributeCache[$cacheKey];
@@ -134,9 +136,9 @@ trait HasProfilable
 
         // Determine layer from class hierarchy
         $layer = match (true) {
-            is_a($this, \CoreFoundation\Services\BaseService::class)         => 'services',
-            is_a($this, \CoreFoundation\Repositories\BaseRepository::class)  => 'repositories',
-            default                                                           => 'services',
+            is_a($this, BaseService::class) => 'services',
+            is_a($this, BaseRepository::class) => 'repositories',
+            default => 'services',
         };
 
         return (bool) config("profiling.layers.{$layer}", true);
@@ -149,9 +151,9 @@ trait HasProfilable
     private function maybeRecordSlowWarning(string $label, string $description): void
     {
         $layer = match (true) {
-            is_a($this, \CoreFoundation\Services\BaseService::class)        => 'service',
-            is_a($this, \CoreFoundation\Repositories\BaseRepository::class) => 'repository',
-            default                                                          => 'service',
+            is_a($this, BaseService::class) => 'service',
+            is_a($this, BaseRepository::class) => 'repository',
+            default => 'service',
         };
 
         $threshold = config("profiling.thresholds.{$layer}");
@@ -164,8 +166,8 @@ trait HasProfilable
 
         if ($duration !== null && $duration >= $threshold) {
             ServerTiming::record(
-                name:        "slow-{$label}",
-                durationMs:  $duration,
+                name: "slow-{$label}",
+                durationMs: $duration,
                 description: "Slow: {$description} exceeded {$threshold}ms threshold",
             );
         }
