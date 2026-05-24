@@ -3,7 +3,7 @@ name: core-foundation-best-practices
 description: "Apply this skill whenever writing, reviewing, or refactoring code in a CoreFoundation Laravel project. Triggers for all base class usage: BaseController (response envelope, exception handling), BaseService (pipeline, events, defer), BaseRepository (filtering, caching, query contracts), BaseDataObject (DTOs, typed properties), BaseResource/BaseCollection (field pipeline, modular extension), BaseRequest (rule hierarchy, route params), BasePolicy (deny-by-default), BaseObserver (lifecycle events), BaseJob (notifications, batching), BaseApiException (three-layer exception system), BaseExtensionServiceProvider (module hooks), BaseTestCase (envelope assertions), and BaseModel (modular extensibility). Also use for module isolation decisions, the response envelope shape, and any CoreFoundation architecture question."
 license: MIT
 metadata:
-  author: rupeshstha
+  author: Rupesh Shrestha
 ---
 
 # CoreFoundation Best Practices
