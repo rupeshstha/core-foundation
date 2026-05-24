@@ -11,6 +11,7 @@ use CoreFoundation\Attributes\BatchRegistrar;
 use Illuminate\Foundation\Exceptions\Handler;
 use CoreFoundation\Exceptions\ExceptionRenderer;
 use Composer\ClassMapGenerator\ClassMapGenerator;
+use CoreFoundation\Console\Commands\GenerateApiDocs;
 use Illuminate\Foundation\Configuration\Exceptions;
 use CoreFoundation\Console\Commands\MakeModuleCommand;
 use CoreFoundation\Facades\Services\ServerTimingFacadeService;
@@ -28,10 +29,6 @@ class CoreFoundationServiceProvider extends ServiceProvider
             $this->publishes([
                 __DIR__.'/../../config/core_foundation.php' => config_path('core_foundation.php'),
             ], 'core_foundation');
-
-            $this->publishes([
-                __DIR__.'/../../config/interceptors.php' => config_path('interceptors.php'),
-            ], 'interceptors');
 
             $this->loadMigrationsFrom([
                 __DIR__.'/../database/migrations',
@@ -57,13 +54,8 @@ class CoreFoundationServiceProvider extends ServiceProvider
 
         $this->bindServices();
         $this->mergeConfigFrom(__DIR__.'/../../config/core_foundation.php', 'core_foundation');
-        $this->mergeConfigFrom(__DIR__.'/../../config/interceptors.php', 'interceptors');
 
         include_once __DIR__.'/../Helpers/helpers.php';
-
-        $this->app->singleton(ServerTimingFacadeService::class, function ($app) {
-            return new ServerTimingFacadeService(new Stopwatch);
-        });
 
         $this->batchRegistrar([
             __DIR__.'/../Repositories', // test bulk bind

@@ -24,7 +24,7 @@ Presets:
   collection, data-object, policy, provider, test
 - **Custom Feature** — service, data-object, test only
 
-To list all available commands: `{{ $assist->artisanCommand('list core') }}`
+To list all available commands: {{ $assist->artisanCommand('list core') }}
 
 ---
 
@@ -453,7 +453,7 @@ Override only the lifecycle events you need. Methods you do not override are no-
 <code-snippet name="Observer with typed PHPDoc" lang="php">
 use CoreFoundation\Observers\BaseObserver;
 
-/** @extends BaseObserver<\App\Models\Order> */
+/** @@extends BaseObserver<\App\Models\Order> */
 class OrderObserver extends BaseObserver
 {
     public function created(mixed $model): void

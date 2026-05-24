@@ -101,8 +101,8 @@ return [
     */
 
     'pagination' => [
-        'default_per_page' => env('REPOSITORY_DEFAULT_PER_PAGE', 25),
-        'max_per_page' => env('REPOSITORY_MAX_PER_PAGE', 100),
+        'default_per_page' => 25,
+        'max_per_page' => 100,
     ],
 
 ];
