@@ -13,7 +13,7 @@ class AppMonitorServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->mergeConfigFrom(
-            __DIR__.'/../../Config/server-timing.php',
+            __DIR__.'/../../config/server-timing.php',
             'server-timing',
         );
 
@@ -82,7 +82,7 @@ class AppMonitorServiceProvider extends ServiceProvider
         }
 
         $this->publishes([
-            __DIR__.'/../../Config/server-timing.php' => config_path('server-timing.php'),
+            __DIR__.'/../../config/server-timing.php' => config_path('server-timing.php'),
         ], 'core-foundation-server-timing');
     }
 }

@@ -38,7 +38,7 @@ class CoreFoundationServiceProvider extends ServiceProvider
             ]);
 
             $this->publishes([
-                __DIR__.'/../../Config/api-docs.php' => config_path('api-docs.php'),
+                __DIR__.'/../../config/api-docs.php' => config_path('api-docs.php'),
             ], 'core-foundation-api-docs');
         }
     }
