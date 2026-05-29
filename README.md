@@ -20,6 +20,7 @@ This foundation is built for developers creating modular monoliths who require s
 - **Octane Safety:** Ensures complete safety in long-running processes (Laravel Octane). Contexts are scoped and reset per request automatically.
 - **Repository Pattern & Caching:** Advanced `BaseRepository` with `FilterApplicator` and `SortApplicator`. Built-in tag-based read-through caching that automatically invalidates upon create, update, and delete actions.
 - **DTOs and Pipelines:** Standardized `BaseDataObject` (DTOs) and `HasPipeline` / `HasEvent` traits to enforce clean data transitions and logic decoupling.
+- **Built-in AI Assistant Context (Agentic Skills):** This package ships with expert-level `.md` rule files and guidelines (located in `resources/boost/skills/core-foundation-best-practices`). When used with an AI coding assistant, it instantly provides the AI with the exact architecture rules, patterns, and conventions of CoreFoundation, ensuring your AI writes compliant code from day one.
 
 ## Installation
 
