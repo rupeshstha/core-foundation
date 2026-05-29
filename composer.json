@@ -2,8 +2,15 @@
     "name": "rupeshstha/core-foundation",
     "description": "A foundational package for streamlined development, offering essential core functionality and components to accelerate project creation and enhance scalability.",
     "keywords": [
-        "rupeshstha",
-        "core-foundation"
+        "laravel",
+        "core-foundation",
+        "api",
+        "modular-monolith",
+        "starter-kit",
+        "dto",
+        "repository-pattern",
+        "octane",
+        "rupeshstha"
     ],
     "homepage": "https://github.com/rupeshstha/core-foundation",
     "license": "MIT",
