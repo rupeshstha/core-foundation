@@ -7,9 +7,19 @@
 
 [![Documentation]()](https://core-foundation-doc.rupeshstha.com.np/)
 
+`core-foundation` is an enterprise-grade Laravel package designed to accelerate the development of robust, scalable, and modular APIs. It replaces hand-rolled base classes with highly opinionated, extensible, and Octane-safe abstractions. 
 
+This foundation is built for developers creating modular monoliths who require strong conventions, structured extensibility, and built-in observability out of the box.
 
-A foundational package for streamlined development, offering essential core functionality and components to accelerate project creation and enhance scalability. This package is built keeping on mind laravel octane, It fully supports laravel octane.
+## Key Features
+
+- **Modular Extensibility:** Extend `BaseModel`, `BaseResource`, `BaseService`, and Repositories across module boundaries without modifying the source module. Uses structured Service Provider hooks (`extendModels`, `extendResources`, etc.).
+- **Consistent Response Envelopes:** Enforces a uniform API response shape (`message`, `payload`, `meta`, `errors`, `exception_id`) across all successful and failed endpoints using `BaseController`.
+- **Three-Layer Exception Handling:** Features a predictable error system with an `ExceptionRenderer` (handles framework exceptions), `BaseApiException` (domain exceptions), and `handleException()` (fatal controller safety net with UUIDs).
+- **Built-in Server-Timing Profiling:** Gain real-time performance insights directly in browser DevTools. Auto-measure pipelines, cache hit/miss rates, and query times via `ServerTimingMiddleware`.
+- **Octane Safety:** Ensures complete safety in long-running processes (Laravel Octane). Contexts are scoped and reset per request automatically.
+- **Repository Pattern & Caching:** Advanced `BaseRepository` with `FilterApplicator` and `SortApplicator`. Built-in tag-based read-through caching that automatically invalidates upon create, update, and delete actions.
+- **DTOs and Pipelines:** Standardized `BaseDataObject` (DTOs) and `HasPipeline` / `HasEvent` traits to enforce clean data transitions and logic decoupling.
 
 ## Installation
 
@@ -19,15 +29,38 @@ You can install the package via composer:
 composer require rupeshstha/core-foundation
 ```
 
+Once installed, you can publish the package configuration:
+
+```bash
+php artisan vendor:publish --tag=core_foundation
+php artisan vendor:publish --tag=core-foundation-server-timing
+```
+
+## Quick Start
+
+CoreFoundation provides interactive scaffolding to rapidly generate compliant modules.
+
+```bash
+php artisan core:make Order
+```
+This generates your Model, Factory, Repository, Service, Controller, Requests, Resource, DTO, Policy, Observer, Provider, and Feature Test – properly wired and ready to use.
+
 ## Usage
 
-This package offers to build your amazing project by uplifting heavy work. Also this package will help you to DRY your code.
-You can always check (https://core-foundation-doc.rupeshstha.com.np/) for detail information.
+For detailed usage instructions, guidelines on writing base classes, and architectural documentation, please refer to the official documentation.
+
+[Read the Full Documentation](https://core-foundation-doc.rupeshstha.com.np/)
 
 ### Testing
 
 ```bash
 composer test
+```
+
+### Code Quality Analysis
+Analyze your project's PHP method complexity and code smell scores using the built-in analyzer:
+```bash
+php artisan core:analyse
 ```
 
 ### Changelog

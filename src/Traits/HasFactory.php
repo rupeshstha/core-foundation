@@ -60,7 +60,7 @@ trait HasFactory
      * Preference registry keyed by static::class — one slot per service class.
      * Keyed by static::class (not self::class) to prevent subclass collision.
      */
-    private static array $preferences = [];
+    protected static array $preferences = [];
 
     // =========================================================================
     // Registration

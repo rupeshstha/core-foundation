@@ -59,10 +59,10 @@ abstract class BaseResource extends JsonResource
     // =========================================================================
 
     /** @var array<class-string, array<string, Closure(mixed, Request): mixed>> */
-    private static array $additionalFields = [];
+    protected static array $additionalFields = [];
 
     /** @var array<class-string, list<string>> */
-    private static array $removedFields = [];
+    protected static array $removedFields = [];
 
     /**
      * Disable Laravel's default "data" wrapping.

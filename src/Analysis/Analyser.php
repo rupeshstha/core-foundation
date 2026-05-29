@@ -77,14 +77,17 @@ final class Analyser
         // Sort
         usort($results, $this->buildSorter($sortBy));
 
-        return array_values($results);
+        return $results;
     }
 
     // =========================================================================
     // Internals
     // =========================================================================
 
-    /** @return MethodMetrics[] */
+    /**
+     * @param  array<string>  $excludePaths
+     * @return MethodMetrics[]
+     */
     private function analyseDirectory(string $path, array $excludePaths): array
     {
         $finder = (new Finder)
@@ -104,6 +107,11 @@ final class Analyser
 
             try {
                 $code = file_get_contents($filePath);
+
+                if ($code === false) {
+                    continue;
+                }
+
                 $ast = $this->parser->parse($code);
 
                 if ($ast === null) {

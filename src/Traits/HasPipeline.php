@@ -91,7 +91,7 @@ trait HasPipeline
     /**
      * Pipe registry: [ ServiceClass::class => [ hookName => [PipeClass, ...] ] ]
      */
-    private static array $pipes = [];
+    protected static array $pipes = [];
 
     // =========================================================================
     // Registration (call from ServiceProvider)
