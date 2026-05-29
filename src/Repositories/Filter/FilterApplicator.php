@@ -147,13 +147,14 @@ final class FilterApplicator
      * @param  Builder  $builder  The query to filter
      * @param  array  $filters  Raw filter params: ['__eq_name' => 'John', ...]
      * @param  array<string>  $allowedColumns  Searchable column whitelist — SQL injection guard
+     * @param  string  $boolean  Join boolean for top-level filters ('and' or 'or')
      */
-    public function apply(Builder $builder, array $filters, array $allowedColumns): Builder
+    public function apply(Builder $builder, array $filters, array $allowedColumns, string $boolean = 'and'): Builder
     {
         self::boot();
 
         foreach ($filters as $key => $value) {
-            $this->applyFilter($builder, (string) $key, $value, $allowedColumns);
+            $this->applyFilter($builder, (string) $key, $value, $allowedColumns, $boolean);
         }
 
         return $builder;
@@ -168,6 +169,7 @@ final class FilterApplicator
         string $key,
         mixed $value,
         array $allowedColumns,
+        string $boolean = 'and',
     ): void {
         $identifier = $this->extractIdentifier($key);
 
@@ -183,13 +185,13 @@ final class FilterApplicator
 
         // Nested OR/AND — recurse without column resolution
         if ($identifier === '__or_' && is_array($value)) {
-            $this->applyNestedCondition($builder, $value, $allowedColumns, 'orWhere');
+            $this->applyNestedCondition($builder, $value, $allowedColumns, 'or');
 
             return;
         }
 
         if ($identifier === '__and_' && is_array($value)) {
-            $this->applyNestedCondition($builder, $value, $allowedColumns, 'where');
+            $this->applyNestedCondition($builder, $value, $allowedColumns, 'and');
 
             return;
         }
@@ -208,18 +210,20 @@ final class FilterApplicator
             return;
         }
 
-        $operator->apply($builder, $column, $value);
+        // We wrap the operator application in a where() call to ensure the correct boolean joining
+        $builder->where(fn ($q) => $operator->apply($q, $column, $value), null, null, $boolean);
     }
 
     private function applyNestedCondition(
         Builder $builder,
         array $filters,
         array $allowedColumns,
-        string $method,
+        string $boolean,
     ): void {
-        $builder->{$method}(function (Builder $nested) use ($filters, $allowedColumns) {
-            $this->apply($nested, $filters, $allowedColumns);
-        });
+        $builder->where(function (Builder $nested) use ($filters, $allowedColumns, $boolean) {
+            // For nested conditions, we join the children with the group's boolean
+            $this->apply($nested, $filters, $allowedColumns, $boolean);
+        }, null, null, $boolean);
     }
 
     /**

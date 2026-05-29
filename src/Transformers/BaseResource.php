@@ -54,12 +54,6 @@ use Illuminate\Http\Resources\Json\JsonResource;
  */
 abstract class BaseResource extends JsonResource
 {
-    /**
-     * Disable Laravel's default "data" wrapping.
-     * BaseController::successResponse() owns the response envelope.
-     */
-    public static ?string $wrap = null;
-
     // =========================================================================
     // Static registries — modular extensibility
     // =========================================================================
@@ -69,6 +63,12 @@ abstract class BaseResource extends JsonResource
 
     /** @var array<class-string, list<string>> */
     private static array $removedFields = [];
+
+    /**
+     * Disable Laravel's default "data" wrapping.
+     * BaseController::successResponse() owns the response envelope.
+     */
+    public static $wrap = null;
 
     /**
      * Add or override a response field from a ServiceProvider.

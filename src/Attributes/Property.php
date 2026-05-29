@@ -1,6 +1,6 @@
 <?php
 
-namespace CoreFoundation\DataObjects\Attributes;
+namespace CoreFoundation\Attributes;
 
 use Attribute;
 

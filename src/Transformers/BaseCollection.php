@@ -15,7 +15,7 @@ use Illuminate\Http\Resources\Json\ResourceCollection;
  *
  *   final class UserCollection extends BaseCollection
  *   {
- *       public string $collects = UserResource::class;
+ *       public $collects = UserResource::class;
  *   }
  *
  * In a controller — non-paginated:
@@ -44,7 +44,7 @@ abstract class BaseCollection extends ResourceCollection
      * Disable Laravel's default "data" wrapping.
      * BaseController::successResponse() / paginatedResponse() owns the response envelope.
      */
-    public static ?string $wrap = null;
+    public static $wrap = null;
 
     /**
      * Enforce explicit $collects declaration — no naming-convention magic.
