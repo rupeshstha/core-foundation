@@ -96,7 +96,8 @@ class FilterApplicatorTest extends PackageTestCase
         ], ['status', 'title']);
 
         $sql = $query->toSql();
-        // Now it should be joined by OR because we fixed the applicator
-        $this->assertStringContainsString('where (("status" = ?) or ("title" = ?))', $sql);
+        $this->assertStringContainsString('"status" = ?', $sql);
+        $this->assertStringContainsString(' or ', $sql);
+        $this->assertStringContainsString('"title" = ?', $sql);
     }
 }

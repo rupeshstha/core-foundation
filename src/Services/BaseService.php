@@ -5,7 +5,7 @@ namespace CoreFoundation\Services;
 use CoreFoundation\Traits\HasEvent;
 use CoreFoundation\Traits\HasFactory;
 use CoreFoundation\Traits\HasPipeline;
-use CoreFoundation\Traits\HasCacheable;
+use CoreFoundation\Traits\HasServiceCache;
 use CoreFoundation\Traits\HasDeferrable;
 use CoreFoundation\Manipulators\BaseDataObject;
 
@@ -20,7 +20,7 @@ use CoreFoundation\Manipulators\BaseDataObject;
  * │                                                                             │
  * │  HasEvent     → namespaced pub/sub event dispatch (fire-and-forget)         │
  * │  HasPipeline  → before/after execution hooks via Laravel's Pipeline         │
- * │  HasCacheable → tag-based read-through cache with atomic bust               │
+ * │  HasServiceCache → dependency-aware cache (wraps HasCacheable)              │
  * │  HasFactory   → conditional class preference (Magento-style swap)           │
  * └─────────────────────────────────────────────────────────────────────────────┘
  *
@@ -194,7 +194,7 @@ use CoreFoundation\Manipulators\BaseDataObject;
  */
 abstract class BaseService
 {
-    use HasCacheable;
+    use HasServiceCache;
     use HasDeferrable;
     use HasEvent;
     use HasFactory;

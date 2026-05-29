@@ -84,11 +84,18 @@ trait ModelScopeable
 
     /**
      * Remove a previously added external scope by identifier.
-     * Wraps withoutGlobalScope() for a consistent API surface.
+     * Clears from both the additional-scopes registry and Eloquent's internal
+     * globalScopes registry so the scope no longer applies to any future query.
      */
     public static function removeScope(string $identifier): void
     {
         unset(static::$additionalScopes[static::class][$identifier]);
+
+        // Also remove from Eloquent's internal static scope registry
+        // so existing queries are not affected by stale scope entries.
+        if (isset(static::$globalScopes[static::class][$identifier])) {
+            unset(static::$globalScopes[static::class][$identifier]);
+        }
     }
 
     /**

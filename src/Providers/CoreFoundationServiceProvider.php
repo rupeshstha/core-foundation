@@ -23,6 +23,8 @@ class CoreFoundationServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        $this->registerExceptionHandling();
+
         if ($this->app->runningInConsole()) {
             $this->publishes([
                 __DIR__.'/../../config/core_foundation.php' => config_path('core_foundation.php'),
@@ -92,26 +94,24 @@ class CoreFoundationServiceProvider extends ServiceProvider
     /**
      * Wire ExceptionRenderer into Laravel's withExceptions() pipeline.
      *
-     * Uses app()->withExceptions() which is the correct way to register
-     * exception handlers from a ServiceProvider in Laravel 11+.
-     *
-     * This is safe to call multiple times — Laravel deduplicates renderers
-     * internally based on the closure's type-hints.
+     * Two-phase registration:
+     *  1. If the Handler is already resolved (common in tests/Octane), wrap
+     *     it directly in an Exceptions instance and register immediately.
+     *  2. Also register via afterResolving so it fires for any future
+     *     Handler resolution (standard app boot sequence).
      */
     private function registerExceptionHandling(): void
     {
-        $this->app->make(Handler::class)
-            ->renderable(function (Throwable $e, $request) {
-                // Delegate entirely to ExceptionRenderer — it handles
-                // all type-specific rendering internally.
-                return null;
-            });
-
-        // The correct Laravel 11+ way to register from a ServiceProvider
-        if (method_exists($this->app, 'withExceptions')) {
-            $this->app->withExceptions(
-                fn (Exceptions $exceptions) => ExceptionRenderer::register($exceptions)
-            );
+        // Phase 1 — Handler already resolved (tests, Octane, re-boots)
+        if ($this->app->resolved(Handler::class)) {
+            $handler = $this->app->make(Handler::class);
+            ExceptionRenderer::register(new Exceptions($handler));
         }
+
+        // Phase 2 — Register for future resolution (normal app bootstrap)
+        $this->app->afterResolving(
+            Handler::class,
+            fn (Handler $handler) => ExceptionRenderer::register(new Exceptions($handler))
+        );
     }
 }

@@ -9,7 +9,7 @@ class IsNotNullOperator implements FilterOperator
 {
     public function identifier(): string
     {
-        return '__lt_';
+        return '__nnull_';
     }
 
     public function apply(Builder $builder, string $column, mixed $value): void

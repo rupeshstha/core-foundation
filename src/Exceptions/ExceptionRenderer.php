@@ -84,25 +84,21 @@ class ExceptionRenderer
             ], Response::HTTP_UNPROCESSABLE_ENTITY);
         });
 
-        // ── ModelNotFoundException ─────────────────────────────────────────────
-        $exceptions->render(function (ModelNotFoundException $e, Request $request): ?JsonResponse {
-            if (! $request->expectsJson()) {
-                return null;
-            }
-
-            return response()->json([
-                'message' => 'Record not found.',
-            ], Response::HTTP_NOT_FOUND);
-        });
-
-        // ── NotFoundHttpException ──────────────────────────────────────────────
+        // ── NotFoundHttpException (covers ModelNotFoundException too) ──────────
+        // Laravel's prepareException() converts ModelNotFoundException to
+        // NotFoundHttpException before renderers run — check getPrevious() to
+        // distinguish an Eloquent model miss from a generic 404.
         $exceptions->render(function (NotFoundHttpException $e, Request $request): ?JsonResponse {
             if (! $request->expectsJson()) {
                 return null;
             }
 
+            $message = $e->getPrevious() instanceof ModelNotFoundException
+                ? 'Record not found.'
+                : 'Not found.';
+
             return response()->json([
-                'message' => 'Not found.',
+                'message' => $message,
             ], Response::HTTP_NOT_FOUND);
         });
 
