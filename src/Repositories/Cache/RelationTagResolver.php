@@ -12,42 +12,42 @@ use Illuminate\Database\Eloquent\Relations\Relation;
 /**
  * RelationTagResolver
  *
- * Discovers all Eloquent relation table names for a model via Reflection.
- * Used to build relation-aware cache tags so that when a related model
- * changes, the parent's cache entries are also invalidated.
+ * Discovers related model table names for building relation-aware cache tags.
+ *
+ * When an Order caches its result with relation tags for 'products' and 'users',
+ * any change to a Product or User model automatically busts the Order's cache.
+ *
+ * Relation tags are intentionally NOT scope-prefixed. A product update in any
+ * tenant may affect a cached order in any tenant that includes that relation.
+ * Scope isolation is applied at the primary (listing/record) tag level only.
  *
  * ┌─────────────────────────────────────────────────────────────────────────────┐
  * │ OCTANE SAFETY                                                               │
  * │                                                                             │
- * │ The resolved relation registry ($resolved) is a static property.           │
- * │ In production, resolved relations are cached across requests — correct,     │
- * │ because model relation definitions don't change at runtime.                 │
- * │                                                                             │
- * │ In non-production, the registry is cleared on each resolution so new       │
- * │ relations added during development are always picked up.                   │
- * │                                                                             │
- * │ Unlike the original RepositoryCacheResolver, this class does NOT use       │
- * │ debug_backtrace() and does NOT invoke relation closures with side effects.  │
+ * │ $resolved is static — safe because relation DEFINITIONS are immutable.      │
+ * │ In development mode the registry is cleared each call to pick up changes.  │
  * └─────────────────────────────────────────────────────────────────────────────┘
  */
 final class RelationTagResolver
 {
     /**
      * Resolved relation table names per model class.
-     * Keyed by model FQCN — safe for static use since relation definitions
-     * are constant for the lifetime of a process.
+     * Keyed by model FQCN — safe for static use since definitions are constant.
      *
      * @var array<class-string, array<string>>
      */
     private static array $resolved = [];
 
     /**
-     * Resolve cache tags for a model — model table + all related table names.
+     * Resolve relation-based cache tags for this model.
      *
-     * @param  array<string>  $requestedRelations  Relations requested in this query
+     * Returns only the RELATION tags — not the primary model tag.
+     * The primary (listing / record) tag is built by RepositoryCache.
+     *
+     * @param  array<string>  $requestedRelations  Relations eager-loaded in this query
      * @return array<string>
      */
-    public function resolve(BaseModel $model, array $requestedRelations = []): array
+    public function resolveRelationTags(BaseModel $model, array $requestedRelations = []): array
     {
         $modelClass = $model::class;
 
@@ -55,13 +55,7 @@ final class RelationTagResolver
             self::$resolved[$modelClass] = $this->discoverRelationTables($model);
         }
 
-        // Base tag: the model's own table
-        $tags = [$model->getTable()];
-
-        // Add all discovered relation tables — so writes to related models bust this cache
-        $tags = array_merge($tags, self::$resolved[$modelClass]);
-
-        // Add tags from explicitly requested relations (handles dot-notation)
+        $tags = self::$resolved[$modelClass];
         $tags = array_merge($tags, $this->resolveRequestedRelationTags($requestedRelations));
 
         return array_unique($tags);
@@ -69,7 +63,7 @@ final class RelationTagResolver
 
     /**
      * Clear the resolved cache for a model class.
-     * Call when a new relation is dynamically added (e.g. in tests).
+     * Call in tests when relations are added dynamically.
      */
     public static function clear(string $modelClass): void
     {
@@ -82,20 +76,18 @@ final class RelationTagResolver
 
     /**
      * Discover relation table names via Reflection.
-     * Inspects public no-parameter methods that return Eloquent Relation instances.
-     * Also inspects externally bound relations registered via ModelRelatable::addRelation().
+     *
+     * Inspects public, no-parameter, non-magic methods that return Eloquent Relation
+     * instances. Also inspects externally bound relations from ModelRelatable::addRelation().
      *
      * @return array<string>
      */
     private function discoverRelationTables(BaseModel $model): array
     {
-        $tables = [];
-
-        // Inspect native model relation methods
+        $tables     = [];
         $reflection = new ReflectionClass($model);
 
         foreach ($reflection->getMethods(ReflectionMethod::IS_PUBLIC) as $method) {
-            // Skip: inherited methods, methods with parameters, magic methods
             if (
                 $method->class !== $model::class
                 || $method->getNumberOfParameters() > 0
@@ -111,12 +103,11 @@ final class RelationTagResolver
                     $tables[] = $result->getRelated()->getTable();
                 }
             } catch (Throwable) {
-                // Method threw — not a relation method, skip silently
+                // Not a relation method — skip
             }
         }
 
-        // Inspect externally bound relations (registered via ModelRelatable::addRelation())
-        foreach ($model::getBindRelations() as $name => $closure) {
+        foreach ($model::getBindRelations() as $closure) {
             try {
                 $result = $closure->call($model, $model);
 
@@ -124,7 +115,7 @@ final class RelationTagResolver
                     $tables[] = $result->getRelated()->getTable();
                 }
             } catch (Throwable) {
-                // Closure threw — skip silently
+                // Skip
             }
         }
 
@@ -133,7 +124,7 @@ final class RelationTagResolver
 
     /**
      * Convert dot-notation relation names to table name tags.
-     * 'user.profile' → ['user', 'profile'] (singular snake_case)
+     * 'order.items' → ['order', 'item']
      *
      * @param  array<string>  $relations
      * @return array<string>
@@ -143,12 +134,8 @@ final class RelationTagResolver
         $tags = [];
 
         foreach ($relations as $relation) {
-            if (is_string($relation)) {
-                foreach (explode('.', $relation) as $segment) {
-                    $tags[] = Str::snake(
-                        Str::singular($segment)
-                    );
-                }
+            foreach (explode('.', $relation) as $segment) {
+                $tags[] = Str::snake(Str::singular($segment));
             }
         }
 

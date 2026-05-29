@@ -4,28 +4,40 @@ namespace CoreFoundation\Repositories\Cache;
 
 use Closure;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Cache;
 use CoreFoundation\Entities\BaseModel;
 use CoreFoundation\Traits\HasCacheable;
 
 /**
  * RepositoryCache
  *
- * Replaces RepositoryCacheManager + RepositoryCacheResolver with a single
- * cohesive class. Composes CacheKeyBuilder and RelationTagResolver.
+ * Tag-based, scope-aware cache manager for repositories.
  *
- * Strategy:
- *   READ   → tag-based cache (model table + relation tables as tags)
- *   CREATE → tag flush (all queries for this model invalidated)
- *   DELETE → tag flush (all queries for this model invalidated)
- *   UPDATE → granular flush (only cache entries tagged with this record's ID)
+ * ┌─────────────────────────────────────────────────────────────────────────────┐
+ * │ TWO-TIER TAG STRATEGY                                                       │
+ * │                                                                             │
+ * │ LISTING tier  — fetchAll, paginated, search results                         │
+ * │   Tag: {scope}:{table}:listing    e.g. tenant:5:products:listing            │
+ * │   Flushed when: any record in this model+scope is created/updated/deleted   │
+ * │                                                                             │
+ * │ RECORD tier   — fetchById, single-record results                            │
+ * │   Tag: {scope}:{table}:record:{id}   e.g. tenant:5:products:record:123     │
+ * │   Flushed when: THIS specific record is updated or deleted                  │
+ * │   Product 456 cache remains warm when product 123 is updated.              │
+ * │                                                                             │
+ * │ SCOPE isolation                                                             │
+ * │   100 tenants × 10,000 products per tenant.                                │
+ * │   Update product 123 in tenant 5:                                           │
+ * │     Flushes:  tenant:5:products:record:123                                  │
+ * │               tenant:5:products:listing                                     │
+ * │     Keeps:    tenant:1:products:*   tenant:2:products:*   ... (99 tenants) │
+ * │               tenant:5:products:record:124  (9,999 other records)           │
+ * └─────────────────────────────────────────────────────────────────────────────┘
  *
  * ┌─────────────────────────────────────────────────────────────────────────────┐
  * │ OCTANE SAFETY                                                               │
  * │                                                                             │
- * │ This class is scoped (re-created per request) via ServiceProvider.          │
- * │ No static mutable state — only RelationTagResolver uses static cache,       │
- * │ which is safe because relation definitions are immutable at runtime.        │
+ * │ This class is registered as scoped() — re-created per Octane request.      │
+ * │ No static mutable state.                                                    │
  * └─────────────────────────────────────────────────────────────────────────────┘
  */
 final class RepositoryCache
@@ -42,19 +54,15 @@ final class RepositoryCache
     }
 
     // =========================================================================
-    // Read — cache-first strategy
+    // Read — cache-first
     // =========================================================================
 
     /**
-     * Cache the result of a repository read query.
+     * Cache a repository query result using scope-aware, tier-targeted tags.
      *
-     * When enabled, results are stored forever under relation-aware tags.
-     * When disabled, the callback is executed directly.
-     *
-     * @param  string  $method  Repository method name (for key building)
-     * @param  array  $extra  Additional key discriminators
-     * @param  bool  $shouldCache  Per-method override (from $cacheAllowedMethods)
-     * @param  Closure  $callback  The actual database query
+     * @param  QueryType  $queryType  Listing or Record — which tag tier to apply
+     * @param  int|string|null  $recordId  Required when $queryType is Record
+     * @param  CacheScope|null  $scope  Isolation boundary; null = global (no isolation)
      */
     public function remember(
         BaseModel $model,
@@ -65,59 +73,99 @@ final class RepositoryCache
         array $extra,
         bool $shouldCache,
         Closure $callback,
+        QueryType $queryType = QueryType::Listing,
+        int|string|null $recordId = null,
+        ?CacheScope $scope = null,
     ): mixed {
         if (! $this->enabled || ! $shouldCache) {
             return $callback();
         }
 
-        $key = $this->keyBuilder->build($model, $method, $filters, $relations, $columns, $extra);
-        $tags = $this->tagResolver->resolve($model, $relations);
+        $key  = $this->keyBuilder->build($model, $method, $filters, $relations, $columns, $extra, $scope);
+        $tags = $this->buildTags($model, $relations, $queryType, $recordId, $scope);
 
         return $this->cacheForever($tags, $key, $callback);
     }
 
     // =========================================================================
-    // Write invalidation
+    // Invalidation
     // =========================================================================
 
     /**
-     * Invalidate ALL cache entries for this model.
-     * Call on create and delete.
+     * Flush the LISTING cache for this model within the scope.
+     *
+     * Call on: create, delete.
+     * Does NOT flush record-tier caches — those stay warm.
+     *
+     * Example (scoped):   flushes tenant:5:products:listing
+     * Example (unscoped): flushes products:listing
      */
-    public function flushModel(BaseModel $model): void
+    public function flushModel(BaseModel $model, ?CacheScope $scope = null): void
     {
-        $tags = [$model->getTable()];
+        $tag = $this->keyBuilder->buildListingTag($model, $scope);
 
-        $this->bustCache($tags);
+        $this->bustCache([$tag]);
 
-        Log::info('Cache invalidated', [
+        Log::info('[Cache] Listing flushed', [
             'model' => $model::class,
-            'table' => $model->getTable(),
-            'scope' => 'full',
+            'scope' => $scope?->prefix() ?? 'global',
+            'tag'   => $tag,
         ]);
     }
 
     /**
-     * Invalidate only cache entries related to a specific record.
-     * Call on update — avoids busting queries for other records.
+     * Flush the RECORD cache and LISTING cache for a specific record.
+     *
+     * Call on: update.
+     *
+     * Why both tiers?
+     *   Record tag  → busts fetchById(123) for this tenant
+     *   Listing tag → busts fetchAll results that may include the stale record
+     *
+     * What stays warm after flushing record 123 in tenant 5:
+     *   ✓  tenant:5:products:record:456   (other records, same tenant)
+     *   ✓  tenant:1:products:record:123   (same record ID, different tenant)
+     *   ✓  tenant:1:products:listing      (other tenant's listings)
      */
-    public function flushRecord(BaseModel $model, int|string $id): void
+    public function flushRecord(BaseModel $model, int|string $id, ?CacheScope $scope = null): void
     {
-        $recordKey = $this->keyBuilder->buildForRecord($model, $id);
-        $tags = [$model->getTable()];
+        $recordTag  = $this->keyBuilder->buildRecordTag($model, $id, $scope);
+        $listingTag = $this->keyBuilder->buildListingTag($model, $scope);
 
-        // Forget the specific record key
-        Cache::tags($tags)->forget($recordKey);
+        $this->bustCache([$recordTag]);
+        $this->bustCache([$listingTag]);
 
-        // Also flush fetchById cache for this ID — always cached per record
-        $fetchByIdKey = $this->keyBuilder->build($model, 'fetchById', extra: ['id' => $id]);
-        Cache::tags($tags)->forget($fetchByIdKey);
+        Log::info('[Cache] Record flushed', [
+            'model'       => $model::class,
+            'id'          => $id,
+            'scope'       => $scope?->prefix() ?? 'global',
+            'record_tag'  => $recordTag,
+            'listing_tag' => $listingTag,
+        ]);
+    }
 
-        Log::info('Cache invalidated', [
+    /**
+     * Flush ALL cache for this model within scope — all tiers, all records.
+     *
+     * Use for: bulk imports, mass updates, operations that bypass observers.
+     * More destructive than flushRecord — prefer that for single writes.
+     *
+     * With scope:    only flushes within that scope
+     * Without scope: flushes globally across all scopes for this model
+     */
+    public function flushAll(BaseModel $model, ?CacheScope $scope = null): void
+    {
+        // The base model tag covers all sub-tags (listing, record:*) for this scope
+        $baseTag = $scope
+            ? sprintf('%s:%s', $scope->prefix(), $model->getTable())
+            : $model->getTable();
+
+        $this->bustCache([$baseTag]);
+
+        Log::info('[Cache] Full flush', [
             'model' => $model::class,
-            'table' => $model->getTable(),
-            'id' => $id,
-            'scope' => 'record',
+            'scope' => $scope?->prefix() ?? 'global',
+            'tag'   => $baseTag,
         ]);
     }
 
@@ -125,10 +173,6 @@ final class RepositoryCache
     // Control
     // =========================================================================
 
-    /**
-     * Disable caching for this request/instance.
-     * Useful in tests or when cache bypassing is needed.
-     */
     public function disable(): self
     {
         $this->enabled = false;
@@ -146,5 +190,42 @@ final class RepositoryCache
     public function isEnabled(): bool
     {
         return $this->enabled;
+    }
+
+    // =========================================================================
+    // Internals
+    // =========================================================================
+
+    /**
+     * Build the tag set for a cached query.
+     *
+     * The primary tag determines which flush operation invalidates this entry.
+     * Relation tags are added so that writes to related models also bust this cache.
+     * Relation tags are intentionally NOT scoped — a relation table change is global.
+     *
+     * @return non-empty-array<string>
+     */
+    private function buildTags(
+        BaseModel $model,
+        array $relations,
+        QueryType $queryType,
+        int|string|null $recordId,
+        ?CacheScope $scope,
+    ): array {
+        // Base tag: {scope}:{table} — covers all tiers (listing, record:*)
+        $baseTag = $scope
+            ? sprintf('%s:%s', $scope->prefix(), $model->getTable())
+            : $model->getTable();
+
+        $primaryTag = match ($queryType) {
+            QueryType::Listing => $this->keyBuilder->buildListingTag($model, $scope),
+            QueryType::Record  => $recordId !== null
+                ? $this->keyBuilder->buildRecordTag($model, $recordId, $scope)
+                : $this->keyBuilder->buildListingTag($model, $scope),
+        };
+
+        $relationTags = $this->tagResolver->resolveRelationTags($model, $relations);
+
+        return array_unique([$baseTag, $primaryTag, ...$relationTags]);
     }
 }

@@ -96,6 +96,7 @@ use Illuminate\Support\Facades\Context;
  * │           Use for: tokens, passwords, PII, internal flags                   │
  * └─────────────────────────────────────────────────────────────────────────────┘
  */
+/** @phpstan-consistent-constructor */
 abstract class ApplicationState
 {
     // =========================================================================
@@ -119,13 +120,20 @@ abstract class ApplicationState
     // =========================================================================
 
     /**
+     * No-arg constructor — enforces that all subclasses remain constructable
+     * without arguments, making new static() safe from the make() factory.
+     * Subclasses must not add required constructor parameters.
+     */
+    public function __construct() {}
+
+    /**
      * Fluent entry point — avoids 'new' at the call site.
      *
      *   OrderState::make()->setOrderId(42)->setStatus('pending');
      */
     final public static function make(): static
     {
-        return new static;
+        return new static();
     }
 
     // =========================================================================

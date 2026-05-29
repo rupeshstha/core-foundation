@@ -9,6 +9,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use CoreFoundation\Repositories\Sort\SortApplicator;
+use CoreFoundation\Repositories\Cache\CacheScope;
+use CoreFoundation\Repositories\Cache\QueryType;
 use CoreFoundation\Repositories\Cache\RepositoryCache;
 use CoreFoundation\Repositories\Filter\FilterApplicator;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -130,6 +132,27 @@ abstract class BaseRepository implements RepositoryContract
         return ['fetchAll', 'fetchById'];
     }
 
+    /**
+     * Cache isolation scope for this repository.
+     *
+     * Return a CacheScope to isolate all cache operations within a boundary
+     * (e.g. tenant). Null = global cache with no isolation (default).
+     *
+     * Override in concrete repositories to enable tenant-aware caching:
+     *
+     *   protected function cacheScope(): CacheScope
+     *   {
+     *       return new TenantCacheScope($this->resolveTenantId());
+     *   }
+     *
+     * The scope is used for both read (remember) and write (flush) operations.
+     * For writes via the observer, scope is derived from the model's attributes.
+     */
+    protected function cacheScope(): ?CacheScope
+    {
+        return null;
+    }
+
     // =========================================================================
     // RepositoryContract — Read
     // =========================================================================
@@ -151,6 +174,8 @@ abstract class BaseRepository implements RepositoryContract
             columns: $columns,
             extra: ['paginate' => $paginate, 'per_page' => $perPage],
             shouldCache: $this->isCached(__FUNCTION__),
+            queryType: QueryType::Listing,
+            scope: $this->cacheScope(),
             callback: function () use ($filters, $relations, $columns, $paginate, $perPage) {
                 $query = $this->model::select($columns);
 
@@ -187,6 +212,9 @@ abstract class BaseRepository implements RepositoryContract
             columns: $columns,
             extra: ['id' => $id],
             shouldCache: $this->isCached(__FUNCTION__),
+            queryType: QueryType::Record,
+            recordId: $id,
+            scope: $this->cacheScope(),
             callback: function () use ($id, $relations, $columns) {
                 $query = $this->model::select($columns);
 
@@ -295,7 +323,16 @@ abstract class BaseRepository implements RepositoryContract
      */
     final protected function flushCache(): void
     {
-        $this->cache->flushModel($this->model);
+        $this->cache->flushModel($this->model, $this->cacheScope());
+    }
+
+    /**
+     * Flush ALL cache for this model within scope — all tiers, all records.
+     * Use after bulk operations that bypass individual model events.
+     */
+    final protected function flushAllCache(): void
+    {
+        $this->cache->flushAll($this->model, $this->cacheScope());
     }
 
     // =========================================================================
