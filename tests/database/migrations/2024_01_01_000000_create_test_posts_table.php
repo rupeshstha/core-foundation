@@ -15,6 +15,7 @@ return new class extends Migration
             $table->string('status')->nullable();
             $table->float('score')->nullable();
             $table->integer('tenant_id')->nullable();
+            $table->integer('version')->nullable();
             $table->timestamp('deleted_at')->nullable();
             $table->timestamps();
         });

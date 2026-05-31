@@ -5,6 +5,7 @@ namespace CoreFoundation\Tests\Unit\Repositories;
 use CoreFoundation\Tests\PackageTestCase;
 use CoreFoundation\Repositories\BaseRepository;
 use CoreFoundation\Tests\Stubs\Models\TestPost;
+use CoreFoundation\Exceptions\StaleDataException;
 
 class TestPostRepository extends BaseRepository
 {
@@ -59,6 +60,20 @@ class BaseRepositoryTest extends PackageTestCase
         $this->assertEquals($post->id, $result->id);
     }
 
+    public function test_it_applies_pessimistic_lock_for_update(): void
+    {
+        $post = TestPost::create(['title' => 'Post 1']);
+
+        $result = $this->repository->lockForUpdate()->fetchById($post->id);
+
+        $this->assertNotNull($result);
+        
+        $reflection = new \ReflectionClass($this->repository);
+        $property = $reflection->getProperty('lockMode');
+        $property->setAccessible(true);
+        $this->assertFalse($property->getValue($this->repository));
+    }
+
     public function test_it_can_create_model(): void
     {
         $post = $this->repository->create(['title' => 'New Post']);
@@ -75,6 +90,38 @@ class BaseRepositoryTest extends PackageTestCase
 
         $this->assertEquals('New Title', $updated->title);
         $this->assertDatabaseHas('test_posts', ['title' => 'New Title']);
+    }
+
+    public function test_update_atomic_succeeds_on_matching_conditions(): void
+    {
+        $post = TestPost::create(['title' => 'Atomic', 'status' => 'pending']);
+
+        $updated = $this->repository->updateAtomic($post->id, ['title' => 'Changed'], ['status' => 'pending']);
+
+        $this->assertEquals('Changed', $updated->title);
+        $this->assertDatabaseHas('test_posts', ['title' => 'Changed']);
+    }
+
+    public function test_update_atomic_fails_on_condition_mismatch(): void
+    {
+        $post = TestPost::create(['title' => 'Atomic', 'status' => 'published']);
+
+        $this->expectException(StaleDataException::class);
+        // Try to update assuming it's still 'pending'
+        $this->repository->updateAtomic($post->id, ['title' => 'Changed'], ['status' => 'pending']);
+    }
+
+    public function test_update_atomic_can_implement_version_locking_opt_in(): void
+    {
+        $post = TestPost::create(['title' => 'Versioned', 'version' => 1]);
+
+        $updated = $this->repository->updateAtomic(
+            id: $post->id, 
+            attributes: ['title' => 'New', 'version' => 2], 
+            conditions: ['version' => 1]
+        );
+
+        $this->assertEquals(2, $updated->version);
     }
 
     public function test_it_can_delete_model(): void

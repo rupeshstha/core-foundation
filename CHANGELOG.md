@@ -2,6 +2,13 @@
 
 All notable changes to `core-foundation` will be documented in this file
 
+## 1.1.0 - 2026-05-30
+
+- Added Pessimistic Locking to `BaseRepository` (`lockForUpdate()`, `sharedLock()`).
+- Introduced Atomic Updates (Compare-and-Swap) to `BaseRepository` via `updateAtomic()`.
+- Added `StaleDataException` for handling optimistic concurrency conflicts (HTTP 409).
+- Improved `BaseRepository` read queries to automatically bypass cache when a lock is applied.
+
 ## 1.0.0 - 2026-05-29
 
 - Initial open source release of `core-foundation`.
