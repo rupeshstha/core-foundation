@@ -14,6 +14,7 @@ This foundation is built for developers creating modular monoliths who require s
 ## Key Features
 
 - **Modular Extensibility:** Extend `BaseModel`, `BaseResource`, `BaseService`, and Repositories across module boundaries without modifying the source module. Uses structured Service Provider hooks (`extendModels`, `extendResources`, etc.).
+- **Application Context:** Collision-safe, domain-scoped state management using `ApplicationContext`, optimized for long-running processes.
 - **Consistent Response Envelopes:** Enforces a uniform API response shape (`message`, `payload`, `meta`, `errors`, `exception_id`) across all successful and failed endpoints using `BaseController`.
 - **Three-Layer Exception Handling:** Features a predictable error system with an `ExceptionRenderer` (handles framework exceptions), `BaseApiException` (domain exceptions), and `handleException()` (fatal controller safety net with UUIDs).
 - **Built-in Server-Timing Profiling:** Gain real-time performance insights directly in browser DevTools. Auto-measure pipelines, cache hit/miss rates, and query times via `ServerTimingMiddleware`.
