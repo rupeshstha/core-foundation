@@ -40,6 +40,8 @@ Before applying any rule, check what the application already does. If a pattern 
 - Custom queries always start from `$this->query()` — never `Model::query()` directly
 - Always `bind()` repositories — never `singleton()` or `scoped()`
 - `fetchAll` and `fetchById` are cached by default; override `cachedMethods()` to change
+- Use `lockForUpdate()` / `sharedLock()` for pessimistic locking (automatically bypasses cache)
+- Use `updateAtomic($id, $attributes, $conditions)` for Compare-and-Swap concurrency control
 
 ### 4. BaseDataObject → `rules/base-data-object.md`
 

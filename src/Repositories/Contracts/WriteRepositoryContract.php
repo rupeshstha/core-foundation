@@ -16,5 +16,12 @@ interface WriteRepositoryContract
 
     public function update(int|string $id, array $attributes): Model;
 
+    /**
+     * Perform an atomic update (Compare-and-Swap).
+     * The update only proceeds if the database record matches the provided conditions.
+     * Throws StaleDataException if 0 rows are affected (indicating a state mismatch).
+     */
+    public function updateAtomic(int|string $id, array $attributes, array $conditions): Model;
+
     public function delete(int|string $id): bool;
 }

@@ -25,14 +25,23 @@ class CoreFoundationServiceProvider extends ServiceProvider
     {
         $this->registerExceptionHandling();
 
+        // Only register feature flag routes when Pennant is installed.
+        // Prevents a fatal error when the host app hasn't required pennant/pennant.
+        if (class_exists(\Laravel\Pennant\Feature::class)) {
+            $this->loadRoutesFrom(__DIR__.'/../../routes/features.php');
+        }
+
+        // Migrations must load in all environments (web, CLI, and test suites
+        // using RefreshDatabase). Placing this inside runningInConsole() would
+        // prevent the features table from being created during automated tests.
+        $this->loadMigrationsFrom([
+            __DIR__.'/../database/migrations',
+        ]);
+
         if ($this->app->runningInConsole()) {
             $this->publishes([
                 __DIR__.'/../../config/core_foundation.php' => config_path('core_foundation.php'),
             ], 'core_foundation');
-
-            $this->loadMigrationsFrom([
-                __DIR__.'/../database/migrations',
-            ]);
 
             $this->commands([
                 GenerateApiDocs::class,
@@ -77,7 +86,10 @@ class CoreFoundationServiceProvider extends ServiceProvider
                 foreach ($attributes as $bind) {
                     $implement = $bind->getArguments()[0] ?? null;
                     if ($implement) {
-                        $this->app->singleton($namespace, $implement);
+                        // Repositories must always be transient (bind, not singleton).
+                        // A singleton repository holds request-scoped state across
+                        // Octane requests, which causes cross-request data leaks.
+                        $this->app->bind($namespace, $implement);
                     }
                 }
             }
