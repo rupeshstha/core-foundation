@@ -21,7 +21,7 @@ namespace CoreFoundation\Repositories\Cache;
  * │                                                                             │
  * │   protected function cacheScope(): CacheScope                               │
  * │   {                                                                         │
- * │       // resolve tenant from request context, ApplicationState, etc.        │
+ * │       // resolve tenant from request context, ApplicationContext, etc.      │
  * │       return new TenantCacheScope($this->tenantId());                       │
  * │   }                                                                         │
  * └─────────────────────────────────────────────────────────────────────────────┘

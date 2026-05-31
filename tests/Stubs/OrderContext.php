@@ -2,10 +2,10 @@
 
 namespace CoreFoundation\Tests\Stubs;
 
-use CoreFoundation\Services\ApplicationState;
+use CoreFoundation\Services\ApplicationContext;
 
 /**
- * OrderState
+ * OrderContext
  *
  * Holds all context data belonging to the Order domain.
  *
@@ -16,7 +16,7 @@ use CoreFoundation\Services\ApplicationState;
  *  - Never call Context facade directly — always go through these methods.
  *  - Never share keys with another state class — the prefix handles isolation.
  */
-class OrderState extends ApplicationState
+class OrderContext extends ApplicationContext
 {
     // Stored as: order.order_id
     // Stored as: order.status
@@ -96,37 +96,37 @@ class OrderState extends ApplicationState
 // =============================================================================
 //
 // Basic:
-//   $state = OrderState::make()
+//   $context = OrderContext::make()
 //       ->setOrderId(42)
 //       ->setStatus('pending')
 //       ->setPaymentToken('tok_abc123');
 //
-//   $state->orderId();       // 42
-//   $state->paymentToken();  // 'tok_abc123'  (not in logs)
+//   $context->orderId();       // 42
+//   $context->paymentToken();  // 'tok_abc123'  (not in logs)
 //
 // Fluent in a service:
-//   OrderState::make()
+//   OrderContext::make()
 //       ->setOrderId($order->id)
 //       ->setStatus($order->status)
 //       ->pushBreadcrumb('payment_initiated')
 //       ->pushBreadcrumb('payment_confirmed');
 //
 // Reading back anywhere in the same request or queued job:
-//   $state = new OrderState;
-//   $state->orderId();   // still 42 — context is global within the process
+//   $context = new OrderContext;
+//   $context->orderId();   // still 42 — context is global within the process
 //
 // Scoped temporary state:
-//   OrderState::make()->scope(function (OrderState $state) {
-//       $state->setStatus('processing');
+//   OrderContext::make()->scope(function (OrderContext $context) {
+//       $context->setStatus('processing');
 //       // ... temporary work ...
 //   }); // status reverts to previous value after scope exits
 //
 // Debug snapshot (never use in production logging directly):
-//   $state->snapshot();
+//   $context->snapshot();
 //   // ['order_id' => 42, 'status' => 'pending', 'items_processed' => 0]
 //
-//   $state->snapshotHidden();
+//   $context->snapshotHidden();
 //   // ['payment_token' => 'tok_abc123']
 //
 // Flush all order context (e.g. between test cases or batch resets):
-//   $state->flush();
+//   $context->flush();

@@ -571,6 +571,6 @@ between requests. Static registries (operators, relation tags) are intentionally
 - Override `rules()` directly — use `baseRules()` / `storeRules()` / `updateRules()`
 - `HasEvent` for execution hooks — that is `HasPipeline`'s job
 - Models registered as singletons
-- Calling the Context facade directly — use `ApplicationState` subclasses
+- Calling the Context facade directly — use `ApplicationContext` subclasses
 - Calling `Notification` facade directly from a service — use `HasNotification`
 - `isProduction()` hardcoded in feature gates — use config-driven environment arrays

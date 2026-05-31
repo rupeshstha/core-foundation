@@ -6,7 +6,7 @@ use LogicException;
 use Illuminate\Support\Facades\Context;
 
 /**
- * ApplicationState
+ * ApplicationContext
  *
  * Abstract base class wrapping Laravel's Context facade.
  * Every domain creates one subclass — never use the Context facade directly.
@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\Context;
  * │                                                                             │
  * │ Laravel's Context facade is a flat global key-value store. Without          │
  * │ discipline, multiple domains writing to it produce silent key collisions.   │
- * │ ApplicationState enforces a mandatory namespace prefix per domain, making   │
+ * │ ApplicationContext enforces a mandatory namespace prefix per domain, making  │
  * │ all keys collision-safe and self-documenting.                               │
  * │                                                                             │
  * │ It also:                                                                    │
@@ -26,14 +26,14 @@ use Illuminate\Support\Facades\Context;
  * └─────────────────────────────────────────────────────────────────────────────┘
  *
  * ┌─────────────────────────────────────────────────────────────────────────────┐
- * │ HOW TO CREATE A DOMAIN STATE CLASS                                          │
+ * │ HOW TO CREATE A DOMAIN CONTEXT CLASS                                        │
  * │                                                                             │
- * │ 1. Extend ApplicationState                                                  │
+ * │ 1. Extend ApplicationContext                                                │
  * │ 2. Declare a namespace prefix — must be unique across the application       │
  * │ 3. Add your own semantic set/get methods using the protected helpers        │
  * │ 4. Never call the Context facade directly — always go through this base     │
  * │                                                                             │
- * │   class OrderState extends ApplicationState                                 │
+ * │   class OrderContext extends ApplicationContext                             │
  * │   {                                                                         │
  * │       // Step 2 — unique prefix, snake_case, domain-scoped                  │
  * │       protected function prefix(): string                                   │
@@ -66,11 +66,11 @@ use Illuminate\Support\Facades\Context;
  * │                                                                             │
  * │ Usage:                                                                      │
  * │                                                                             │
- * │   $state = new OrderState;                                                  │
- * │   $state->setOrderId(42)->setPaymentToken('tok_abc');                       │
+ * │   $context = new OrderContext;                                              │
+ * │   $context->setOrderId(42)->setPaymentToken('tok_abc');                     │
  * │                                                                             │
  * │   // Or via the static factory:                                             │
- * │   OrderState::make()->setOrderId(42);                                       │
+ * │   OrderContext::make()->setOrderId(42);                                     │
  * └─────────────────────────────────────────────────────────────────────────────┘
  *
  * ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -78,7 +78,7 @@ use Illuminate\Support\Facades\Context;
  * │                                                                             │
  * │  - Must be non-empty                                                        │
  * │  - snake_case only (a-z, 0-9, underscores)                                  │
- * │  - Must be unique per domain — two state classes must never share a prefix  │
+ * │  - Must be unique per domain — two context classes must never share a prefix │
  * │                                                                             │
  * │ All context keys are stored as: {prefix}.{key}                              │
  * │ e.g. prefix = 'order', key = 'order_id' → stored as 'order.order_id'       │
@@ -97,7 +97,7 @@ use Illuminate\Support\Facades\Context;
  * └─────────────────────────────────────────────────────────────────────────────┘
  */
 /** @phpstan-consistent-constructor */
-abstract class ApplicationState
+abstract class ApplicationContext
 {
     // =========================================================================
     // Contract — subclasses must declare this
@@ -109,7 +109,7 @@ abstract class ApplicationState
      * Rules:
      *  - snake_case only (a-z, 0-9, underscores)
      *  - Non-empty
-     *  - Unique across all ApplicationState subclasses in the application
+     *  - Unique across all ApplicationContext subclasses in the application
      *
      * All context keys written by this class are stored as: {prefix}.{key}
      */

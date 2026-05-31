@@ -8,6 +8,7 @@ All notable changes to `core-foundation` will be documented in this file
 - Introduced Atomic Updates (Compare-and-Swap) to `BaseRepository` via `updateAtomic()`.
 - Added `StaleDataException` for handling optimistic concurrency conflicts (HTTP 409).
 - Improved `BaseRepository` read queries to automatically bypass cache when a lock is applied.
+- Renamed `ApplicationState` to `ApplicationContext` to better reflect its architectural purpose.
 
 ## 1.0.0 - 2026-05-29
 
