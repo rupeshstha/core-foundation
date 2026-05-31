@@ -31,6 +31,26 @@ class TestResource extends BaseResource
     }
 }
 
+class TimestampResource extends BaseResource
+{
+    protected function fields(Request $request): array
+    {
+        return $this->withTimestamps([
+            'id' => $this->resource->id,
+        ]);
+    }
+}
+
+class TimestampResourceNoTimestamps extends BaseResource
+{
+    protected function fields(Request $request): array
+    {
+        return $this->withTimestamps([
+            'id' => $this->resource->id,
+        ]);
+    }
+}
+
 class BaseResourceTest extends PackageTestCase
 {
     protected function setUp(): void
@@ -66,5 +86,55 @@ class BaseResourceTest extends PackageTestCase
 
         $this->assertArrayNotHasKey('name', $result);
         $this->assertArrayHasKey('id', $result);
+    }
+
+    public function test_with_timestamps_merges_created_at_and_updated_at(): void
+    {
+        $now = now();
+        $model = (object) [
+            'id' => 1,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ];
+
+        $resource = new TimestampResource($model);
+        $result = $resource->toArray(new Request);
+
+        $this->assertArrayHasKey('id', $result);
+        $this->assertArrayHasKey('created_at', $result);
+        $this->assertArrayHasKey('updated_at', $result);
+        $this->assertSame($now->toISOString(), $result['created_at']);
+        $this->assertSame($now->toISOString(), $result['updated_at']);
+    }
+
+    public function test_with_timestamps_returns_null_when_timestamps_are_null(): void
+    {
+        $model = (object) [
+            'id' => 1,
+            'created_at' => null,
+            'updated_at' => null,
+        ];
+
+        $resource = new TimestampResourceNoTimestamps($model);
+        $result = $resource->toArray(new Request);
+
+        $this->assertNull($result['created_at']);
+        $this->assertNull($result['updated_at']);
+    }
+
+    public function test_with_timestamps_does_not_override_existing_fields(): void
+    {
+        $now = now();
+        $model = (object) [
+            'id' => 42,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ];
+
+        $resource = new TimestampResource($model);
+        $result = $resource->toArray(new Request);
+
+        // id from fields() should survive
+        $this->assertSame(42, $result['id']);
     }
 }

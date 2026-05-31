@@ -8,14 +8,14 @@ use Illuminate\Foundation\Application;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
-use CoreFoundation\Repositories\Sort\SortApplicator;
-use CoreFoundation\Repositories\Cache\CacheScope;
 use CoreFoundation\Repositories\Cache\QueryType;
+use CoreFoundation\Exceptions\StaleDataException;
+use CoreFoundation\Repositories\Cache\CacheScope;
+use CoreFoundation\Repositories\Sort\SortApplicator;
 use CoreFoundation\Repositories\Cache\RepositoryCache;
 use CoreFoundation\Repositories\Filter\FilterApplicator;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use CoreFoundation\Repositories\Contracts\RepositoryContract;
-use CoreFoundation\Exceptions\StaleDataException;
 use CoreFoundation\Repositories\Exceptions\ModelNotInstantiableException;
 
 /**
@@ -75,6 +75,7 @@ abstract class BaseRepository implements RepositoryContract
 
     /**
      * Active pessimistic lock mode for the next query.
+     *
      * @var string|false 'update', 'shared', or false
      */
     protected string|false $lockMode = false;
@@ -328,7 +329,7 @@ abstract class BaseRepository implements RepositoryContract
                 ->exists();
 
             if (! $isStillValid) {
-                throw new StaleDataException();
+                throw new StaleDataException;
             }
         }
 

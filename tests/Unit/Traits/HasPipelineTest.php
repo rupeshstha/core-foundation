@@ -127,7 +127,8 @@ class HasPipelineTest extends PackageTestCase
 
     public function test_pipes_isolated_between_service_classes(): void
     {
-        $otherService = new class extends BaseService {
+        $otherService = new class extends BaseService
+        {
             public function doWork(string $p): string
             {
                 return $this->throughPipes('work', $p, fn ($p) => $p);

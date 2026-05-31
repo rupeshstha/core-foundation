@@ -99,7 +99,8 @@ class HasEventExtendedTest extends PackageTestCase
     {
         Event::fake();
 
-        $service = new class {
+        $service = new class
+        {
             use HasEvent;
 
             public function fire(string $event): void

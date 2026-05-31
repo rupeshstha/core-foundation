@@ -3,6 +3,7 @@
 namespace CoreFoundation\Traits;
 
 use Closure;
+use InvalidArgumentException;
 
 /**
  * HasServiceCache
@@ -93,12 +94,12 @@ trait HasServiceCache
      *
      * @param  string  $key  Unique, namespaced cache key. Include tenant/user IDs.
      * @param  array<string>  $dependencies  Repository-compatible dependency tags.
-     *                                      Build via CacheDependency::on*().
-     *                                      Must not be empty — throws if passed empty array.
+     *                                       Build via CacheDependency::on*().
+     *                                       Must not be empty — throws if passed empty array.
      * @param  Closure(): mixed  $callback  The expensive operation to cache.
      * @param  int|null  $ttl  Seconds until expiry. null = cache forever (dep-only).
      *
-     * @throws \InvalidArgumentException  When dependencies is empty (use cacheForever instead).
+     * @throws InvalidArgumentException When dependencies is empty (use cacheForever instead).
      */
     final protected function rememberWithDependencies(
         string $key,
@@ -107,10 +108,10 @@ trait HasServiceCache
         ?int $ttl = null,
     ): mixed {
         if ($dependencies === []) {
-            throw new \InvalidArgumentException(
-                static::class . '::rememberWithDependencies() requires at least one dependency. '
-                . 'Use HasCacheable::cacheForever() for non-dependency caching, '
-                . 'or declare the model/entity this result depends on via CacheDependency.',
+            throw new InvalidArgumentException(
+                static::class.'::rememberWithDependencies() requires at least one dependency. '
+                .'Use HasCacheable::cacheForever() for non-dependency caching, '
+                .'or declare the model/entity this result depends on via CacheDependency.',
             );
         }
 

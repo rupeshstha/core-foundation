@@ -4,15 +4,18 @@ namespace CoreFoundation\Tests\Unit\Repositories\Filter;
 
 use InvalidArgumentException;
 use CoreFoundation\Tests\PackageTestCase;
+use Illuminate\Database\Eloquent\Builder;
 use CoreFoundation\Tests\Stubs\Models\TestPost;
 use CoreFoundation\Repositories\Filter\FilterApplicator;
-use CoreFoundation\Repositories\Filter\Contracts\FilterOperator;
 use CoreFoundation\Repositories\Filter\Operators\EqualOperator;
-use Illuminate\Database\Eloquent\Builder;
+use CoreFoundation\Repositories\Filter\Contracts\FilterOperator;
 
 class CustomTestOperator implements FilterOperator
 {
-    public function identifier(): string { return '__custom_'; }
+    public function identifier(): string
+    {
+        return '__custom_';
+    }
 
     public function apply(Builder $builder, string $column, mixed $value): void
     {
@@ -56,11 +59,16 @@ class FilterApplicatorApiTest extends PackageTestCase
 
     public function test_override_operator_replaces_existing(): void
     {
-        $replacement = new class implements FilterOperator {
-            public function identifier(): string { return '__eq_'; }
+        $replacement = new class implements FilterOperator
+        {
+            public function identifier(): string
+            {
+                return '__eq_';
+            }
+
             public function apply(Builder $builder, string $column, mixed $value): void
             {
-                $builder->whereRaw("1=1");
+                $builder->whereRaw('1=1');
             }
         };
 

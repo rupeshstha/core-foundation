@@ -183,7 +183,7 @@ abstract class BaseFeature
     {
         match (true) {
             $scope !== null => Feature::for($scope)->activate(static::class),
-            default         => Feature::activate(static::class),
+            default => Feature::activate(static::class),
         };
     }
 
@@ -194,7 +194,7 @@ abstract class BaseFeature
     {
         match (true) {
             $scope !== null => Feature::for($scope)->deactivate(static::class),
-            default         => Feature::deactivate(static::class),
+            default => Feature::deactivate(static::class),
         };
     }
 
@@ -206,7 +206,7 @@ abstract class BaseFeature
     {
         match (true) {
             $scope !== null => Feature::for($scope)->forget(static::class),
-            default         => Feature::forget(static::class),
+            default => Feature::forget(static::class),
         };
     }
 }

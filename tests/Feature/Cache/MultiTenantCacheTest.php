@@ -3,14 +3,14 @@
 namespace CoreFoundation\Tests\Feature\Cache;
 
 use Illuminate\Support\Facades\Cache;
+use CoreFoundation\Services\BaseService;
 use CoreFoundation\Tests\PackageTestCase;
 use CoreFoundation\Repositories\BaseRepository;
-use CoreFoundation\Repositories\Cache\CacheScope;
-use CoreFoundation\Repositories\Cache\TenantCacheScope;
-use CoreFoundation\Repositories\Cache\CacheDependency;
-use CoreFoundation\Repositories\Cache\RepositoryCacheObserver;
-use CoreFoundation\Services\BaseService;
 use CoreFoundation\Tests\Stubs\Models\TestPost;
+use CoreFoundation\Repositories\Cache\CacheScope;
+use CoreFoundation\Repositories\Cache\CacheDependency;
+use CoreFoundation\Repositories\Cache\TenantCacheScope;
+use CoreFoundation\Repositories\Cache\RepositoryCacheObserver;
 
 class TenantPostRepository extends BaseRepository
 {
@@ -36,9 +36,10 @@ class PriceCalculationService extends BaseService
         return $this->rememberWithDependencies(
             key: "price_calc:{$post->id}",
             dependencies: [CacheDependency::onRecord($post, $post->id, $scope)],
-            callback: function() {
+            callback: function () {
                 $this->callCount++;
-                return "result";
+
+                return 'result';
             }
         );
     }
@@ -47,6 +48,7 @@ class PriceCalculationService extends BaseService
 class MultiTenantCacheTest extends PackageTestCase
 {
     private TenantPostRepository $repository;
+
     private PriceCalculationService $service;
 
     protected function getEnvironmentSetUp($app): void

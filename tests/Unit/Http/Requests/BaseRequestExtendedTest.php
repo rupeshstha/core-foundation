@@ -2,6 +2,7 @@
 
 namespace CoreFoundation\Tests\Unit\Http\Requests;
 
+use ReflectionClass;
 use CoreFoundation\Tests\PackageTestCase;
 use CoreFoundation\Http\Requests\BaseRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
@@ -55,7 +56,7 @@ class BaseRequestExtendedTest extends PackageTestCase
         $request = new ExtendedTestRequest;
         $request->setMethod('POST');
 
-        $reflection = new \ReflectionClass(ExtendedTestRequest::class);
+        $reflection = new ReflectionClass(ExtendedTestRequest::class);
         $method = $reflection->getMethod('isStoring');
         $method->setAccessible(true);
 
@@ -67,7 +68,7 @@ class BaseRequestExtendedTest extends PackageTestCase
         $request = new ExtendedTestRequest;
         $request->setMethod('PUT');
 
-        $reflection = new \ReflectionClass(ExtendedTestRequest::class);
+        $reflection = new ReflectionClass(ExtendedTestRequest::class);
         $method = $reflection->getMethod('isStoring');
         $method->setAccessible(true);
 
@@ -79,7 +80,7 @@ class BaseRequestExtendedTest extends PackageTestCase
         $request = new ExtendedTestRequest;
         $request->setMethod('PUT');
 
-        $reflection = new \ReflectionClass(ExtendedTestRequest::class);
+        $reflection = new ReflectionClass(ExtendedTestRequest::class);
         $method = $reflection->getMethod('isUpdating');
         $method->setAccessible(true);
 
@@ -91,7 +92,7 @@ class BaseRequestExtendedTest extends PackageTestCase
         $request = new ExtendedTestRequest;
         $request->setMethod('PATCH');
 
-        $reflection = new \ReflectionClass(ExtendedTestRequest::class);
+        $reflection = new ReflectionClass(ExtendedTestRequest::class);
         $method = $reflection->getMethod('isUpdating');
         $method->setAccessible(true);
 
@@ -103,7 +104,7 @@ class BaseRequestExtendedTest extends PackageTestCase
         $request = new ExtendedTestRequest;
         $request->setMethod('POST');
 
-        $reflection = new \ReflectionClass(ExtendedTestRequest::class);
+        $reflection = new ReflectionClass(ExtendedTestRequest::class);
         $method = $reflection->getMethod('isUpdating');
         $method->setAccessible(true);
 
@@ -126,7 +127,7 @@ class BaseRequestExtendedTest extends PackageTestCase
         $request = new UnauthorizedRequest;
         $request->setContainer($this->app);
 
-        $reflection = new \ReflectionClass(UnauthorizedRequest::class);
+        $reflection = new ReflectionClass(UnauthorizedRequest::class);
         $method = $reflection->getMethod('failedAuthorization');
         $method->setAccessible(true);
 

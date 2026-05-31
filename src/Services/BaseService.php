@@ -5,8 +5,8 @@ namespace CoreFoundation\Services;
 use CoreFoundation\Traits\HasEvent;
 use CoreFoundation\Traits\HasFactory;
 use CoreFoundation\Traits\HasPipeline;
-use CoreFoundation\Traits\HasServiceCache;
 use CoreFoundation\Traits\HasDeferrable;
+use CoreFoundation\Traits\HasServiceCache;
 use CoreFoundation\Manipulators\BaseDataObject;
 
 /**
@@ -194,11 +194,11 @@ use CoreFoundation\Manipulators\BaseDataObject;
  */
 abstract class BaseService
 {
-    use HasServiceCache;
     use HasDeferrable;
     use HasEvent;
     use HasFactory;
     use HasPipeline;
+    use HasServiceCache;
 
     // =========================================================================
     // Container-aware static entry point

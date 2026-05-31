@@ -126,7 +126,7 @@ trait HasDeferrable
      */
     final protected function cancelDefer(string $name): void
     {
-        DeferredCallbackCollection::forget($name);
+        app(DeferredCallbackCollection::class)->forget($name);
     }
 
     // =========================================================================

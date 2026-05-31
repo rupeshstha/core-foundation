@@ -2,9 +2,9 @@
 
 namespace CoreFoundation\Providers;
 
-use Throwable;
 use ReflectionClass;
 use ReflectionAttribute;
+use Laravel\Pennant\Feature;
 use Illuminate\Support\ServiceProvider;
 use CoreFoundation\Attributes\BatchRegistrar;
 use Illuminate\Foundation\Exceptions\Handler;
@@ -27,7 +27,7 @@ class CoreFoundationServiceProvider extends ServiceProvider
 
         // Only register feature flag routes when Pennant is installed.
         // Prevents a fatal error when the host app hasn't required pennant/pennant.
-        if (class_exists(\Laravel\Pennant\Feature::class)) {
+        if (class_exists(Feature::class)) {
             $this->loadRoutesFrom(__DIR__.'/../../routes/features.php');
         }
 

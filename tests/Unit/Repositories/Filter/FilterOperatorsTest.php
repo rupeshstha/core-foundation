@@ -5,20 +5,20 @@ namespace CoreFoundation\Tests\Unit\Repositories\Filter;
 use CoreFoundation\Tests\PackageTestCase;
 use CoreFoundation\Tests\Stubs\Models\TestPost;
 use CoreFoundation\Repositories\Filter\FilterApplicator;
-use CoreFoundation\Repositories\Filter\Operators\EqualOperator;
-use CoreFoundation\Repositories\Filter\Operators\NotEqualOperator;
-use CoreFoundation\Repositories\Filter\Operators\GreaterThanOperator;
-use CoreFoundation\Repositories\Filter\Operators\GreaterThanOrEqualOperator;
-use CoreFoundation\Repositories\Filter\Operators\LessThanOperator;
-use CoreFoundation\Repositories\Filter\Operators\LessThanOrEqualOperator;
-use CoreFoundation\Repositories\Filter\Operators\LikeOperator;
-use CoreFoundation\Repositories\Filter\Operators\NotLikeOperator;
-use CoreFoundation\Repositories\Filter\Operators\IsNullOperator;
-use CoreFoundation\Repositories\Filter\Operators\IsNotNullOperator;
 use CoreFoundation\Repositories\Filter\Operators\InOperator;
-use CoreFoundation\Repositories\Filter\Operators\NotInOperator;
 use CoreFoundation\Repositories\Filter\Operators\OrOperator;
 use CoreFoundation\Repositories\Filter\Operators\AndOperator;
+use CoreFoundation\Repositories\Filter\Operators\LikeOperator;
+use CoreFoundation\Repositories\Filter\Operators\EqualOperator;
+use CoreFoundation\Repositories\Filter\Operators\NotInOperator;
+use CoreFoundation\Repositories\Filter\Operators\IsNullOperator;
+use CoreFoundation\Repositories\Filter\Operators\NotLikeOperator;
+use CoreFoundation\Repositories\Filter\Operators\LessThanOperator;
+use CoreFoundation\Repositories\Filter\Operators\NotEqualOperator;
+use CoreFoundation\Repositories\Filter\Operators\IsNotNullOperator;
+use CoreFoundation\Repositories\Filter\Operators\GreaterThanOperator;
+use CoreFoundation\Repositories\Filter\Operators\LessThanOrEqualOperator;
+use CoreFoundation\Repositories\Filter\Operators\GreaterThanOrEqualOperator;
 
 class FilterOperatorsTest extends PackageTestCase
 {

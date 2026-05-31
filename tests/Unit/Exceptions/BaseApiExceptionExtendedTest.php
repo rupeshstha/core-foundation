@@ -2,16 +2,17 @@
 
 namespace CoreFoundation\Tests\Unit\Exceptions;
 
+use Throwable;
 use Illuminate\Http\Request;
 use CoreFoundation\Tests\PackageTestCase;
-use CoreFoundation\Exceptions\BaseApiException;
 use Symfony\Component\HttpFoundation\Response;
+use CoreFoundation\Exceptions\BaseApiException;
 
 class OrderNotFoundException extends BaseApiException
 {
     protected int $status = Response::HTTP_NOT_FOUND;
 
-    public function __construct(string $message = 'Order not found.', array $errors = [], ?int $status = null, ?\Throwable $previous = null)
+    public function __construct(string $message = 'Order not found.', array $errors = [], ?int $status = null, ?Throwable $previous = null)
     {
         parent::__construct($message, $errors, $status, $previous);
     }

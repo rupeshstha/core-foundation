@@ -2,6 +2,7 @@
 
 namespace CoreFoundation\Tests\Unit\Repositories;
 
+use ReflectionClass;
 use CoreFoundation\Tests\PackageTestCase;
 use CoreFoundation\Repositories\BaseRepository;
 use CoreFoundation\Tests\Stubs\Models\TestPost;
@@ -67,8 +68,8 @@ class BaseRepositoryTest extends PackageTestCase
         $result = $this->repository->lockForUpdate()->fetchById($post->id);
 
         $this->assertNotNull($result);
-        
-        $reflection = new \ReflectionClass($this->repository);
+
+        $reflection = new ReflectionClass($this->repository);
         $property = $reflection->getProperty('lockMode');
         $property->setAccessible(true);
         $this->assertFalse($property->getValue($this->repository));
@@ -116,8 +117,8 @@ class BaseRepositoryTest extends PackageTestCase
         $post = TestPost::create(['title' => 'Versioned', 'version' => 1]);
 
         $updated = $this->repository->updateAtomic(
-            id: $post->id, 
-            attributes: ['title' => 'New', 'version' => 2], 
+            id: $post->id,
+            attributes: ['title' => 'New', 'version' => 2],
             conditions: ['version' => 1]
         );
 

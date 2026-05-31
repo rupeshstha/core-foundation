@@ -3,9 +3,9 @@
 namespace CoreFoundation\Http\Controllers;
 
 use Throwable;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Laravel\Pennant\Feature;
+use Illuminate\Http\JsonResponse;
 use CoreFoundation\Features\BaseFeature;
 
 /**
@@ -128,7 +128,7 @@ class FeatureFlagController extends BaseController
                 continue;
             }
 
-            $key           = $isBaseFeature ? $name::name() : $name;
+            $key = $isBaseFeature ? $name::name() : $name;
             $features[$key] = $value;
         }
 
@@ -164,18 +164,18 @@ class FeatureFlagController extends BaseController
             );
         }
 
-        $value         = $all[$feature];
+        $value = $all[$feature];
         $isBaseFeature = class_exists($feature) && is_a($feature, BaseFeature::class, true);
 
         $payload = [
-            'name'   => $isBaseFeature ? $feature::name() : $feature,
+            'name' => $isBaseFeature ? $feature::name() : $feature,
             'active' => (bool) $value,
-            'value'  => $value,
+            'value' => $value,
         ];
 
         if ($isBaseFeature) {
             $payload['description'] = $feature::description();
-            $payload['tags']        = $feature::tags();
+            $payload['tags'] = $feature::tags();
         }
 
         return $this->successResponse(
