@@ -40,8 +40,8 @@ class CoreFoundationServiceProvider extends ServiceProvider
 
         if ($this->app->runningInConsole()) {
             $this->publishes([
-                __DIR__.'/../../config/core_foundation.php' => config_path('core_foundation.php'),
-            ], 'core_foundation');
+                __DIR__.'/../../config/core-foundation.php' => config_path('core-foundation.php'),
+            ], 'core-foundation');
 
             $this->commands([
                 GenerateApiDocs::class,
@@ -62,7 +62,7 @@ class CoreFoundationServiceProvider extends ServiceProvider
         $this->app->register(AppMonitorServiceProvider::class);
 
         $this->bindServices();
-        $this->mergeConfigFrom(__DIR__.'/../../config/core_foundation.php', 'core_foundation');
+        $this->mergeConfigFrom(__DIR__.'/../../config/core-foundation.php', 'core-foundation');
 
         include_once __DIR__.'/../Helpers/helpers.php';
 

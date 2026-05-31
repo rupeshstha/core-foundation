@@ -50,7 +50,7 @@ final class RepositoryCache
         private readonly CacheKeyBuilder $keyBuilder,
         private readonly RelationTagResolver $tagResolver,
     ) {
-        $this->enabled = (bool) config('core_foundation.cache.global', true);
+        $this->enabled = (bool) config('core-foundation.cache.global', true);
     }
 
     // =========================================================================

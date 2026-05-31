@@ -60,7 +60,7 @@ class ProfilingMiddleware
      * Request attribute key — set to true when profiling is active.
      * HasProfilable reads this via request() helper to decide whether to measure.
      */
-    public const ACTIVE_KEY = 'core_foundation.profiling.active';
+    public const ACTIVE_KEY = 'core-foundation.profiling.active';
 
     public function handle(Request $request, Closure $next): Response
     {

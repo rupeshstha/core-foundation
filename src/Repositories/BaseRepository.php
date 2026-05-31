@@ -118,18 +118,10 @@ abstract class BaseRepository implements RepositoryContract
         $this->lockMode = false;
     }
 
-    // =========================================================================
-    // Contract — child must implement
-    // =========================================================================
-
     /**
      * Return the FQCN of the model this repository manages.
      */
     abstract protected function setModel(): string;
-
-    // =========================================================================
-    // Extension points
-    // =========================================================================
 
     /**
      * Columns allowed for filtering in this repository.
@@ -189,10 +181,6 @@ abstract class BaseRepository implements RepositoryContract
     {
         return null;
     }
-
-    // =========================================================================
-    // RepositoryContract — Read
-    // =========================================================================
 
     public function fetchAll(
         array $filters = [],
@@ -276,10 +264,6 @@ abstract class BaseRepository implements RepositoryContract
         return $result;
     }
 
-    // =========================================================================
-    // RepositoryContract — Write
-    // =========================================================================
-
     public function create(array $attributes): Model
     {
         $this->dispatch('create.before', $attributes);
@@ -358,10 +342,6 @@ abstract class BaseRepository implements RepositoryContract
         return $result;
     }
 
-    // =========================================================================
-    // RepositoryContract — Query
-    // =========================================================================
-
     /**
      * Return a fresh Builder for custom queries.
      * Starting point for all domain-specific queries in concrete repositories.
@@ -371,18 +351,10 @@ abstract class BaseRepository implements RepositoryContract
         return $this->model::query();
     }
 
-    // =========================================================================
-    // RepositoryContract — Model access
-    // =========================================================================
-
     public function getModel(): BaseModel
     {
         return $this->model;
     }
-
-    // =========================================================================
-    // Cache control — callable from concrete repositories
-    // =========================================================================
 
     /**
      * Bypass cache for the next call.
@@ -412,10 +384,6 @@ abstract class BaseRepository implements RepositoryContract
     {
         $this->cache->flushAll($this->model, $this->cacheScope());
     }
-
-    // =========================================================================
-    // Internals
-    // =========================================================================
 
     /**
      * Boot the repository — resolve and validate the model.

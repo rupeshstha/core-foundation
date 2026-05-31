@@ -35,7 +35,7 @@ composer require rupeshstha/core-foundation
 Once installed, you can publish the package configuration:
 
 ```bash
-php artisan vendor:publish --tag=core_foundation
+php artisan vendor:publish --tag=core-foundation
 php artisan vendor:publish --tag=core-foundation-server-timing
 ```
 
