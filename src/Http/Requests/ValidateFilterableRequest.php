@@ -17,6 +17,7 @@ class ValidateFilterableRequest extends BaseRequest
         ];
     }
 
+    /** @return array<string, string> */
     public function messages(): array
     {
         return [

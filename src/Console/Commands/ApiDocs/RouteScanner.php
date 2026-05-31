@@ -44,7 +44,7 @@ class RouteScanner
                     uri: '/'.ltrim($route->uri(), '/'),
                     action: $route->getActionName(),
                     name: $route->getName() ?? '',
-                    middleware: $route->middleware(),
+                    middleware: is_array($mw = $route->middleware()) ? $mw : [],
                 );
             }
         }
