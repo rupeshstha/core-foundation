@@ -94,8 +94,8 @@ abstract class BaseJob implements ShouldQueue
     {
         return [
             NotificationFacade::route(
-                channel: config('core_foundation.notifications.jobs.notifiables.channel'),
-                route: config('core_foundation.notifications.jobs.notifiables.route')
+                channel: config('core-foundation.notifications.jobs.notifiables.channel'),
+                route: config('core-foundation.notifications.jobs.notifiables.route')
             ),
             ...$this->additionalNotifiables(),
         ];
@@ -126,7 +126,7 @@ abstract class BaseJob implements ShouldQueue
     protected function failedNotification(Throwable $exception): ?Notification
     {
         /** @var Notification $failedNotificationClass */
-        $failedNotificationClass = config('core_foundation.notifications.jobs.failed');
+        $failedNotificationClass = config('core-foundation.notifications.jobs.failed');
         if (! $failedNotificationClass) {
             return null;
         }
@@ -141,7 +141,7 @@ abstract class BaseJob implements ShouldQueue
     protected function startedNotification(): ?Notification
     {
         /** @var Notification $startedNotificationClass */
-        $startedNotificationClass = config('core_foundation.notifications.jobs.started');
+        $startedNotificationClass = config('core-foundation.notifications.jobs.started');
         if (! $startedNotificationClass) {
             return null;
         }
@@ -156,7 +156,7 @@ abstract class BaseJob implements ShouldQueue
     protected function completedNotification(): ?Notification
     {
         /** @var Notification $completedNotificationClass */
-        $completedNotificationClass = config('core_foundation.notifications.jobs.completed');
+        $completedNotificationClass = config('core-foundation.notifications.jobs.completed');
         if (! $completedNotificationClass) {
             return null;
         }

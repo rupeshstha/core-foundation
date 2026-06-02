@@ -8,9 +8,10 @@ use Illuminate\Foundation\Application;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
-use CoreFoundation\Repositories\Sort\SortApplicator;
-use CoreFoundation\Repositories\Cache\CacheScope;
 use CoreFoundation\Repositories\Cache\QueryType;
+use CoreFoundation\Exceptions\StaleDataException;
+use CoreFoundation\Repositories\Cache\CacheScope;
+use CoreFoundation\Repositories\Sort\SortApplicator;
 use CoreFoundation\Repositories\Cache\RepositoryCache;
 use CoreFoundation\Repositories\Filter\FilterApplicator;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -72,6 +73,13 @@ abstract class BaseRepository implements RepositoryContract
 
     protected Model $model;
 
+    /**
+     * Active pessimistic lock mode for the next query.
+     *
+     * @var string|false 'update', 'shared', or false
+     */
+    protected string|false $lockMode = false;
+
     public function __construct(
         protected readonly Application $app,
         protected readonly FilterApplicator $filterApplicator,
@@ -82,17 +90,38 @@ abstract class BaseRepository implements RepositoryContract
     }
 
     // =========================================================================
-    // Contract — child must implement
+    // Pessimistic Locking
     // =========================================================================
+
+    public function lockForUpdate(): static
+    {
+        $this->lockMode = 'update';
+
+        return $this;
+    }
+
+    public function sharedLock(): static
+    {
+        $this->lockMode = 'shared';
+
+        return $this;
+    }
+
+    protected function applyLock(Builder $query): void
+    {
+        if ($this->lockMode === 'update') {
+            $query->lockForUpdate();
+        } elseif ($this->lockMode === 'shared') {
+            $query->sharedLock();
+        }
+
+        $this->lockMode = false;
+    }
 
     /**
      * Return the FQCN of the model this repository manages.
      */
     abstract protected function setModel(): string;
-
-    // =========================================================================
-    // Extension points
-    // =========================================================================
 
     /**
      * Columns allowed for filtering in this repository.
@@ -155,10 +184,6 @@ abstract class BaseRepository implements RepositoryContract
         return null;
     }
 
-    // =========================================================================
-    // RepositoryContract — Read
-    // =========================================================================
-
     public function fetchAll(
         array $filters = [],
         array $relations = [],
@@ -168,6 +193,9 @@ abstract class BaseRepository implements RepositoryContract
     ): Collection|LengthAwarePaginator {
         $this->dispatch('fetch-all.before', compact('filters', 'relations'));
 
+        $isLocked = $this->lockMode !== false;
+        $shouldCache = $this->isCached(__FUNCTION__) && ! $isLocked;
+
         $result = $this->cache->remember(
             model: $this->model,
             method: __FUNCTION__,
@@ -175,11 +203,12 @@ abstract class BaseRepository implements RepositoryContract
             relations: $relations,
             columns: $columns,
             extra: ['paginate' => $paginate, 'per_page' => $perPage],
-            shouldCache: $this->isCached(__FUNCTION__),
+            shouldCache: $shouldCache,
             queryType: QueryType::Listing,
             scope: $this->cacheScope(),
             callback: function () use ($filters, $relations, $columns, $paginate, $perPage) {
                 $query = $this->model::select($columns);
+                $this->applyLock($query);
 
                 if ($relations) {
                     $query->with($relations);
@@ -206,6 +235,9 @@ abstract class BaseRepository implements RepositoryContract
     ): ?Model {
         $this->dispatch('fetch-by-id.before', compact('id', 'relations'));
 
+        $isLocked = $this->lockMode !== false;
+        $shouldCache = $this->isCached(__FUNCTION__) && ! $isLocked;
+
         $result = $this->cache->remember(
             model: $this->model,
             method: __FUNCTION__,
@@ -213,12 +245,13 @@ abstract class BaseRepository implements RepositoryContract
             relations: $relations,
             columns: $columns,
             extra: ['id' => $id],
-            shouldCache: $this->isCached(__FUNCTION__),
+            shouldCache: $shouldCache,
             queryType: QueryType::Record,
             recordId: $id,
             scope: $this->cacheScope(),
             callback: function () use ($id, $relations, $columns) {
                 $query = $this->model::select($columns);
+                $this->applyLock($query);
 
                 if ($relations) {
                     $query->with($relations);
@@ -232,10 +265,6 @@ abstract class BaseRepository implements RepositoryContract
 
         return $result;
     }
-
-    // =========================================================================
-    // RepositoryContract — Write
-    // =========================================================================
 
     public function create(array $attributes): Model
     {
@@ -267,6 +296,39 @@ abstract class BaseRepository implements RepositoryContract
         return $model;
     }
 
+    public function updateAtomic(int|string $id, array $attributes, array $conditions): Model
+    {
+        $this->dispatch('update-atomic.before', compact('id', 'attributes', 'conditions'));
+
+        $model = $this->model::findOrFail($id);
+
+        $affected = $this->model::where($model->getKeyName(), $id)
+            ->where($conditions)
+            ->update($attributes);
+
+        // A zero affected count could mean either:
+        // 1. Stale data (conditions didn't match)
+        // 2. Data was already identical (no-op update)
+        if ($affected === 0) {
+            $isStillValid = $this->model::where($model->getKeyName(), $id)
+                ->where($conditions)
+                ->exists();
+
+            if (! $isStillValid) {
+                throw new StaleDataException;
+            }
+        }
+
+        // Direct updates bypass Eloquent observers, so we must flush cache manually.
+        $this->cache->flushRecord($model, $id, $this->cacheScope());
+
+        $model->refresh();
+
+        $this->dispatch('update-atomic.after', $model);
+
+        return $model;
+    }
+
     public function delete(int|string $id): bool
     {
         $this->dispatch('delete.before', compact('id'));
@@ -281,10 +343,6 @@ abstract class BaseRepository implements RepositoryContract
 
         return $result;
     }
-
-    // =========================================================================
-    // RepositoryContract — Query
-    // =========================================================================
 
     /**
      * Return a fresh Builder for custom queries.
@@ -303,10 +361,6 @@ abstract class BaseRepository implements RepositoryContract
     {
         return $this->model;
     }
-
-    // =========================================================================
-    // Cache control — callable from concrete repositories
-    // =========================================================================
 
     /**
      * Bypass cache for the next call.
@@ -336,10 +390,6 @@ abstract class BaseRepository implements RepositoryContract
     {
         $this->cache->flushAll($this->model, $this->cacheScope());
     }
-
-    // =========================================================================
-    // Internals
-    // =========================================================================
 
     /**
      * Boot the repository — resolve and validate the model.

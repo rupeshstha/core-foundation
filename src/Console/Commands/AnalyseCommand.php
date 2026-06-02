@@ -60,9 +60,12 @@ class AnalyseCommand extends Command
         $paths = $this->resolvePaths();
         $threshold = (int) ($this->option('threshold') ?? config('profiling.quality.smell_threshold', 30));
         $limit = (int) ($this->option('limit') ?? 30);
-        $sortBy = (string) ($this->option('sort') ?? 'smell');
-        $format = (string) ($this->option('format') ?? 'table');
-        $visibility = $this->option('visibility') ?: null;
+        $sortOption = $this->option('sort');
+        $sortBy = is_string($sortOption) ? $sortOption : 'smell';
+        $formatOption = $this->option('format');
+        $format = is_string($formatOption) ? $formatOption : 'table';
+        $visibilityOption = $this->option('visibility');
+        $visibility = is_string($visibilityOption) ? $visibilityOption : null;
         $excludeConstructors = (bool) $this->option('exclude-constructors');
 
         if ($format === 'table') {
@@ -96,7 +99,7 @@ class AnalyseCommand extends Command
 
         // Baseline regression check
         $baseline = $this->option('baseline');
-        if ($baseline !== null) {
+        if (is_string($baseline)) {
             $metrics = $this->filterByBaseline($metrics, $baseline);
         }
 
@@ -125,7 +128,7 @@ class AnalyseCommand extends Command
     {
         $optionPaths = $this->option('path');
 
-        if (! empty($optionPaths)) {
+        if (is_array($optionPaths) && ! empty($optionPaths)) {
             return array_map(fn ($p) => str_starts_with($p, '/') ? $p : base_path($p), $optionPaths);
         }
 

@@ -3,9 +3,9 @@
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/rupeshstha/core-foundation.svg?style=flat-square)](https://packagist.org/packages/rupeshstha/core-foundation)
 [![Total Downloads](https://img.shields.io/packagist/dt/rupeshstha/core-foundation.svg?style=flat-square)](https://packagist.org/packages/rupeshstha/core-foundation)
 
-[![https://core-foundation-doc.rupeshstha.com.np/?ref=github](https://github.com/rupeshstha/core-foundation/blob/main/artifacts/Images/core-foundation-cover.jpg?raw=true)](https://core-foundation-doc.rupeshstha.com.np/?ref=github)
+[![https://core-foundation-doc.rupeshstha.com.np/?ref=github](https://banners.beyondco.de/rupeshstha%2Fcore-foundation.png?theme=light&packageManager=composer+require&packageName=rupeshstha%2Fcore-foundation&pattern=architect&style=style_1&description=A+foundational+package+for+streamlined+development%2C+offering+essential+core+functionality+and+components+to+accelerate+project+creation+and+enhance+scalability.&md=1&showWatermark=0&fontSize=100px&images=home&widths=200)
 
-[![Documentation]()](https://core-foundation-doc.rupeshstha.com.np/)
+
 
 `core-foundation` is an enterprise-grade Laravel package designed to accelerate the development of robust, scalable, and modular APIs. It replaces hand-rolled base classes with highly opinionated, extensible, and Octane-safe abstractions. 
 
@@ -14,10 +14,12 @@ This foundation is built for developers creating modular monoliths who require s
 ## Key Features
 
 - **Modular Extensibility:** Extend `BaseModel`, `BaseResource`, `BaseService`, and Repositories across module boundaries without modifying the source module. Uses structured Service Provider hooks (`extendModels`, `extendResources`, etc.).
+- **Application Context:** Collision-safe, domain-scoped state management using `ApplicationContext`, optimized for long-running processes.
 - **Consistent Response Envelopes:** Enforces a uniform API response shape (`message`, `payload`, `meta`, `errors`, `exception_id`) across all successful and failed endpoints using `BaseController`.
 - **Three-Layer Exception Handling:** Features a predictable error system with an `ExceptionRenderer` (handles framework exceptions), `BaseApiException` (domain exceptions), and `handleException()` (fatal controller safety net with UUIDs).
 - **Built-in Server-Timing Profiling:** Gain real-time performance insights directly in browser DevTools. Auto-measure pipelines, cache hit/miss rates, and query times via `ServerTimingMiddleware`.
 - **Octane Safety:** Ensures complete safety in long-running processes (Laravel Octane). Contexts are scoped and reset per request automatically.
+- **Race Condition Handling:** Native support for Pessimistic Locking (`lockForUpdate`, `sharedLock`) and Atomic Updates (Compare-and-Swap) via `updateAtomic` in repositories to prevent lost updates in high-concurrency scenarios.
 - **Repository Pattern & Caching:** Advanced `BaseRepository` with `FilterApplicator` and `SortApplicator`. Built-in tag-based read-through caching that automatically invalidates upon create, update, and delete actions.
 - **DTOs and Pipelines:** Standardized `BaseDataObject` (DTOs) and `HasPipeline` / `HasEvent` traits to enforce clean data transitions and logic decoupling.
 - **Built-in AI Assistant Context (Agentic Skills):** This package ships with expert-level `.md` rule files and guidelines (located in `resources/boost/skills/core-foundation-best-practices`). When used with an AI coding assistant, it instantly provides the AI with the exact architecture rules, patterns, and conventions of CoreFoundation, ensuring your AI writes compliant code from day one.
@@ -33,7 +35,7 @@ composer require rupeshstha/core-foundation
 Once installed, you can publish the package configuration:
 
 ```bash
-php artisan vendor:publish --tag=core_foundation
+php artisan vendor:publish --tag=core-foundation
 php artisan vendor:publish --tag=core-foundation-server-timing
 ```
 

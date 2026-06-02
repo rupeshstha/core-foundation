@@ -143,3 +143,42 @@ protected function extendOperators(): void
 Order::addSearchable(['subscription_id', 'plan_code']);
 // Now those columns are available for filtering in OrderRepository
 ```
+
+## Race Condition & Locking
+
+`BaseRepository` provides built-in mechanisms to handle race conditions safely at the database level.
+
+### Pessimistic Locking
+Locks the selected rows from being updated (or read depending on lock type) until the current transaction commits. Calling `lockForUpdate()` or `sharedLock()` configures the repository to apply a database-level lock to the **very next read query** (`fetchAll` or `fetchById`). It also safely bypasses the cache.
+
+```php
+// Apply a FOR UPDATE lock on the record
+$order = $this->repository->lockForUpdate()->fetchById($id);
+
+// Apply a FOR SHARE lock on the record
+$order = $this->repository->sharedLock()->fetchById($id);
+```
+**Rule:** Pessimistic locks must be executed inside an active database transaction (`DB::transaction`).
+
+### Atomic Updates (Compare-and-Swap)
+Protects against lost updates by ensuring the database record still matches an expected state before applying the update. This is the preferred architectural pattern for optimistic concurrency control as it is schema-neutral.
+
+```php
+// Performs an atomic update ONLY IF the status is still 'pending'
+$this->repository->updateAtomic(
+    id: $id, 
+    attributes: ['status' => 'processing', 'locked_at' => now()], 
+    conditions: ['status' => 'pending']
+);
+```
+
+**Opt-in Versioning:** If a specific resource requires version-based locking, you can explicitly include a version check. This avoids forcing a version column on every table in the system.
+
+```php
+$this->repository->updateAtomic(
+    id: $id, 
+    attributes: ['balance' => 100, 'version' => $v + 1], 
+    conditions: ['version' => $v]
+);
+```
+**Rule:** Use `updateAtomic` for high-concurrency resources where you need to guarantee state transitions (e.g., Status flows, Inventory, Wallets). If the conditions are no longer met, it throws `StaleDataException` (HTTP 409 Conflict).

@@ -140,7 +140,7 @@ OrderService::make()->place($data);
 
 ## Do Not Use Context Facade Directly
 
-Use `ApplicationState` subclasses to access request-scoped state — never the `Context` facade directly.
+Use `ApplicationContext` subclasses to access request-scoped state — never the `Context` facade directly.
 
 Incorrect:
 ```php
@@ -149,5 +149,5 @@ $tenantId = Context::get('tenant_id');
 
 Correct:
 ```php
-$tenantId = ApplicationState::tenantId();
+$tenantId = ApplicationContext::tenantId();
 ```

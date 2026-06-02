@@ -48,12 +48,12 @@ final class CacheKeyBuilder
         ?CacheScope $scope = null,
     ): string {
         $payload = [
-            'model'     => $model::class,
-            'method'    => $method,
-            'filters'   => $this->normalise($filters),
+            'model' => $model::class,
+            'method' => $method,
+            'filters' => $this->normalise($filters),
             'relations' => $this->normalise($relations),
-            'columns'   => $this->normalise($columns),
-            'extra'     => $this->normalise($extra),
+            'columns' => $this->normalise($columns),
+            'extra' => $this->normalise($extra),
         ];
 
         $hash = md5(json_encode($payload, JSON_THROW_ON_ERROR));

@@ -4,8 +4,8 @@ namespace CoreFoundation\Tests\Unit\Entities;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
-use Illuminate\Database\Eloquent\Builder;
 use CoreFoundation\Tests\PackageTestCase;
+use Illuminate\Database\Eloquent\Builder;
 use CoreFoundation\Tests\Stubs\Models\TestPost;
 
 class ActiveScope implements Scope

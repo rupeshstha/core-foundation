@@ -28,7 +28,10 @@
         "illuminate/database": "*",
         "illuminate/support": "*",
         "laravel/slack-notification-channel": "^3.8",
-        "symfony/stopwatch": "^8.0"
+        "symfony/stopwatch": "^7.0 | ^8.0"
+    },
+    "suggest": {
+        "laravel/pennant": "Required for BaseFeature and FeatureFlagController (GET /features)."
     },
      "require-dev": {
         "laravel/boost": "^2.4",

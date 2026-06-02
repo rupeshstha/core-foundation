@@ -4,15 +4,17 @@ namespace CoreFoundation\Tests\Feature\Exceptions;
 
 use RuntimeException;
 use CoreFoundation\Tests\PackageTestCase;
-use CoreFoundation\Exceptions\BaseApiException;
-use Illuminate\Contracts\Debug\ShouldntReport;
 use Illuminate\Auth\AuthenticationException;
-use Illuminate\Auth\Access\AuthorizationException;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Foundation\Exceptions\Handler;
+use Illuminate\Contracts\Debug\ShouldntReport;
 use Illuminate\Validation\ValidationException;
+use CoreFoundation\Exceptions\BaseApiException;
+use CoreFoundation\Exceptions\ExceptionRenderer;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Foundation\Configuration\Exceptions;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
-use Symfony\Component\HttpFoundation\Response;
 
 class SilentDomainException extends BaseApiException implements ShouldntReport
 {
@@ -33,9 +35,9 @@ class ExceptionRendererTest extends PackageTestCase
         // Ensure renderers are registered on the already-resolved handler.
         // In Testbench the handler is resolved before ServiceProvider boot completes,
         // so we register directly here to guarantee correct ordering in the test.
-        $handler = $this->app->make(\Illuminate\Foundation\Exceptions\Handler::class);
-        \CoreFoundation\Exceptions\ExceptionRenderer::register(
-            new \Illuminate\Foundation\Configuration\Exceptions($handler)
+        $handler = $this->app->make(Handler::class);
+        ExceptionRenderer::register(
+            new Exceptions($handler)
         );
 
         // Register test routes that throw specific exceptions

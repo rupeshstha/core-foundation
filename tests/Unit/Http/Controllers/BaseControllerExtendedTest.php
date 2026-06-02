@@ -4,11 +4,10 @@ namespace CoreFoundation\Tests\Unit\Http\Controllers;
 
 use Illuminate\Http\JsonResponse;
 use CoreFoundation\Tests\PackageTestCase;
-use CoreFoundation\Tests\Stubs\Models\TestPost;
-use CoreFoundation\Exceptions\BaseApiException;
 use Symfony\Component\HttpFoundation\Response;
-use CoreFoundation\Http\Controllers\BaseController;
+use CoreFoundation\Exceptions\BaseApiException;
 use Illuminate\Pagination\LengthAwarePaginator;
+use CoreFoundation\Http\Controllers\BaseController;
 
 class FullTestController extends BaseController
 {
@@ -41,7 +40,8 @@ class FullTestController extends BaseController
 
     public function domainExceptionAction(): JsonResponse
     {
-        $exception = new class extends BaseApiException {
+        $exception = new class extends BaseApiException
+        {
             protected int $status = 422;
         };
         $exception->__construct('Domain problem', ['field' => ['error']]);

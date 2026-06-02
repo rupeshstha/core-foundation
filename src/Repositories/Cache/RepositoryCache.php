@@ -50,7 +50,7 @@ final class RepositoryCache
         private readonly CacheKeyBuilder $keyBuilder,
         private readonly RelationTagResolver $tagResolver,
     ) {
-        $this->enabled = (bool) config('core_foundation.cache.global', true);
+        $this->enabled = (bool) config('core-foundation.cache.global', true);
     }
 
     // =========================================================================
@@ -81,7 +81,7 @@ final class RepositoryCache
             return $callback();
         }
 
-        $key  = $this->keyBuilder->build($model, $method, $filters, $relations, $columns, $extra, $scope);
+        $key = $this->keyBuilder->build($model, $method, $filters, $relations, $columns, $extra, $scope);
         $tags = $this->buildTags($model, $relations, $queryType, $recordId, $scope);
 
         return $this->cacheForever($tags, $key, $callback);
@@ -109,7 +109,7 @@ final class RepositoryCache
         Log::info('[Cache] Listing flushed', [
             'model' => $model::class,
             'scope' => $scope?->prefix() ?? 'global',
-            'tag'   => $tag,
+            'tag' => $tag,
         ]);
     }
 
@@ -129,17 +129,17 @@ final class RepositoryCache
      */
     public function flushRecord(Model $model, int|string $id, ?CacheScope $scope = null): void
     {
-        $recordTag  = $this->keyBuilder->buildRecordTag($model, $id, $scope);
+        $recordTag = $this->keyBuilder->buildRecordTag($model, $id, $scope);
         $listingTag = $this->keyBuilder->buildListingTag($model, $scope);
 
         $this->bustCache([$recordTag]);
         $this->bustCache([$listingTag]);
 
         Log::info('[Cache] Record flushed', [
-            'model'       => $model::class,
-            'id'          => $id,
-            'scope'       => $scope?->prefix() ?? 'global',
-            'record_tag'  => $recordTag,
+            'model' => $model::class,
+            'id' => $id,
+            'scope' => $scope?->prefix() ?? 'global',
+            'record_tag' => $recordTag,
             'listing_tag' => $listingTag,
         ]);
     }
@@ -165,7 +165,7 @@ final class RepositoryCache
         Log::info('[Cache] Full flush', [
             'model' => $model::class,
             'scope' => $scope?->prefix() ?? 'global',
-            'tag'   => $baseTag,
+            'tag' => $baseTag,
         ]);
     }
 
@@ -219,7 +219,7 @@ final class RepositoryCache
 
         $primaryTag = match ($queryType) {
             QueryType::Listing => $this->keyBuilder->buildListingTag($model, $scope),
-            QueryType::Record  => $recordId !== null
+            QueryType::Record => $recordId !== null
                 ? $this->keyBuilder->buildRecordTag($model, $recordId, $scope)
                 : $this->keyBuilder->buildListingTag($model, $scope),
         };

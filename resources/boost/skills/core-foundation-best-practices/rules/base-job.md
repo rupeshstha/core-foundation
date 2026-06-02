@@ -79,7 +79,7 @@ protected function completedNotification(): ?Notification
 }
 ```
 
-Configure notifiable channel and route in `config/core_foundation.php`:
+Configure notifiable channel and route in `config/core-foundation.php`:
 
 ```php
 'notifications' => [

@@ -1,6 +1,6 @@
 ---
 name: core-foundation-best-practices
-description: "Apply this skill whenever writing, reviewing, or refactoring code in a CoreFoundation Laravel project. Triggers for all base class usage: BaseController (response envelope, exception handling), BaseService (pipeline, events, defer), BaseRepository (filtering, caching, query contracts), BaseDataObject (DTOs, typed properties), BaseResource/BaseCollection (field pipeline, modular extension), BaseRequest (rule hierarchy, route params), BasePolicy (deny-by-default), BaseObserver (lifecycle events), BaseJob (notifications, batching), BaseApiException (three-layer exception system), BaseExtensionServiceProvider (module hooks), BaseTestCase (envelope assertions), and BaseModel (modular extensibility). Also use for module isolation decisions, the response envelope shape, and any CoreFoundation architecture question."
+description: "Apply this skill whenever writing, reviewing, or refactoring code in a CoreFoundation Laravel project. Triggers for all base class usage: BaseController (response envelope, exception handling), BaseService (pipeline, events, defer), BaseRepository (filtering, caching, query contracts, locking), BaseDataObject (DTOs, typed properties), BaseResource/BaseCollection (field pipeline, modular extension), BaseRequest (rule hierarchy, route params), BasePolicy (deny-by-default), BaseObserver (lifecycle events), BaseJob (notifications, batching), BaseApiException (three-layer exception system), BaseExtensionServiceProvider (module hooks), BaseTestCase (envelope assertions), BaseModel (modular extensibility), and ApplicationContext (domain-scoped state). Also use for module isolation decisions, the response envelope shape, and any CoreFoundation architecture question."
 license: MIT
 metadata:
   author: Rupesh Shrestha
@@ -40,6 +40,8 @@ Before applying any rule, check what the application already does. If a pattern 
 - Custom queries always start from `$this->query()` — never `Model::query()` directly
 - Always `bind()` repositories — never `singleton()` or `scoped()`
 - `fetchAll` and `fetchById` are cached by default; override `cachedMethods()` to change
+- Use `lockForUpdate()` / `sharedLock()` for pessimistic locking (automatically bypasses cache)
+- Use `updateAtomic($id, $attributes, $conditions)` for Compare-and-Swap concurrency control
 
 ### 4. BaseDataObject → `rules/base-data-object.md`
 

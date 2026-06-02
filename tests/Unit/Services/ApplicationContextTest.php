@@ -4,9 +4,9 @@ namespace CoreFoundation\Tests\Unit\Services;
 
 use Illuminate\Support\Facades\Context;
 use CoreFoundation\Tests\PackageTestCase;
-use CoreFoundation\Services\ApplicationState;
+use CoreFoundation\Services\ApplicationContext;
 
-class TestState extends ApplicationState
+class TestContext extends ApplicationContext
 {
     protected function prefix(): string
     {
@@ -34,7 +34,7 @@ class TestState extends ApplicationState
     }
 }
 
-class ApplicationStateTest extends PackageTestCase
+class ApplicationContextTest extends PackageTestCase
 {
     protected function setUp(): void
     {
@@ -44,20 +44,20 @@ class ApplicationStateTest extends PackageTestCase
 
     public function test_it_namespaces_keys(): void
     {
-        $state = new TestState;
-        $state->setFoo('bar');
+        $context = new TestContext;
+        $context->setFoo('bar');
 
         $this->assertEquals('bar', Context::get('test.foo'));
-        $this->assertEquals('bar', $state->getFoo());
+        $this->assertEquals('bar', $context->getFoo());
     }
 
     public function test_it_can_get_snapshot(): void
     {
-        $state = new TestState;
-        $state->setFoo('bar');
-        $state->setPublic('baz', 'qux');
+        $context = new TestContext;
+        $context->setFoo('bar');
+        $context->setPublic('baz', 'qux');
 
-        $snapshot = $state->snapshot();
+        $snapshot = $context->snapshot();
 
         $this->assertArrayHasKey('foo', $snapshot);
         $this->assertArrayHasKey('baz', $snapshot);
@@ -66,13 +66,13 @@ class ApplicationStateTest extends PackageTestCase
 
     public function test_it_can_flush_domain_state(): void
     {
-        $state = new TestState;
-        $state->setFoo('bar');
+        $context = new TestContext;
+        $context->setFoo('bar');
         Context::add('other.key', 'stay');
 
-        $state->flush();
+        $context->flush();
 
-        $this->assertTrue($state->isMissing('foo'));
+        $this->assertTrue($context->isMissing('foo'));
         $this->assertTrue(Context::has('other.key'));
     }
 }

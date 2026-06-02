@@ -2,6 +2,7 @@
 
 namespace CoreFoundation\Tests\Unit\Observers;
 
+use stdClass;
 use CoreFoundation\Tests\PackageTestCase;
 use CoreFoundation\Observers\BaseObserver;
 
@@ -19,86 +20,87 @@ class BaseObserverTest extends PackageTestCase
 
     public function test_creating_is_no_op_by_default(): void
     {
-        $result = $this->observer->creating(new \stdClass);
+        $result = $this->observer->creating(new stdClass);
         $this->assertNull($result);
     }
 
     public function test_created_is_no_op_by_default(): void
     {
-        $result = $this->observer->created(new \stdClass);
+        $result = $this->observer->created(new stdClass);
         $this->assertNull($result);
     }
 
     public function test_updating_is_no_op_by_default(): void
     {
-        $result = $this->observer->updating(new \stdClass);
+        $result = $this->observer->updating(new stdClass);
         $this->assertNull($result);
     }
 
     public function test_updated_is_no_op_by_default(): void
     {
-        $result = $this->observer->updated(new \stdClass);
+        $result = $this->observer->updated(new stdClass);
         $this->assertNull($result);
     }
 
     public function test_saving_is_no_op_by_default(): void
     {
-        $result = $this->observer->saving(new \stdClass);
+        $result = $this->observer->saving(new stdClass);
         $this->assertNull($result);
     }
 
     public function test_saved_is_no_op_by_default(): void
     {
-        $result = $this->observer->saved(new \stdClass);
+        $result = $this->observer->saved(new stdClass);
         $this->assertNull($result);
     }
 
     public function test_deleting_is_no_op_by_default(): void
     {
-        $result = $this->observer->deleting(new \stdClass);
+        $result = $this->observer->deleting(new stdClass);
         $this->assertNull($result);
     }
 
     public function test_deleted_is_no_op_by_default(): void
     {
-        $result = $this->observer->deleted(new \stdClass);
+        $result = $this->observer->deleted(new stdClass);
         $this->assertNull($result);
     }
 
     public function test_restoring_is_no_op_by_default(): void
     {
-        $result = $this->observer->restoring(new \stdClass);
+        $result = $this->observer->restoring(new stdClass);
         $this->assertNull($result);
     }
 
     public function test_restored_is_no_op_by_default(): void
     {
-        $result = $this->observer->restored(new \stdClass);
+        $result = $this->observer->restored(new stdClass);
         $this->assertNull($result);
     }
 
     public function test_force_deleting_is_no_op_by_default(): void
     {
-        $result = $this->observer->forceDeleting(new \stdClass);
+        $result = $this->observer->forceDeleting(new stdClass);
         $this->assertNull($result);
     }
 
     public function test_force_deleted_is_no_op_by_default(): void
     {
-        $result = $this->observer->forceDeleted(new \stdClass);
+        $result = $this->observer->forceDeleted(new stdClass);
         $this->assertNull($result);
     }
 
     public function test_replicating_is_no_op_by_default(): void
     {
-        $result = $this->observer->replicating(new \stdClass);
+        $result = $this->observer->replicating(new stdClass);
         $this->assertNull($result);
     }
 
     public function test_overriding_lifecycle_method_is_called(): void
     {
         $called = false;
-        $observer = new class extends BaseObserver {
+        $observer = new class extends BaseObserver
+        {
             public bool $wasCalled = false;
 
             public function created(mixed $model): void
@@ -107,7 +109,7 @@ class BaseObserverTest extends PackageTestCase
             }
         };
 
-        $observer->created(new \stdClass);
+        $observer->created(new stdClass);
         $this->assertTrue($observer->wasCalled);
     }
 }

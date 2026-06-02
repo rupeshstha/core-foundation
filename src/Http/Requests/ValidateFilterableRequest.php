@@ -4,7 +4,7 @@ namespace CoreFoundation\Http\Requests;
 
 class ValidateFilterableRequest extends BaseRequest
 {
-    public function rules(): array
+    protected function baseRules(): array
     {
         return [
             'per_page' => 'sometimes|numeric',
@@ -17,6 +17,7 @@ class ValidateFilterableRequest extends BaseRequest
         ];
     }
 
+    /** @return array<string, string> */
     public function messages(): array
     {
         return [

@@ -42,4 +42,14 @@ interface ReadRepositoryContract
         array $relations = [],
         array $columns = ['*'],
     ): ?Model;
+
+    /**
+     * Apply a "FOR UPDATE" pessimistic lock to the next read query.
+     */
+    public function lockForUpdate(): static;
+
+    /**
+     * Apply a "FOR SHARE" pessimistic shared lock to the next read query.
+     */
+    public function sharedLock(): static;
 }

@@ -85,7 +85,7 @@ final class RelationTagResolver
      */
     private function discoverRelationTables(Model $model): array
     {
-        $tables     = [];
+        $tables = [];
         $reflection = new ReflectionClass($model);
 
         foreach ($reflection->getMethods(ReflectionMethod::IS_PUBLIC) as $method) {

@@ -1,3 +1,6 @@
+includes:
+  - phpstan-baseline.neon
+
 parameters:
   paths:
     - src
@@ -6,6 +9,12 @@ parameters:
 
   treatPhpDocTypesAsCertain: false
 
+  # Baseline entries may not match on all Laravel/PHP version combinations;
+  # unmatched entries are silently skipped rather than failing the build.
+  reportUnmatchedIgnoredErrors: false
+
   ignoreErrors:
     - "#Unsafe usage of new static\\(\\)#"
-    - "#Call to an undefined method Illuminate\\\\Contracts\\\\Foundation\\\\Application::routesAreCached#"
+    # Context::increment(), decrement(), scope() were added after Laravel 11.0;
+    # suppress for the ^11.0 matrix while keeping full analysis for Laravel 12.
+    - "#Call to an undefined static method Illuminate\\\\Support\\\\Facades\\\\Context::(increment|decrement|scope)\\(\\)\\.#"

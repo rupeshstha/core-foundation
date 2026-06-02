@@ -186,7 +186,8 @@ class MakeModuleCommand extends Command
 
     private function resolveName(): string
     {
-        $raw = $this->argument('name') ?? text(
+        $arg = $this->argument('name');
+        $raw = is_string($arg) ? $arg : text(
             label: 'Class name',
             placeholder: 'Order',
             required: true,
