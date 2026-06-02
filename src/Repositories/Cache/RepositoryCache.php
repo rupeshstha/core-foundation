@@ -4,8 +4,8 @@ namespace CoreFoundation\Repositories\Cache;
 
 use Closure;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Database\Eloquent\Model;
 use CoreFoundation\Traits\HasCacheable;
+use Illuminate\Database\Eloquent\Model;
 
 /**
  * RepositoryCache

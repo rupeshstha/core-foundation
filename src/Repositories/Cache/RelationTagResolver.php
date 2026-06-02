@@ -7,8 +7,8 @@ use ReflectionClass;
 use ReflectionMethod;
 use Illuminate\Support\Str;
 use Illuminate\Database\Eloquent\Model;
-use CoreFoundation\Entities\Contracts\HasRelationRegistry;
 use Illuminate\Database\Eloquent\Relations\Relation;
+use CoreFoundation\Entities\Contracts\HasRelationRegistry;
 
 /**
  * RelationTagResolver

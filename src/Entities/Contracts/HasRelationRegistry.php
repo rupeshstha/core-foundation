@@ -2,6 +2,8 @@
 
 namespace CoreFoundation\Entities\Contracts;
 
+use Closure;
+
 /**
  * HasRelationRegistry
  *
@@ -13,6 +15,6 @@ namespace CoreFoundation\Entities\Contracts;
  */
 interface HasRelationRegistry
 {
-    /** @return array<string, \Closure> */
+    /** @return array<string, Closure> */
     public static function getBindRelations(): array;
 }

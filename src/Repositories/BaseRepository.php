@@ -3,7 +3,6 @@
 namespace CoreFoundation\Repositories;
 
 use CoreFoundation\Traits\HasEvent;
-use CoreFoundation\Entities\Contracts\HasSearchableColumns;
 use Illuminate\Foundation\Application;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
@@ -15,6 +14,7 @@ use CoreFoundation\Repositories\Sort\SortApplicator;
 use CoreFoundation\Repositories\Cache\RepositoryCache;
 use CoreFoundation\Repositories\Filter\FilterApplicator;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use CoreFoundation\Entities\Contracts\HasSearchableColumns;
 use CoreFoundation\Repositories\Contracts\RepositoryContract;
 use CoreFoundation\Repositories\Exceptions\ModelNotInstantiableException;
 
