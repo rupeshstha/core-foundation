@@ -112,7 +112,7 @@ Before applying any rule, check what the application already does. If a pattern 
 - Module B adds fillable/casts/relations/scopes from its own ServiceProvider — never edit the model source
 - `static::class` in all static registries — never `self::class` (subclass collision)
 - Never register a model as `singleton()` or `scoped()` — always transient
-- `BaseRepository` requires the model to extend `BaseModel` — never `Illuminate\Database\Eloquent\Model`
+- `BaseRepository` accepts any `Illuminate\Database\Eloquent\Model` subclass; extending `BaseModel` is recommended for full capabilities — implement `HasSearchableColumns` / `HasRelationRegistry` to opt in without extending `BaseModel`
 
 ## How to Apply
 

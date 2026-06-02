@@ -2,7 +2,7 @@
 
 namespace CoreFoundation\Repositories\Cache;
 
-use CoreFoundation\Entities\BaseModel;
+use Illuminate\Database\Eloquent\Model;
 
 /**
  * RepositoryCacheObserver
@@ -46,7 +46,7 @@ class RepositoryCacheObserver
      * Handle the "created" event.
      * New records only affect listings; no individual record cache exists yet.
      */
-    public function created(BaseModel $model): void
+    public function created(Model $model): void
     {
         $this->cache->flushModel($model, $this->scopeFromModel($model));
     }
@@ -55,7 +55,7 @@ class RepositoryCacheObserver
      * Handle the "updated" event.
      * Must flush both the record (stale data) and listings (may have changed position/filtered out).
      */
-    public function updated(BaseModel $model): void
+    public function updated(Model $model): void
     {
         $this->cache->flushRecord($model, $model->getKey(), $this->scopeFromModel($model));
     }
@@ -64,7 +64,7 @@ class RepositoryCacheObserver
      * Handle the "deleted" event.
      * Must flush both the record and listings.
      */
-    public function deleted(BaseModel $model): void
+    public function deleted(Model $model): void
     {
         $this->cache->flushRecord($model, $model->getKey(), $this->scopeFromModel($model));
     }
@@ -73,7 +73,7 @@ class RepositoryCacheObserver
      * Handle the "restored" event.
      * Restored records affect listings (they reappear); individual record cache is likely already empty.
      */
-    public function restored(BaseModel $model): void
+    public function restored(Model $model): void
     {
         $this->cache->flushModel($model, $this->scopeFromModel($model));
     }
@@ -90,7 +90,7 @@ class RepositoryCacheObserver
      * Default: reads 'tenant_id' — returns TenantCacheScope when present,
      * null (global invalidation) when the model has no tenant_id.
      */
-    protected function scopeFromModel(BaseModel $model): ?CacheScope
+    protected function scopeFromModel(Model $model): ?CacheScope
     {
         $tenantId = $model->getAttribute('tenant_id');
 

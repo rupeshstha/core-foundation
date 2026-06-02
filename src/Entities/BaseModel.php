@@ -3,6 +3,8 @@
 namespace CoreFoundation\Entities;
 
 use Illuminate\Database\Eloquent\Model;
+use CoreFoundation\Entities\Contracts\HasRelationRegistry;
+use CoreFoundation\Entities\Contracts\HasSearchableColumns;
 use CoreFoundation\Traits\Models\ModelCastables;
 use CoreFoundation\Traits\Models\ModelFillables;
 use CoreFoundation\Traits\Models\ModelRelatable;
@@ -73,7 +75,7 @@ use CoreFoundation\Traits\Models\ModelSearchable;
  * │   Order::getAdditionalScopes()     // global scopes added by modules        │
  * └─────────────────────────────────────────────────────────────────────────────┘
  */
-abstract class BaseModel extends Model
+abstract class BaseModel extends Model implements HasSearchableColumns, HasRelationRegistry
 {
     use ModelCastables;
     use ModelFillables;

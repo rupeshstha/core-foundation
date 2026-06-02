@@ -3,7 +3,7 @@
 namespace CoreFoundation\Repositories;
 
 use CoreFoundation\Traits\HasEvent;
-use CoreFoundation\Entities\BaseModel;
+use CoreFoundation\Entities\Contracts\HasSearchableColumns;
 use Illuminate\Foundation\Application;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
@@ -70,7 +70,7 @@ abstract class BaseRepository implements RepositoryContract
 {
     use HasEvent;
 
-    protected BaseModel $model;
+    protected Model $model;
 
     public function __construct(
         protected readonly Application $app,
@@ -104,7 +104,9 @@ abstract class BaseRepository implements RepositoryContract
      */
     protected function searchable(): array
     {
-        return $this->model::getSearchable();
+        return $this->model instanceof HasSearchableColumns
+            ? $this->model::getSearchable()
+            : [];
     }
 
     /**
@@ -297,7 +299,7 @@ abstract class BaseRepository implements RepositoryContract
     // RepositoryContract — Model access
     // =========================================================================
 
-    public function getModel(): BaseModel
+    public function getModel(): Model
     {
         return $this->model;
     }
@@ -352,9 +354,9 @@ abstract class BaseRepository implements RepositoryContract
         $instance = $this->app->make($modelClass);
 
         throw_unless(
-            condition: $instance instanceof BaseModel,
+            condition: $instance instanceof Model,
             exception: new ModelNotInstantiableException(
-                "[{$modelClass}] must extend CoreFoundation\\Entities\\BaseModel."
+                "[{$modelClass}] must extend Illuminate\\Database\\Eloquent\\Model."
             ),
         );
 

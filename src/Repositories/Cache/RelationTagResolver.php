@@ -6,7 +6,8 @@ use Throwable;
 use ReflectionClass;
 use ReflectionMethod;
 use Illuminate\Support\Str;
-use CoreFoundation\Entities\BaseModel;
+use Illuminate\Database\Eloquent\Model;
+use CoreFoundation\Entities\Contracts\HasRelationRegistry;
 use Illuminate\Database\Eloquent\Relations\Relation;
 
 /**
@@ -47,7 +48,7 @@ final class RelationTagResolver
      * @param  array<string>  $requestedRelations  Relations eager-loaded in this query
      * @return array<string>
      */
-    public function resolveRelationTags(BaseModel $model, array $requestedRelations = []): array
+    public function resolveRelationTags(Model $model, array $requestedRelations = []): array
     {
         $modelClass = $model::class;
 
@@ -82,7 +83,7 @@ final class RelationTagResolver
      *
      * @return array<string>
      */
-    private function discoverRelationTables(BaseModel $model): array
+    private function discoverRelationTables(Model $model): array
     {
         $tables     = [];
         $reflection = new ReflectionClass($model);
@@ -107,15 +108,17 @@ final class RelationTagResolver
             }
         }
 
-        foreach ($model::getBindRelations() as $closure) {
-            try {
-                $result = $closure->call($model, $model);
+        if ($model instanceof HasRelationRegistry) {
+            foreach ($model::getBindRelations() as $closure) {
+                try {
+                    $result = $closure->call($model, $model);
 
-                if ($result instanceof Relation) {
-                    $tables[] = $result->getRelated()->getTable();
+                    if ($result instanceof Relation) {
+                        $tables[] = $result->getRelated()->getTable();
+                    }
+                } catch (Throwable) {
+                    // Skip
                 }
-            } catch (Throwable) {
-                // Skip
             }
         }
 

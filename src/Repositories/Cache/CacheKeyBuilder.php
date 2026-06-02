@@ -2,7 +2,7 @@
 
 namespace CoreFoundation\Repositories\Cache;
 
-use CoreFoundation\Entities\BaseModel;
+use Illuminate\Database\Eloquent\Model;
 
 /**
  * CacheKeyBuilder
@@ -30,7 +30,7 @@ final class CacheKeyBuilder
     /**
      * Build a cache key for a repository query.
      *
-     * @param  BaseModel  $model  The model being queried (schema reference only)
+     * @param  Model  $model  The model being queried (schema reference only)
      * @param  string  $method  Repository method name e.g. 'fetchAll', 'fetchById'
      * @param  array  $filters  Applied filter parameters
      * @param  array  $relations  Eager-loaded relation names
@@ -39,7 +39,7 @@ final class CacheKeyBuilder
      * @param  CacheScope|null  $scope  Isolation boundary — tenant, user, etc.
      */
     public function build(
-        BaseModel $model,
+        Model $model,
         string $method,
         array $filters = [],
         array $relations = [],
@@ -75,7 +75,7 @@ final class CacheKeyBuilder
      * @param  CacheScope|null  $scope  Must match the scope used at write time
      */
     public function buildRecordTag(
-        BaseModel $model,
+        Model $model,
         int|string $id,
         ?CacheScope $scope = null,
     ): string {
@@ -94,7 +94,7 @@ final class CacheKeyBuilder
      *
      * @param  CacheScope|null  $scope  Must match the scope used at write time
      */
-    public function buildListingTag(BaseModel $model, ?CacheScope $scope = null): string
+    public function buildListingTag(Model $model, ?CacheScope $scope = null): string
     {
         $base = sprintf('%s:listing', $model->getTable());
 

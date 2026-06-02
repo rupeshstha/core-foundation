@@ -1,8 +1,17 @@
 # BaseModel Rules
 
-## Every Eloquent Model Must Extend BaseModel
+## Extending BaseModel — Recommended, Not Required
 
-`BaseRepository` requires a `BaseModel` subclass. Passing a plain `Model` throws a `LogicException` at construction time.
+`BaseRepository` accepts any `Illuminate\Database\Eloquent\Model` subclass. Extending `BaseModel` is strongly recommended because it unlocks the full modular extensibility system (fillable, casts, relations, scopes, searchable) and automatic searchable column discovery in repositories.
+
+For models that cannot extend `BaseModel` (e.g. third-party package models), implement the capability interfaces to opt in to specific features:
+
+| Interface | Namespace | What it unlocks |
+|---|---|---|
+| `HasSearchableColumns` | `CoreFoundation\Entities\Contracts` | `getSearchable()` in repository filter whitelist |
+| `HasRelationRegistry` | `CoreFoundation\Entities\Contracts` | `getBindRelations()` in relation-aware cache tags |
+
+Without either interface, the repository still works — `searchable()` returns `[]` (no filter columns), and relation cache tags fall back to Reflection-only discovery.
 
 ```php
 use CoreFoundation\Entities\BaseModel;

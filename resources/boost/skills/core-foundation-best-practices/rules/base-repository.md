@@ -1,15 +1,17 @@
 # BaseRepository Rules
 
-## `setModel()` — Return a `BaseModel` Subclass
+## `setModel()` — Return an Eloquent `Model` Subclass
 
-`setModel()` must return the FQCN of a class that extends `BaseModel`. `BaseRepository` throws `ModelNotInstantiableException` if the model doesn't extend `BaseModel`.
+`setModel()` must return the FQCN of a class that extends `Illuminate\Database\Eloquent\Model`. `BaseRepository` throws `ModelNotInstantiableException` if the model is not an Eloquent model.
+
+Extending `BaseModel` is the recommended path — it unlocks modular extensibility (`addFillable`, `addRelation`, etc.) and automatic searchable column discovery. If you cannot extend `BaseModel` (e.g. the model comes from a third-party package), implement `HasSearchableColumns` and/or `HasRelationRegistry` from `CoreFoundation\Entities\Contracts` to opt in to those specific capabilities.
 
 ```php
 class OrderRepository extends BaseRepository implements RepositoryContract
 {
     protected function setModel(): string
     {
-        return Order::class; // Order must extend BaseModel
+        return Order::class; // Order extends BaseModel (recommended) or any Eloquent Model
     }
 }
 ```

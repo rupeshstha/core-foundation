@@ -2,7 +2,7 @@
 
 namespace CoreFoundation\Repositories\Contracts;
 
-use CoreFoundation\Entities\BaseModel;
+use Illuminate\Database\Eloquent\Model;
 
 /**
  * RepositoryContract
@@ -12,5 +12,5 @@ use CoreFoundation\Entities\BaseModel;
  */
 interface RepositoryContract extends QueryRepositoryContract, ReadRepositoryContract, WriteRepositoryContract
 {
-    public function getModel(): BaseModel;
+    public function getModel(): Model;
 }

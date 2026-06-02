@@ -4,7 +4,7 @@ namespace CoreFoundation\Repositories\Cache;
 
 use Closure;
 use Illuminate\Support\Facades\Log;
-use CoreFoundation\Entities\BaseModel;
+use Illuminate\Database\Eloquent\Model;
 use CoreFoundation\Traits\HasCacheable;
 
 /**
@@ -65,7 +65,7 @@ final class RepositoryCache
      * @param  CacheScope|null  $scope  Isolation boundary; null = global (no isolation)
      */
     public function remember(
-        BaseModel $model,
+        Model $model,
         string $method,
         array $filters,
         array $relations,
@@ -100,7 +100,7 @@ final class RepositoryCache
      * Example (scoped):   flushes tenant:5:products:listing
      * Example (unscoped): flushes products:listing
      */
-    public function flushModel(BaseModel $model, ?CacheScope $scope = null): void
+    public function flushModel(Model $model, ?CacheScope $scope = null): void
     {
         $tag = $this->keyBuilder->buildListingTag($model, $scope);
 
@@ -127,7 +127,7 @@ final class RepositoryCache
      *   ✓  tenant:1:products:record:123   (same record ID, different tenant)
      *   ✓  tenant:1:products:listing      (other tenant's listings)
      */
-    public function flushRecord(BaseModel $model, int|string $id, ?CacheScope $scope = null): void
+    public function flushRecord(Model $model, int|string $id, ?CacheScope $scope = null): void
     {
         $recordTag  = $this->keyBuilder->buildRecordTag($model, $id, $scope);
         $listingTag = $this->keyBuilder->buildListingTag($model, $scope);
@@ -153,7 +153,7 @@ final class RepositoryCache
      * With scope:    only flushes within that scope
      * Without scope: flushes globally across all scopes for this model
      */
-    public function flushAll(BaseModel $model, ?CacheScope $scope = null): void
+    public function flushAll(Model $model, ?CacheScope $scope = null): void
     {
         // The base model tag covers all sub-tags (listing, record:*) for this scope
         $baseTag = $scope
@@ -206,7 +206,7 @@ final class RepositoryCache
      * @return non-empty-array<string>
      */
     private function buildTags(
-        BaseModel $model,
+        Model $model,
         array $relations,
         QueryType $queryType,
         int|string|null $recordId,
