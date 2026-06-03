@@ -14,6 +14,7 @@ namespace CoreFoundation\Entities\Contracts;
  */
 interface HasSearchableColumns
 {
+    /** @param array<string> $columns */
     public static function addSearchable(array $columns): void;
 
     /** @return array<string> */

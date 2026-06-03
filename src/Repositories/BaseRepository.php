@@ -207,7 +207,10 @@ abstract class BaseRepository implements RepositoryContract
             queryType: QueryType::Listing,
             scope: $this->cacheScope(),
             callback: function () use ($filters, $relations, $columns, $paginate, $perPage) {
-                $query = $this->model::select($columns);
+                /** @var Builder<Model> $query */
+                $query = $this->model->newQuery();
+                $query->select($columns);
+
                 $this->applyLock($query);
 
                 if ($relations) {
@@ -250,7 +253,10 @@ abstract class BaseRepository implements RepositoryContract
             recordId: $id,
             scope: $this->cacheScope(),
             callback: function () use ($id, $relations, $columns) {
-                $query = $this->model::select($columns);
+                /** @var Builder<Model> $query */
+                $query = $this->model->newQuery();
+                $query->select($columns);
+
                 $this->applyLock($query);
 
                 if ($relations) {
@@ -270,7 +276,7 @@ abstract class BaseRepository implements RepositoryContract
     {
         $this->dispatch('create.before', $attributes);
 
-        $model = $this->model::create($attributes);
+        $model = $this->model->newQuery()->create($attributes);
 
         // Observer handles cache invalidation by default.
         // Call explicitly here only if the observer is not registered.
@@ -285,7 +291,7 @@ abstract class BaseRepository implements RepositoryContract
     {
         $this->dispatch('update.before', compact('id', 'attributes'));
 
-        $model = $this->model::findOrFail($id);
+        $model = $this->model->newQuery()->findOrFail($id);
         $model->update($attributes);
 
         // Observer handles cache invalidation by default.
@@ -300,9 +306,10 @@ abstract class BaseRepository implements RepositoryContract
     {
         $this->dispatch('update-atomic.before', compact('id', 'attributes', 'conditions'));
 
-        $model = $this->model::findOrFail($id);
+        $model = $this->model->newQuery()->findOrFail($id);
 
-        $affected = $this->model::where($model->getKeyName(), $id)
+        $affected = $this->model->newQuery()
+            ->where($model->getKeyName(), $id)
             ->where($conditions)
             ->update($attributes);
 
@@ -310,7 +317,8 @@ abstract class BaseRepository implements RepositoryContract
         // 1. Stale data (conditions didn't match)
         // 2. Data was already identical (no-op update)
         if ($affected === 0) {
-            $isStillValid = $this->model::where($model->getKeyName(), $id)
+            $isStillValid = $this->model->newQuery()
+                ->where($model->getKeyName(), $id)
                 ->where($conditions)
                 ->exists();
 
@@ -333,7 +341,7 @@ abstract class BaseRepository implements RepositoryContract
     {
         $this->dispatch('delete.before', compact('id'));
 
-        $model = $this->model::findOrFail($id);
+        $model = $this->model->newQuery()->findOrFail($id);
         $result = (bool) $model->delete();
 
         // Observer handles cache invalidation by default.

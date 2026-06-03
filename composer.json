@@ -55,7 +55,7 @@
     "scripts": {
         "test": "vendor/bin/pest",
         "test:lint": "vendor/bin/pint --test",
-        "test:types": "vendor/bin/phpstan analyse --verbose",
+        "test:types": "vendor/bin/phpstan analyse --verbose --memory-limit=512M",
         "test:unit": "vendor/bin/pest",
         "test:coverage": "vendor/bin/pest --coverage-html coverage"
     },
