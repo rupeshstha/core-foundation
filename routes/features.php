@@ -9,14 +9,19 @@ use CoreFoundation\Http\Controllers\FeatureFlagController;
 |--------------------------------------------------------------------------
 |
 | These routes are registered automatically by CoreFoundationServiceProvider.
-| They require Sanctum authentication — the authenticated user is used as
-| the Pennant scope for all feature evaluations.
+| The middleware stack is config-driven — CoreFoundation does not assume any
+| particular authentication package. The default is Laravel's built-in 'auth'
+| guard. Override in config/core-foundation.php:
+|
+|   'auth' => ['features_middleware' => ['auth:sanctum']]   // Sanctum
+|   'auth' => ['features_middleware' => ['auth:api']]       // Passport
+|   'auth' => ['features_middleware' => []]                 // unprotected (use resolveScope())
 |
 | Prefix: /features (no /api prefix — the host app applies its own prefix)
 |
 */
 
-Route::middleware('auth:sanctum')
+Route::middleware(config('core-foundation.auth.features_middleware', ['auth']))
     ->prefix('features')
     ->group(static function (): void {
         Route::get('/', [FeatureFlagController::class, 'index'])

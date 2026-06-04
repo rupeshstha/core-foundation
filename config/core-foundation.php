@@ -7,6 +7,14 @@ use CoreFoundation\Notifications\JobCompletedNotification;
 
 return [
     /**
+     * Middleware applied to the built-in feature flag routes (GET /features).
+     * Override after publishing to match your application's auth guard.
+     */
+    'auth' => [
+        'features_middleware' => [],
+    ],
+
+    /**
      * Todo: make different config file but merge to same config key
      */
     'repository' => [
