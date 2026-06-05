@@ -11,7 +11,7 @@ return [
      * Override after publishing to match your application's auth guard.
      */
     'auth' => [
-        'features_middleware' => [],
+        'features_middleware' => ['auth'],
     ],
 
     /**
@@ -40,7 +40,7 @@ return [
         'repository' => env('CORE_CACHE_REPOSITORY', true),
         'cache_repository_methods' => [
             'fetchAll',
-            'fetch',
+            'fetchById',
         ],
         'cache_prefix' => env('APP_NAME'),
         'cache_ttl' => env('CORE_CACHE_TTL', 20),

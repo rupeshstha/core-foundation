@@ -25,6 +25,8 @@ class CoreFoundationServiceProvider extends ServiceProvider
     {
         $this->registerExceptionHandling();
 
+        $this->loadTranslationsFrom(__DIR__.'/../../lang', 'core-foundation');
+
         // Only register feature flag routes when Pennant is installed.
         // Prevents a fatal error when the host app hasn't required pennant/pennant.
         if (class_exists(Feature::class)) {
@@ -42,6 +44,10 @@ class CoreFoundationServiceProvider extends ServiceProvider
             $this->publishes([
                 __DIR__.'/../../config/core-foundation.php' => config_path('core-foundation.php'),
             ], 'core-foundation');
+
+            $this->publishes([
+                __DIR__.'/../../lang' => lang_path('vendor/core-foundation'),
+            ], 'core-foundation-lang');
 
             $this->commands([
                 GenerateApiDocs::class,

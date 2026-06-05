@@ -133,7 +133,7 @@ class FeatureFlagController extends BaseController
         }
 
         return $this->successResponse(
-            message: 'Features fetched successfully.',
+            message: $this->lang('core-foundation::features.fetch-all'),
             payload: ['features' => $features],
         );
     }
@@ -159,7 +159,7 @@ class FeatureFlagController extends BaseController
 
         if (! array_key_exists($feature, $all)) {
             return $this->errorResponse(
-                message: "Feature [{$feature}] is not defined.",
+                message: $this->lang('core-foundation::features.not-found', ['feature' => $feature]),
                 status: 404,
             );
         }
@@ -179,7 +179,7 @@ class FeatureFlagController extends BaseController
         }
 
         return $this->successResponse(
-            message: 'Feature fetched successfully.',
+            message: $this->lang('core-foundation::features.fetch-one'),
             payload: $payload,
         );
     }

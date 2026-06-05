@@ -147,15 +147,8 @@ use CoreFoundation\Manipulators\BaseDataObject;
  * │       (new OrderService)->resolvePreference()                               │
  * │   );                                                                        │
  * └─────────────────────────────────────────────────────────────────────────────┘
- *  ADD to the existing BaseService use declarations:
- *   use HasDeferrable;
- *
- * ADD to the existing BaseService imports:
- *   use CoreFoundation\Traits\HasDeferrable;
- *
- * ─────────────────────────────────────────────────────────────────────────────
- * DEFERRABLE PATTERN IN SERVICES
- * ─────────────────────────────────────────────────────────────────────────────
+ * ┌─────────────────────────────────────────────────────────────────────────────┐
+ * │ DEFERRABLE PATTERN IN SERVICES                                              │
  *
  * The standard write method pattern with defer:
  *
@@ -178,19 +171,18 @@ use CoreFoundation\Manipulators\BaseDataObject;
  *           return $result;
  *       });
  *   }
- *
- * ─────────────────────────────────────────────────────────────────────────────
- * DECISION GUIDE: defer() vs dispatch() vs queue()
- * ─────────────────────────────────────────────────────────────────────────────
- *
- *   defer()           Post-response, same process, no retry, milliseconds
- *                     Use for: cache busting, audit logs, analytics
- *
- *   dispatch()        Immediate, same request, listeners block the response
- *                     Use for: events where listeners affect the response
- *
- *   dispatch()->onQueue() Async, separate worker, retry, persistent
- *                     Use for: email, heavy processing, anything critical
+ * │                                                                             │
+ * │ DECISION GUIDE: defer() vs dispatch() vs queue()                            │
+ * │                                                                             │
+ * │   defer()               Post-response, same process, no retry              │
+ * │                         Use for: cache busting, audit logs, analytics      │
+ * │                                                                             │
+ * │   dispatch()            Immediate, same request, listeners block response   │
+ * │                         Use for: events where listeners affect the response │
+ * │                                                                             │
+ * │   dispatch()->onQueue() Async, separate worker, retry, persistent          │
+ * │                         Use for: email, heavy processing, critical work    │
+ * └─────────────────────────────────────────────────────────────────────────────┘
  */
 abstract class BaseService
 {

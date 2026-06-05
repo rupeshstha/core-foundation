@@ -3,20 +3,62 @@
 namespace CoreFoundation\Jobs;
 
 use Throwable;
-use Illuminate\Support\Str;
 use Illuminate\Bus\Batchable;
 use Illuminate\Bus\Queueable;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
 use CoreFoundation\Traits\HasNotification;
 use Illuminate\Notifications\Notification;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use CoreFoundation\Exceptions\ExceptionRenderer;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\Middleware\SkipIfBatchCancelled;
 use Illuminate\Support\Facades\Notification as NotificationFacade;
 
+/**
+ * BaseJob
+ *
+ * Foundation class for all queued jobs. Provides lifecycle hooks, structured
+ * failure logging, optional notifications, and batch support.
+ *
+ * ┌─────────────────────────────────────────────────────────────────────────────┐
+ * │ USAGE                                                                       │
+ * │                                                                             │
+ * │   final class SyncProductToSearchJob extends BaseJob                        │
+ * │   {                                                                         │
+ * │       public function __construct(                                          │
+ * │           private readonly int $productId,                                  │
+ * │       ) {}                                                                  │
+ * │                                                                             │
+ * │       public function handle(ProductService $service): void                 │
+ * │       {                                                                     │
+ * │           $this->notifyStarted();                                           │
+ * │           $service->syncToSearch($this->productId);                         │
+ * │           $this->notifyCompleted();                                         │
+ * │       }                                                                     │
+ * │   }                                                                         │
+ * └─────────────────────────────────────────────────────────────────────────────┘
+ *
+ * ┌─────────────────────────────────────────────────────────────────────────────┐
+ * │ NOTIFICATIONS                                                               │
+ * │                                                                             │
+ * │ Override shouldNotify() to enable failure/start/complete notifications:     │
+ * │                                                                             │
+ * │   protected function shouldNotify(): bool { return true; }                 │
+ * │                                                                             │
+ * │ Override failedNotification(), startedNotification(), completedNotification()
+ * │ to return a custom Notification class instead of the config defaults.       │
+ * └─────────────────────────────────────────────────────────────────────────────┘
+ *
+ * ┌─────────────────────────────────────────────────────────────────────────────┐
+ * │ FAILURE LOGGING                                                             │
+ * │                                                                             │
+ * │ On failure, the job logs a structured error entry using the same context    │
+ * │ builders as ExceptionRenderer — class, message, relative file:line, and    │
+ * │ trimmed trace. Override logContext() to add domain-specific fields.         │
+ * └─────────────────────────────────────────────────────────────────────────────┘
+ */
 abstract class BaseJob implements ShouldQueue
 {
     use Batchable;
@@ -36,9 +78,8 @@ abstract class BaseJob implements ShouldQueue
 
     public function failed(Throwable $exception): void
     {
-        // send notification
         $this->rollbackPreviousTransactions();
-        $this->setLogs($exception);
+        $this->logFailure($exception);
         $this->sendNotification($exception);
     }
 
@@ -54,35 +95,31 @@ abstract class BaseJob implements ShouldQueue
         }
     }
 
-    protected function errorMessageUniqueKey(): string
+    /**
+     * Whether to send notifications on failure/start/complete.
+     * Return true in subclasses that need alerting.
+     */
+    protected function shouldNotify(): bool
     {
-        return Str::slug(class_basename($this));
+        return false;
     }
 
-    protected function errorContext(Throwable $exception): array
+    /**
+     * Extra context merged into the failure log entry.
+     * Override to add domain-specific fields (order_id, tenant_id, etc.).
+     */
+    protected function logContext(Throwable $exception): array
     {
-        return [
-            'trace' => $exception->getTrace(),
-        ];
+        return [];
     }
 
-    protected function setLogs(Throwable $exception): void
+    private function logFailure(Throwable $exception): void
     {
-        Log::error(
-            message: $this->errorMessageUniqueKey().'| '.$exception->getMessage(),
-            context: [
-                [
-                    'trace_line' => $exception->getLine(),
-                    'trace_file' => $exception->getFile(),
-                ],
-                ...$this->errorContext($exception),
-            ]
-        );
-    }
-
-    protected function shouldNotify(bool $notify = false): bool
-    {
-        return $notify;
+        logger()->error('Job failed: '.class_basename($this).'.', [
+            'job'       => static::class,
+            'exception' => ExceptionRenderer::buildExceptionContext($exception),
+            ...$this->logContext($exception),
+        ]);
     }
 
     protected function additionalNotifiables(): array

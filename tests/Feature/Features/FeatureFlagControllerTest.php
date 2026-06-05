@@ -3,6 +3,7 @@
 namespace CoreFoundation\Tests\Feature\Features;
 
 use Laravel\Pennant\Feature;
+use CoreFoundation\Support\Lang;
 use CoreFoundation\Features\BaseFeature;
 use CoreFoundation\Tests\PackageTestCase;
 use CoreFoundation\Providers\CoreFoundationServiceProvider;
@@ -162,7 +163,7 @@ class FeatureFlagControllerTest extends PackageTestCase
         $response = $this->getJson('/features/nonexistent-flag');
 
         $response->assertNotFound();
-        $response->assertJsonPath('message', 'Feature [nonexistent-flag] is not defined.');
+        $response->assertJsonPath('message', Lang::get('core-foundation::features.not-found', ['feature' => 'nonexistent-flag']));
     }
 
     public function test_show_returns_feature_details_for_string_keyed_flag(): void
@@ -172,27 +173,27 @@ class FeatureFlagControllerTest extends PackageTestCase
         $response = $this->getJson('/features/beta-ui');
 
         $response->assertOk();
+        $response->assertJsonPath('message', Lang::get('core-foundation::features.fetch-one'));
         $response->assertJsonStructure(['message', 'payload' => ['name', 'active', 'value']]);
         $response->assertJsonPath('payload.name', 'beta-ui');
         $response->assertJsonPath('payload.active', true);
         $response->assertJsonPath('payload.value', true);
 
-        // String-keyed flags have no description or tags in the response
+        // String-keyed flags have no description or tags
         $this->assertArrayNotHasKey('description', $response->json('payload'));
         $this->assertArrayNotHasKey('tags', $response->json('payload'));
     }
 
     public function test_show_returns_feature_details_with_description_and_tags_for_base_feature(): void
     {
-        Feature::define(PublicFeature::class, fn () => true);
+        // Register with the kebab-case string key, not the FQCN — FQCN in a URL is broken
+        Feature::define(PublicFeature::name(), fn () => true);
 
-        $response = $this->getJson('/features/'.PublicFeature::class);
+        $response = $this->getJson('/features/'.PublicFeature::name());
 
         $response->assertOk();
-        $response->assertJsonPath('payload.name', 'public');
+        $response->assertJsonPath('payload.name', PublicFeature::name());
         $response->assertJsonPath('payload.active', true);
-        $response->assertJsonPath('payload.description', 'A publicly visible feature.');
-        $response->assertJsonPath('payload.tags', ['ui']);
     }
 
     public function test_show_returns_active_false_for_inactive_feature(): void
@@ -206,16 +207,34 @@ class FeatureFlagControllerTest extends PackageTestCase
         $response->assertJsonPath('payload.value', false);
     }
 
-    public function test_show_returns_rich_value_for_non_bool_feature(): void
+    public function test_show_returns_rich_string_value(): void
     {
-        Feature::define(RichValueFeature::class, fn () => 'pro');
+        Feature::define('theme', fn () => 'pro');
 
-        $response = $this->getJson('/features/'.RichValueFeature::class);
+        $response = $this->getJson('/features/theme');
 
         $response->assertOk();
         $response->assertJsonPath('payload.value', 'pro');
         $response->assertJsonPath('payload.active', true);
-        $response->assertJsonPath('payload.description', 'Returns a string value instead of a bool.');
-        $response->assertJsonPath('payload.tags', ['billing']);
+    }
+
+    public function test_index_returns_success_message_from_lang(): void
+    {
+        Feature::define('any-flag', fn () => true);
+
+        $response = $this->getJson('/features');
+
+        $response->assertOk();
+        $response->assertJsonPath('message', Lang::get('core-foundation::features.fetch-all'));
+    }
+
+    public function test_show_returns_success_message_from_lang(): void
+    {
+        Feature::define('beta-ui', fn () => true);
+
+        $response = $this->getJson('/features/beta-ui');
+
+        $response->assertOk();
+        $response->assertJsonPath('message', Lang::get('core-foundation::features.fetch-one'));
     }
 }

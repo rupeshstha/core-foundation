@@ -4,6 +4,7 @@ namespace CoreFoundation\Http\Requests;
 
 use ReflectionClass;
 use Illuminate\Validation\Rule;
+use CoreFoundation\Support\Lang;
 use CoreFoundation\Attributes\BodyParam;
 use CoreFoundation\Attributes\ApiRequest;
 use Illuminate\Foundation\Http\FormRequest;
@@ -126,7 +127,7 @@ abstract class BaseRequest extends FormRequest
     {
         throw new HttpResponseException(
             response()->json([
-                'message' => 'This action is unauthorized.',
+                'message' => Lang::get('core-foundation::http.unauthorized'),
             ], 403)
         );
     }

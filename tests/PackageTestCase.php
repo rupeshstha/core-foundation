@@ -20,13 +20,17 @@ abstract class PackageTestCase extends TestCase
     {
         $app['config']->set('database.default', 'testing');
         $app['config']->set('database.connections.testing', [
-            'driver' => 'sqlite',
+            'driver'   => 'sqlite',
             'database' => ':memory:',
-            'prefix' => '',
+            'prefix'   => '',
         ]);
 
         $app['config']->set('cache.default', 'array');
         $app['config']->set('repository', require __DIR__.'/../config/repository.php');
+
+        // Package tests run without an application auth layer.
+        // Auth guard selection is application-specific — not the package's concern.
+        $app['config']->set('core-foundation.auth.features_middleware', []);
     }
 
     protected function defineDatabaseMigrations(): void

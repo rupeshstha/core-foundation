@@ -3,10 +3,10 @@
 namespace CoreFoundation\Traits;
 
 use Throwable;
-use Illuminate\Support\Str;
 use Illuminate\Http\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use CoreFoundation\Exceptions\BaseApiException;
+use CoreFoundation\Exceptions\ExceptionRenderer;
 
 /**
  * HasExceptionHandler
@@ -78,25 +78,14 @@ trait HasExceptionHandler
             return $exception->render(request());
         }
 
-        // Fatal — unknown exception, generate UUID for support correlation
-        $exceptionId = (string) Str::uuid();
-
+        // report() triggers ExceptionRenderer's reporter pipeline:
+        // it logs the structured entry and stores the UUID in the WeakMap.
         report($exception);
 
-        logger()->error('Fatal exception: '.$exception->getMessage(), [
-            'exception_id' => $exceptionId,
-            'exception' => get_class($exception),
-            'message' => $exception->getMessage(),
-            'url' => request()->fullUrl(),
-            'method' => request()->method(),
-            'user_id' => auth()->id(),
-            'file' => $exception->getFile(),
-            'line' => $exception->getLine(),
-        ]);
-
-        return response()->json([
-            'message' => 'An unexpected error occurred. Please contact support with the exception ID.',
-            'exception_id' => $exceptionId,
-        ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        return $this->errorResponse(
+            message: $this->lang('core-foundation::http.server-error'),
+            status: Response::HTTP_INTERNAL_SERVER_ERROR,
+            exceptionId: ExceptionRenderer::consumeExceptionId($exception),
+        );
     }
 }

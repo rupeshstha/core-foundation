@@ -4,6 +4,7 @@ namespace CoreFoundation\Tests\Unit\Http\Requests;
 
 use ReflectionClass;
 use CoreFoundation\Tests\PackageTestCase;
+use CoreFoundation\Support\Lang;
 use CoreFoundation\Http\Requests\BaseRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
 
@@ -138,7 +139,7 @@ class BaseRequestExtendedTest extends PackageTestCase
             $response = $e->getResponse();
             $this->assertEquals(403, $response->getStatusCode());
             $data = json_decode($response->getContent(), true);
-            $this->assertEquals('This action is unauthorized.', $data['message']);
+            $this->assertEquals(Lang::get('core-foundation::http.unauthorized'), $data['message']);
         }
     }
 

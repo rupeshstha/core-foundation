@@ -26,7 +26,7 @@ use Illuminate\Http\Resources\Json\ResourceCollection;
  *
  *   return $this->paginatedResponse('Users fetched.', new UserCollection($paginator));
  *
- * Custom item shape (override toArray() when you need collection-level control):
+ * Add computed collection-level fields (override toArray() only for this):
  *
  *   final class OrderCollection extends BaseCollection
  *   {
@@ -34,7 +34,10 @@ use Illuminate\Http\Resources\Json\ResourceCollection;
  *
  *       public function toArray(Request $request): array
  *       {
- *           return parent::toArray($request);
+ *           return [
+ *               'items'   => parent::toArray($request),
+ *               'summary' => $this->collection->sum('total'),
+ *           ];
  *       }
  *   }
  */

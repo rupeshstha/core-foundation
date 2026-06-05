@@ -4,6 +4,7 @@ namespace CoreFoundation\Tests\Unit\Http\Controllers;
 
 use Exception;
 use Illuminate\Http\JsonResponse;
+use CoreFoundation\Support\Lang;
 use CoreFoundation\Tests\PackageTestCase;
 use Symfony\Component\HttpFoundation\Response;
 use CoreFoundation\Http\Controllers\BaseController;
@@ -45,6 +46,6 @@ class BaseControllerTest extends PackageTestCase
 
         $data = $response->getData(true);
         $this->assertArrayHasKey('exception_id', $data);
-        $this->assertStringContainsString('unexpected error', $data['message']);
+        $this->assertEquals(Lang::get('core-foundation::http.server-error'), $data['message']);
     }
 }
