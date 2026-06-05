@@ -69,6 +69,7 @@ class LangTest extends PackageTestCase
             'method-not-allowed'    => 'Method not allowed.',
             'database-error'        => 'A database error occurred. Please try again later.',
             'duplicate-entry'       => 'Duplicate entry.',
+            'foreign-key-violation' => 'Cannot delete or update a parent row: a foreign key constraint fails.',
             'server-error'          => 'An unexpected error occurred. Please contact support with the exception ID.',
         ];
 

@@ -69,12 +69,9 @@ class CoreFoundationServiceProvider extends ServiceProvider
 
         $this->bindServices();
         $this->mergeConfigFrom(__DIR__.'/../../config/core-foundation.php', 'core-foundation');
+        $this->mergeConfigFrom(__DIR__.'/../../config/repository.php', 'repository');
 
         include_once __DIR__.'/../Helpers/helpers.php';
-
-        $this->batchRegistrar([
-            __DIR__.'/../Repositories', // test bulk bind
-        ]);
     }
 
     private function bindServices(): void {}

@@ -1,67 +1,69 @@
 <?php
 
-use Illuminate\Support\Facades\Notification;
 use CoreFoundation\Notifications\JobFailedNotification;
 use CoreFoundation\Notifications\JobStartedNotification;
 use CoreFoundation\Notifications\JobCompletedNotification;
 
 return [
-    /**
-     * Middleware applied to the built-in feature flag routes (GET /features).
-     * Override after publishing to match your application's auth guard.
-     */
+
+    /*
+    |--------------------------------------------------------------------------
+    | Authentication
+    |--------------------------------------------------------------------------
+    |
+    | Middleware applied to the built-in feature flag routes (GET /features).
+    | Override after publishing to match your application's auth guard:
+    |
+    |   'features_middleware' => ['auth:sanctum']   Sanctum
+    |   'features_middleware' => ['auth:api']        Passport
+    |   'features_middleware' => []                  unprotected
+    |
+    */
+
     'auth' => [
         'features_middleware' => ['auth'],
     ],
 
-    /**
-     * Todo: make different config file but merge to same config key
-     */
-    'repository' => [
-        'pagination' => 25,
-        'indexing' => [
-            'cache' => [
-                'driver' => 'cache',
-                'status' => true,
-            ],
-            'algolia' => [
-                'driver' => 'algolia',
-                'status' => true,
-            ],
-        ],
-    ],
-    /**
-     * Global caching status
-     *
-     * Todo: make different config file but merge to same config key
-     */
+    /*
+    |--------------------------------------------------------------------------
+    | Cache
+    |--------------------------------------------------------------------------
+    |
+    | global  — Master on/off switch for all CoreFoundation caching.
+    | prefix  — Prefix applied to all cache keys (defaults to APP_NAME).
+    | ttl     — Default TTL in seconds for cached items.
+    |
+    | Repository-level caching is configured in config/repository.php.
+    |
+    */
+
     'cache' => [
-        'global' => env('CORE_CACHE_GLOBAL', true),
-        'repository' => env('CORE_CACHE_REPOSITORY', true),
-        'cache_repository_methods' => [
-            'fetchAll',
-            'fetchById',
-        ],
-        'cache_prefix' => env('APP_NAME'),
-        'cache_ttl' => env('CORE_CACHE_TTL', 20),
+        'global'        => env('CORE_CACHE_GLOBAL', true),
+        'cache_prefix'  => env('APP_NAME'),
+        'cache_ttl'     => env('CORE_CACHE_TTL', 20),
     ],
 
-    /**
-     * Notifications
-     */
+    /*
+    |--------------------------------------------------------------------------
+    | Notifications
+    |--------------------------------------------------------------------------
+    |
+    | Notification classes dispatched by BaseJob on failure, start, and
+    | completion. Set any value to null to disable that notification type.
+    |
+    */
+
     'notifications' => [
         'channel' => env('CORE_NOTIFY_CHANNEL', 'slack'),
-        /**
-         * Before changing notification channel, Change jobs channel dependencies.
-         */
         'jobs' => [
-            'failed' => JobFailedNotification::class,
-            'started' => JobStartedNotification::class,
+            'failed'    => JobFailedNotification::class,
+            'started'   => JobStartedNotification::class,
             'completed' => JobCompletedNotification::class,
             'notifiables' => [
                 'channel' => env('CORE_NOTIFY_CHANNEL', 'slack'),
-                'route' => env('CORE_NOTIFY_ROUTE', config('services.slack.webhook')),
+                'route'   => env('CORE_NOTIFY_ROUTE'),
             ],
         ],
     ],
+
 ];

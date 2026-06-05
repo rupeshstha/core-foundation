@@ -101,7 +101,6 @@ trait HasApiResponse
     final protected function paginatedResponse(
         string $message,
         AbstractPaginator $paginator,
-        string $message2 = '',
     ): JsonResponse {
         $paginator->appends(request()->query());
 
