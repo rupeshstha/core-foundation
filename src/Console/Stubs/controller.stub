@@ -14,14 +14,21 @@ use {{ namespace }}\Resources\{{ class }}Collection;
 class {{ class }}Controller extends BaseController
 {
     public function __construct(
-        private readonly {{ class }}Service $service,
-        private readonly {{ class }}Repository $repository,
+        private readonly {{ class }}Service ${{ class }}service,
+        private readonly {{ class }}Collection ${{ class }}Collection,
+        private readonly {{ class }}Resource ${{ class }}Resource,
     ) {}
 
-    public function index(): JsonResponse
+    public function index(Request): JsonResponse
     {
-        return $this->success(
-            new {{ class }}Collection($this->repository->fetchAll()),
+        try {
+            ${{ class }} = $this->{{ class }}Service->fetchAll();
+        } catch (Exception $exception) {
+            return $this->handleException($exception);
+        }
+
+        return $this->successResponse(
+            ,
         );
     }
 

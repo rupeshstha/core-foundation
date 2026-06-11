@@ -40,8 +40,7 @@ use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
  * │   class UserController extends BaseController                               │
  * │   {                                                                         │
  * │       public function __construct(                                          │
- * │           private readonly UserService    $userService,                     │
- * │           private readonly UserResource   $userResource,                    │
+ * │           private readonly UserService $userService,                        │
  * │       ) {}                                                                  │
  * │                                                                             │
  * │       public function index(Request $request): JsonResponse                 │

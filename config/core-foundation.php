@@ -21,7 +21,7 @@ return [
     */
 
     'auth' => [
-        'features_middleware' => ['auth'],
+        'features_middleware' => [],
     ],
 
     /*

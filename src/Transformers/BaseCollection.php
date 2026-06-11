@@ -30,7 +30,7 @@ use Illuminate\Http\Resources\Json\ResourceCollection;
  *
  *   final class OrderCollection extends BaseCollection
  *   {
- *       public string $collects = OrderResource::class;
+ *       public $collects = OrderResource::class;
  *
  *       public function toArray(Request $request): array
  *       {

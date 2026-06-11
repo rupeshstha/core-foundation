@@ -41,7 +41,7 @@ final class CacheKeyBuilder
     public function build(
         Model $model,
         string $method,
-        array $filters = [],
+        array $criteria = [],
         array $relations = [],
         array $columns = [],
         array $extra = [],
@@ -50,7 +50,7 @@ final class CacheKeyBuilder
         $payload = [
             'model' => $model::class,
             'method' => $method,
-            'filters' => $this->normalise($filters),
+            'criteria' => $this->normalise($criteria),
             'relations' => $this->normalise($relations),
             'columns' => $this->normalise($columns),
             'extra' => $this->normalise($extra),

@@ -83,13 +83,9 @@ class ExceptionRenderer
         static::registerReporters($exceptions);
     }
 
-    // =========================================================================
-    // Renderers — what the API client receives
-    // =========================================================================
-
     private static function registerRenderers(Exceptions $exceptions): void
     {
-        // ── ValidationException ───────────────────────────────────────────────
+        // ValidationException
         $exceptions->render(function (ValidationException $validationException, Request $request): ?JsonResponse {
             if (! $request->expectsJson()) {
                 return null;
