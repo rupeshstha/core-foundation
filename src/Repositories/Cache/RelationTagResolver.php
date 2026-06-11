@@ -2,138 +2,61 @@
 
 namespace CoreFoundation\Repositories\Cache;
 
-use Throwable;
-use ReflectionClass;
-use ReflectionMethod;
 use Illuminate\Support\Str;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\Relation;
-use CoreFoundation\Entities\Contracts\HasRelationRegistry;
 
 /**
  * RelationTagResolver
  *
- * Discovers related model table names for building relation-aware cache tags.
- *
- * When an Order caches its result with relation tags for 'products' and 'users',
- * any change to a Product or User model automatically busts the Order's cache.
- *
- * Relation tags are intentionally NOT scope-prefixed. A product update in any
- * tenant may affect a cached order in any tenant that includes that relation.
- * Scope isolation is applied at the primary (listing/record) tag level only.
+ * Converts eager-loaded relation names into cache invalidation tags.
  *
  * ┌─────────────────────────────────────────────────────────────────────────────┐
- * │ OCTANE SAFETY                                                               │
+ * │ WHY ONLY LOADED RELATIONS                                                   │
  * │                                                                             │
- * │ $resolved is static — safe because relation DEFINITIONS are immutable.      │
- * │ In development mode the registry is cleared each call to pick up changes.  │
+ * │ Previous design used reflection to discover ALL relations on a model and   │
+ * │ added all their table names as tags — even for queries that loaded none.   │
+ * │                                                                             │
+ * │ Problems with that approach:                                                │
+ * │  1. Invoking every public model method via reflection is fragile and        │
+ * │     expensive — methods may have side effects or throw unexpectedly.        │
+ * │  2. A User query that loads no relations gets tagged with 'profiles',       │
+ * │     'roles', 'permissions' etc. Any write to those tables busts the User   │
+ * │     listing cache unnecessarily.                                            │
+ * │  3. Cross-tenant invalidation — a profile write in tenant A busts the      │
+ * │     user listing cache in tenant B (since relation tags are unscoped).     │
+ * │                                                                             │
+ * │ Correct rule: a cache entry can only contain stale relation data if that   │
+ * │ relation was actually loaded. Tag only what was loaded.                    │
+ * └─────────────────────────────────────────────────────────────────────────────┘
+ *
+ * ┌─────────────────────────────────────────────────────────────────────────────┐
+ * │ TAG FORMAT                                                                  │
+ * │                                                                             │
+ * │ Relation name → singular snake_case table name (best-effort):              │
+ * │   'profile'      → 'profile'                                               │
+ * │   'orderItems'   → 'order_item'                                            │
+ * │   'order.items'  → ['order', 'item']  (nested: each segment tagged)        │
+ * │                                                                             │
+ * │ Relation tags are NOT scope-prefixed. A relation table is shared across    │
+ * │ all scopes — writing to it may affect any scope that loaded it.            │
  * └─────────────────────────────────────────────────────────────────────────────┘
  */
 final class RelationTagResolver
 {
     /**
-     * Resolved relation table names per model class.
-     * Keyed by model FQCN — safe for static use since definitions are constant.
+     * Convert relation names to cache tags.
      *
-     * @var array<class-string, array<string>>
+     * Only call this with the relations actually passed to ->with() for this
+     * query. Do not pass all possible model relations.
+     *
+     * @param  array<string>  $relations  Relation names e.g. ['profile', 'order.items']
+     * @return array<string>  Deduplicated table-name tags
      */
-    private static array $resolved = [];
-
-    /**
-     * Resolve relation-based cache tags for this model.
-     *
-     * Returns only the RELATION tags — not the primary model tag.
-     * The primary (listing / record) tag is built by RepositoryCache.
-     *
-     * @param  array<string>  $requestedRelations  Relations eager-loaded in this query
-     * @return array<string>
-     */
-    public function resolveRelationTags(Model $model, array $requestedRelations = []): array
+    public function resolve(array $relations): array
     {
-        $modelClass = $model::class;
-
-        if (! isset(self::$resolved[$modelClass]) || ! app()->isProduction()) {
-            self::$resolved[$modelClass] = $this->discoverRelationTables($model);
+        if (empty($relations)) {
+            return [];
         }
 
-        $tags = self::$resolved[$modelClass];
-        $tags = array_merge($tags, $this->resolveRequestedRelationTags($requestedRelations));
-
-        return array_unique($tags);
-    }
-
-    /**
-     * Clear the resolved cache for a model class.
-     * Call in tests when relations are added dynamically.
-     */
-    public static function clear(string $modelClass): void
-    {
-        unset(self::$resolved[$modelClass]);
-    }
-
-    // =========================================================================
-    // Internals
-    // =========================================================================
-
-    /**
-     * Discover relation table names via Reflection.
-     *
-     * Inspects public, no-parameter, non-magic methods that return Eloquent Relation
-     * instances. Also inspects externally bound relations from ModelRelatable::addRelation().
-     *
-     * @return array<string>
-     */
-    private function discoverRelationTables(Model $model): array
-    {
-        $tables = [];
-        $reflection = new ReflectionClass($model);
-
-        foreach ($reflection->getMethods(ReflectionMethod::IS_PUBLIC) as $method) {
-            if (
-                $method->class !== $model::class
-                || $method->getNumberOfParameters() > 0
-                || str_starts_with($method->getName(), '__')
-            ) {
-                continue;
-            }
-
-            try {
-                $result = $method->invoke($model);
-
-                if ($result instanceof Relation) {
-                    $tables[] = $result->getRelated()->getTable();
-                }
-            } catch (Throwable) {
-                // Not a relation method — skip
-            }
-        }
-
-        if ($model instanceof HasRelationRegistry) {
-            foreach ($model::getBindRelations() as $closure) {
-                try {
-                    $result = $closure->call($model, $model);
-
-                    if ($result instanceof Relation) {
-                        $tables[] = $result->getRelated()->getTable();
-                    }
-                } catch (Throwable) {
-                    // Skip
-                }
-            }
-        }
-
-        return array_unique($tables);
-    }
-
-    /**
-     * Convert dot-notation relation names to table name tags.
-     * 'order.items' → ['order', 'item']
-     *
-     * @param  array<string>  $relations
-     * @return array<string>
-     */
-    private function resolveRequestedRelationTags(array $relations): array
-    {
         $tags = [];
 
         foreach ($relations as $relation) {
@@ -142,6 +65,6 @@ final class RelationTagResolver
             }
         }
 
-        return $tags;
+        return array_unique($tags);
     }
 }

@@ -4,6 +4,7 @@ namespace CoreFoundation\Repositories;
 
 use CoreFoundation\Traits\HasEvent;
 use Illuminate\Foundation\Application;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
@@ -79,6 +80,15 @@ abstract class BaseRepository implements RepositoryContract
      * @var string|false 'update', 'shared', or false
      */
     protected string|false $lockMode = false;
+
+    /**
+     * Per-repository cache bypass flag.
+     *
+     * Scoped to this repository instance only — does NOT touch the shared
+     * RepositoryCache instance, so other repositories in the same request
+     * are unaffected. Consumed and reset on the next read call.
+     */
+    private bool $bypassCache = false;
 
     public function __construct(
         protected readonly Application $app,
@@ -166,18 +176,26 @@ abstract class BaseRepository implements RepositoryContract
     /**
      * Cache isolation scope for this repository.
      *
-     * Return a CacheScope to isolate all cache operations within a boundary
-     * (e.g. tenant). Null = global cache with no isolation (default).
+     * ┌─────────────────────────────────────────────────────────────────────────┐
+     * │ SECURITY — MULTI-TENANT REPOS MUST OVERRIDE THIS                        │
+     * │                                                                         │
+     * │ The default (null) produces a global cache key with NO tenant prefix:   │
+     * │   users:fetchAll:{hash}                                                 │
+     * │                                                                         │
+     * │ Two tenants sending identical queries share the same key. Tenant B      │
+     * │ gets Tenant A's cached result — a data isolation breach.                │
+     * │                                                                         │
+     * │ Null is only safe for cross-tenant data: plans, feature flags,          │
+     * │ reference tables. Every domain model repo must return a scope.          │
+     * └─────────────────────────────────────────────────────────────────────────┘
      *
-     * Override in concrete repositories to enable tenant-aware caching:
-     *
+     *   // In a tenant-scoped repo:
      *   protected function cacheScope(): CacheScope
      *   {
      *       return new TenantCacheScope($this->resolveTenantId());
      *   }
      *
-     * The scope is used for both read (remember) and write (flush) operations.
-     * For writes via the observer, scope is derived from the model's attributes.
+     * The scope prefixes all read (remember) and write (flush) operations.
      */
     protected function cacheScope(): ?CacheScope
     {
@@ -185,28 +203,42 @@ abstract class BaseRepository implements RepositoryContract
     }
 
     public function fetchAll(
-        array $filters = [],
+        array $criteria = [],
         array $relations = [],
         array $columns = ['*'],
         bool $paginate = true,
         int $perPage = 25,
     ): Collection|LengthAwarePaginator {
-        $this->dispatch('fetch-all.before', compact('filters', 'relations'));
+        // Events fire on every call including cache hits. Listeners must be
+        // idempotent — avoid side effects (counters, audit writes) here.
+        $this->dispatch('fetch-all.before', compact('criteria', 'relations'));
 
-        $isLocked = $this->lockMode !== false;
-        $shouldCache = $this->isCached(__FUNCTION__) && ! $isLocked;
+        $isLocked          = $this->lockMode !== false;
+        $bypass            = $this->bypassCache;
+        $this->bypassCache = false;
+
+        // Paginated results are request-bound (current page lives in the request).
+        // Caching them would return page 1 data for every subsequent page request
+        // that shares the same criteria. Only cache non-paginated collections.
+        $shouldCache = $this->isCached(__FUNCTION__) && ! $bypass && ! $isLocked && ! $paginate;
+
+        if ($this->isCached(__FUNCTION__) && $paginate) {
+            Log::debug('[Cache] fetchAll bypassed — paginate:true on a cached method. Pass paginate:false to cache.', [
+                'model' => $this->model::class,
+            ]);
+        }
 
         $result = $this->cache->remember(
             model: $this->model,
             method: __FUNCTION__,
-            filters: $filters,
+            criteria: $criteria,
             relations: $relations,
             columns: $columns,
-            extra: ['paginate' => $paginate, 'per_page' => $perPage],
+            extra: [],
             shouldCache: $shouldCache,
             queryType: QueryType::Listing,
             scope: $this->cacheScope(),
-            callback: function () use ($filters, $relations, $columns, $paginate, $perPage) {
+            callback: function () use ($criteria, $relations, $columns, $paginate, $perPage) {
                 /** @var Builder<Model> $query */
                 $query = $this->model->newQuery();
                 $query->select($columns);
@@ -217,11 +249,11 @@ abstract class BaseRepository implements RepositoryContract
                     $query->with($relations);
                 }
 
-                $this->filterApplicator->apply($query, $filters['filters'] ?? [], $this->searchable());
-                $this->sortApplicator->apply($query, $filters['sort'] ?? [], $this->sortable());
+                $this->filterApplicator->apply($query, $criteria['filters'] ?? [], $this->searchable());
+                $this->sortApplicator->apply($query, $criteria['sort'] ?? [], $this->sortable());
 
                 return $paginate
-                    ? $query->paginate($perPage)->appends(request()->except('page'))
+                    ? $query->paginate($perPage)
                     : $query->get();
             },
         );
@@ -238,13 +270,15 @@ abstract class BaseRepository implements RepositoryContract
     ): ?Model {
         $this->dispatch('fetch-by-id.before', compact('id', 'relations'));
 
-        $isLocked = $this->lockMode !== false;
-        $shouldCache = $this->isCached(__FUNCTION__) && ! $isLocked;
+        $isLocked          = $this->lockMode !== false;
+        $bypass            = $this->bypassCache;
+        $this->bypassCache = false;
+        $shouldCache       = $this->isCached(__FUNCTION__) && ! $bypass && ! $isLocked;
 
         $result = $this->cache->remember(
             model: $this->model,
             method: __FUNCTION__,
-            filters: [],
+            criteria: [],
             relations: $relations,
             columns: $columns,
             extra: ['id' => $id],
@@ -371,12 +405,15 @@ abstract class BaseRepository implements RepositoryContract
     }
 
     /**
-     * Bypass cache for the next call.
-     * Useful when fresh data is required regardless of cache state.
+     * Bypass cache for the next read call on this repository only.
+     *
+     * Sets a flag that is consumed and reset by the next fetchAll() or
+     * fetchById() call. Does NOT touch the shared RepositoryCache instance,
+     * so other repositories in the same request are completely unaffected.
      */
     final protected function withoutCache(): static
     {
-        $this->cache->disable();
+        $this->bypassCache = true;
 
         return $this;
     }
