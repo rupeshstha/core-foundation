@@ -6,6 +6,7 @@ use Closure;
 use Illuminate\Support\Facades\Log;
 use CoreFoundation\Traits\HasCacheable;
 use Illuminate\Database\Eloquent\Model;
+use CoreFoundation\Repositories\Cache\CacheBustCollector;
 
 /**
  * RepositoryCache
@@ -49,6 +50,7 @@ final class RepositoryCache
     public function __construct(
         private readonly CacheKeyBuilder $keyBuilder,
         private readonly RelationTagResolver $tagResolver,
+        private readonly CacheBustCollector $bustCollector,
     ) {
         $this->enabled = (bool) config('core-foundation.cache.global', true);
     }
@@ -105,6 +107,7 @@ final class RepositoryCache
         $tag = $this->keyBuilder->buildListingTag($model, $scope);
 
         $this->bustCache([$tag]);
+        $this->bustCollector->record([$tag]);
 
         Log::info('[Cache] Listing flushed', [
             'model' => $model::class,
@@ -134,6 +137,7 @@ final class RepositoryCache
 
         $this->bustCache([$recordTag]);
         $this->bustCache([$listingTag]);
+        $this->bustCollector->record([$recordTag, $listingTag]);
 
         Log::info('[Cache] Record flushed', [
             'model' => $model::class,
@@ -161,6 +165,7 @@ final class RepositoryCache
             : $model->getTable();
 
         $this->bustCache([$baseTag]);
+        $this->bustCollector->record([$baseTag]);
 
         Log::info('[Cache] Full flush', [
             'model' => $model::class,

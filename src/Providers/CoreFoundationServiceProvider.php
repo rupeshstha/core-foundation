@@ -13,6 +13,8 @@ use Composer\ClassMapGenerator\ClassMapGenerator;
 use Illuminate\Foundation\Configuration\Exceptions;
 use CoreFoundation\Console\Commands\GenerateApiDocs;
 use CoreFoundation\Console\Commands\MakeModuleCommand;
+use CoreFoundation\Repositories\Cache\CacheBustCollector;
+use CoreFoundation\Repositories\Cache\RepositoryCache;
 
 class CoreFoundationServiceProvider extends ServiceProvider
 {
@@ -74,7 +76,17 @@ class CoreFoundationServiceProvider extends ServiceProvider
         include_once __DIR__.'/../Helpers/helpers.php';
     }
 
-    private function bindServices(): void {}
+    private function bindServices(): void
+    {
+        // Scoped — one instance per request in Octane, behaves as singleton in standard Laravel.
+        // CacheBustCollector must be scoped so the same instance is shared between
+        // RepositoryCache (writer) and AttachCacheHeaders middleware (reader).
+        $this->app->scoped(CacheBustCollector::class);
+
+        // Scoped to ensure RepositoryCache shares the same CacheBustCollector instance
+        // as the middleware within the same request lifecycle.
+        $this->app->scoped(RepositoryCache::class);
+    }
 
     public function batchRegistrar(array $batchRegistrarPaths): void
     {

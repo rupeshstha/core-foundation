@@ -4,6 +4,7 @@ namespace CoreFoundation\Transformers;
 
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
@@ -13,44 +14,66 @@ use Illuminate\Http\Resources\Json\JsonResource;
  * and gives modules a static registry to add, override, or remove fields without
  * touching the resource class itself.
  *
- * USAGE:
+ * $this->resource accepts any value — Eloquent model, BaseDataObject (DTO), or array.
+ * The service layer is responsible for all computation. This class maps the result
+ * to response fields only. Zero business logic here.
+ *
+ * TYPICAL USAGE — service returns a DTO, resource maps it:
+ *
+ *   // Service computes everything and returns a typed DTO
+ *   public function summary(): OrderSummaryData
+ *   {
+ *       return new OrderSummaryData(
+ *           totalOrders:       $orders->count(),
+ *           totalRevenue:      $orders->sum('total'),
+ *           averageOrderValue: $orders->avg('total'),
+ *       );
+ *   }
+ *
+ *   // Resource maps DTO fields — no computation
+ *   final class OrderSummaryResource extends BaseResource
+ *   {
+ *       protected function fields(Request $request): array
+ *       {
+ *           return [
+ *               'total_orders'        => $this->resource->totalOrders,
+ *               'total_revenue'       => $this->resource->totalRevenue,
+ *               'average_order_value' => $this->resource->averageOrderValue,
+ *           ];
+ *       }
+ *   }
+ *
+ * SIMPLE MODEL USAGE:
  *
  *   final class UserResource extends BaseResource
  *   {
  *       protected function fields(Request $request): array
  *       {
- *           return [
- *               'id'    => $this->id,
- *               'name'  => $this->name,
- *               'email' => $this->email,
- *           ];
+ *           return $this->withTimestamps([
+ *               'id'    => $this->resource->id,
+ *               'name'  => $this->resource->name,
+ *               'email' => $this->resource->email,
+ *           ]);
  *       }
  *   }
  *
  * Modular extension from ServiceProvider::boot() — Module B never touches UserResource.php:
  *
  *   // Add a new field
- *   UserResource::addField('plan', fn ($user, $req) => $user->subscription?->plan_code);
+ *   UserResource::addField('plan', fn ($resource, $req) => $resource->subscription?->plan_code);
  *
  *   // Override an existing field (same key — registry wins over base)
- *   UserResource::addField('email', fn ($user, $req) => $req->user()?->isAdmin()
- *       ? $user->email
+ *   UserResource::addField('email', fn ($resource, $req) => $req->user()?->isAdmin()
+ *       ? $resource->email
  *       : str_repeat('*', 6) . '@hidden'
  *   );
  *
  *   // Remove a field entirely (compliance / PII stripping)
  *   UserResource::removeField('internal_notes');
  *
- * Opt-in timestamps inside fields():
- *
- *   return $this->withTimestamps([
- *       'id'   => $this->id,
- *       'name' => $this->name,
- *   ]);
- *
  * In a controller:
  *
- *   return $this->successResponse('User fetched.', new UserResource($userDataObject));
+ *   return $this->successResponse('Summary fetched.', new OrderSummaryResource($summaryData));
  */
 abstract class BaseResource extends JsonResource
 {
@@ -102,15 +125,20 @@ abstract class BaseResource extends JsonResource
     /**
      * Merge ISO 8601 timestamps into the given field map.
      *
-     * Not called automatically — opt in per resource:
+     * Model-only helper — silently skips if $this->resource is not an Eloquent model.
+     * DTOs that carry timestamps should include them explicitly in fields().
      *
      *   return $this->withTimestamps([
-     *       'id'   => $this->id,
-     *       'name' => $this->name,
+     *       'id'   => $this->resource->id,
+     *       'name' => $this->resource->name,
      *   ]);
      */
     protected function withTimestamps(array $fields): array
     {
+        if (! $this->resource instanceof Model) {
+            return $fields;
+        }
+
         return array_merge($fields, [
             'created_at' => $this->resource->created_at?->toISOString(),
             'updated_at' => $this->resource->updated_at?->toISOString(),

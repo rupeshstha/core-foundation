@@ -5,7 +5,9 @@ namespace {{ namespace }}\Resources;
 use Illuminate\Http\Request;
 use CoreFoundation\Transformers\BaseResource;
 
-class {{ class }}Resource extends BaseResource
+// $this->resource is whatever the controller passes in — Eloquent model or BaseDataObject DTO.
+// All computation belongs in the service. Map fields here only.
+final class {{ class }}Resource extends BaseResource
 {
     protected function fields(Request $request): array
     {
