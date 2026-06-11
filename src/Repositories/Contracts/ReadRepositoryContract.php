@@ -17,14 +17,14 @@ interface ReadRepositoryContract
     /**
      * Fetch all records, optionally filtered, sorted, and paginated.
      *
-     * @param  array  $filters  Validated filter + sort parameters
+     * @param  array  $criteria  Filter + sort criteria: ['filters' => [...], 'sort' => [...]]
      * @param  array  $relations  Eager-load relation names
      * @param  array  $columns  Columns to select
      * @param  bool  $paginate  Whether to paginate — defaults to true
      * @param  int  $perPage  Records per page when paginating
      */
     public function fetchAll(
-        array $filters = [],
+        array $criteria = [],
         array $relations = [],
         array $columns = ['*'],
         bool $paginate = true,

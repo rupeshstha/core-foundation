@@ -64,7 +64,7 @@ trait HasApiResponse
      * 200 OK — generic success with a payload.
      */
     final protected function successResponse(
-        string $message,
+        ?string $message = null,
         mixed $payload = null,
         int $status = Response::HTTP_OK,
     ): JsonResponse {
@@ -78,7 +78,7 @@ trait HasApiResponse
      * 201 Created — resource was successfully created.
      */
     final protected function createdResponse(
-        string $message,
+        ?string $message = null,
         mixed $payload = null,
     ): JsonResponse {
         return $this->successResponse($message, $payload, Response::HTTP_CREATED);
@@ -99,7 +99,7 @@ trait HasApiResponse
      * Appends all current query parameters to pagination links automatically.
      */
     final protected function paginatedResponse(
-        string $message,
+        ?string $message = null,
         AbstractPaginator $paginator,
     ): JsonResponse {
         $paginator->appends(request()->query());
@@ -120,8 +120,8 @@ trait HasApiResponse
      * Called by HasExceptionHandler::handleException() — not typically called directly.
      */
     final protected function errorResponse(
-        string $message,
-        int $status,
+        ?string $message = null,
+        int $status = Response::HTTP_INTERNAL_SERVER_ERROR,
         array $errors = [],
         ?string $exceptionId = null,
     ): JsonResponse {
@@ -139,7 +139,7 @@ trait HasApiResponse
      * Build the success response envelope.
      * Override to add/rename top-level keys for your team's convention.
      */
-    protected function successEnvelope(string $message, mixed $payload, ?array $meta = null): array
+    protected function successEnvelope(?string $message = null, mixed $payload = [], ?array $meta = null): array
     {
         $envelope = [
             'message' => $message,
@@ -157,7 +157,7 @@ trait HasApiResponse
      * Build the error response envelope.
      * Override to add/rename top-level keys for your team's convention.
      */
-    protected function errorEnvelope(string $message, array $errors = [], ?string $exceptionId = null): array
+    protected function errorEnvelope(?string $message = null, array $errors = [], ?string $exceptionId = null): array
     {
         $envelope = [
             'message' => $message,
