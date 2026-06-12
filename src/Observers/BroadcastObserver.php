@@ -2,23 +2,23 @@
 
 namespace CoreFoundation\Observers;
 
-use CoreFoundation\Broadcasting\Abstracts\TenantBroadcastEvent;
+use CoreFoundation\Broadcasting\Abstracts\ScopedBroadcastEvent;
 use Illuminate\Database\Eloquent\Model;
 
 /**
  * BroadcastObserver
  *
- * Automatically broadcasts model changes to tenant channels.
+ * Automatically broadcasts model changes to scoped private channels.
  *
  * USAGE:
- *   1. Create an event extending TenantBroadcastEvent
+ *   1. Create an event extending ScopedBroadcastEvent
  *   2. Register this observer for your model:
  *      MyModel::observe(new BroadcastObserver(MyModelChanged::class));
  */
 class BroadcastObserver
 {
     /**
-     * @param class-string<TenantBroadcastEvent> $eventClass
+     * @param class-string<ScopedBroadcastEvent> $eventClass
      */
     public function __construct(
         protected string $eventClass

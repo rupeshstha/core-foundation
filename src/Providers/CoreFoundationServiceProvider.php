@@ -17,6 +17,7 @@ use CoreFoundation\Console\Commands\MakeModuleCommand;
 use CoreFoundation\Repositories\Cache\CacheWarmingRegistry;
 use CoreFoundation\Repositories\Cache\CacheBustCollector;
 use CoreFoundation\Repositories\Cache\RepositoryCache;
+use CoreFoundation\Support\Maintenance\MaintenanceManager;
 
 class CoreFoundationServiceProvider extends ServiceProvider
 {
@@ -31,9 +32,8 @@ class CoreFoundationServiceProvider extends ServiceProvider
 
         $this->loadTranslationsFrom(__DIR__.'/../../lang', 'core-foundation');
 
-        // Only register feature flag routes when Pennant is installed.
-        // Prevents a fatal error when the host app hasn't required pennant/pennant.
-        if (class_exists(Feature::class)) {
+        // Load routes from the package.
+        if (file_exists(__DIR__.'/../../routes/features.php')) {
             $this->loadRoutesFrom(__DIR__.'/../../routes/features.php');
         }
 
@@ -91,6 +91,7 @@ class CoreFoundationServiceProvider extends ServiceProvider
         $this->app->scoped(RepositoryCache::class);
 
         $this->app->singleton(CacheWarmingRegistry::class);
+        $this->app->singleton(MaintenanceManager::class);
     }
 
     public function batchRegistrar(array $batchRegistrarPaths): void

@@ -35,7 +35,7 @@ class FullTestController extends BaseController
             currentPage: 1,
         );
 
-        return $this->paginatedResponse('Listed.', $paginator);
+        return $this->paginatedResponse($paginator, 'Listed.');
     }
 
     public function domainExceptionAction(): JsonResponse

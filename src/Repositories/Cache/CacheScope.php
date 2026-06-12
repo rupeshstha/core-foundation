@@ -8,29 +8,22 @@ namespace CoreFoundation\Repositories\Cache;
  * Defines an isolation boundary for cache operations.
  *
  * The most common scope is tenant isolation — all cache tags and keys for a
- * given tenant are prefixed so that flushing one tenant's cache never touches
- * another tenant's data.
+ * given tenant are prefixed with a unique identifier. This ensures that
+ * data for Tenant A is never returned to a request from Tenant B.
  *
  * ┌─────────────────────────────────────────────────────────────────────────────┐
- * │ USAGE — in a concrete repository:                                           │
+ * │ USAGE                                                                       │
  * │                                                                             │
- * │   protected function cacheScope(): ?CacheScope                              │
+ * │   public function cacheScope(): ?CacheScope                                 │
  * │   {                                                                         │
- * │       return new TenantCacheScope(tenant()->id);                            │
- * │   }                                                                         │
- * │                                                                             │
- * │ Or using the provided NullCacheScope to explicitly opt out:                 │
- * │                                                                             │
- * │   protected function cacheScope(): ?CacheScope                              │
- * │   {                                                                         │
- * │       return null;   // global (unscoped) cache — backward compatible       │
+ * │       return new PrefixCacheScope("tenant:{$this->tenantId}");              │
  * │   }                                                                         │
  * └─────────────────────────────────────────────────────────────────────────────┘
  */
 interface CacheScope
 {
     /**
-     * The prefix prepended to all cache tags and keys for this scope.
+     * The unique prefix for this scope.
      *
      * Must be unique per isolation unit. For tenants: "tenant:{id}".
      * Must be URL-safe (no spaces, no cache-reserved characters).

@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Model;
  *
  * Specific base for broadcasting Eloquent model changes.
  */
-abstract class ModelBroadcastEvent extends TenantBroadcastEvent
+abstract class ModelBroadcastEvent extends ScopedBroadcastEvent
 {
     public function __construct(
         protected Model $model,
@@ -28,10 +28,5 @@ abstract class ModelBroadcastEvent extends TenantBroadcastEvent
                 ? $this->transformer->transform($this->model)
                 : $this->model->toArray(),
         ];
-    }
-
-    protected function getTenantId(): int|string|null
-    {
-        return $this->model->getAttribute('tenant_id');
     }
 }

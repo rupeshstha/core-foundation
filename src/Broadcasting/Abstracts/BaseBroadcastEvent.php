@@ -11,7 +11,7 @@ use Illuminate\Queue\SerializesModels;
  * BaseBroadcastEvent
  *
  * A foundational class for all broadcastable events in the platform.
- * Ensures consistent structure and tenant isolation for real-time events.
+ * Ensures consistent structure and isolation for real-time events.
  */
 abstract class BaseBroadcastEvent implements ShouldBroadcast
 {
@@ -34,7 +34,7 @@ abstract class BaseBroadcastEvent implements ShouldBroadcast
             'payload' => $this->getPayload(),
             'meta' => [
                 'timestamp' => now()->toIso8601String(),
-                'tenant_id' => $this->getTenantId(),
+                'scope_id' => $this->getScopeId(),
             ],
         ];
     }
@@ -55,7 +55,7 @@ abstract class BaseBroadcastEvent implements ShouldBroadcast
     abstract protected function getPayload(): array;
 
     /**
-     * Get the tenant ID for isolation.
+     * Get the scope ID for isolation (e.g. tenant ID).
      */
-    abstract protected function getTenantId(): int|string|null;
+    abstract protected function getScopeId(): int|string|null;
 }

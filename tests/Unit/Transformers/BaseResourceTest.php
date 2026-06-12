@@ -6,6 +6,7 @@ use ReflectionClass;
 use Illuminate\Http\Request;
 use CoreFoundation\Tests\PackageTestCase;
 use CoreFoundation\Transformers\BaseResource;
+use Illuminate\Database\Eloquent\Model;
 
 class TestResource extends BaseResource
 {
@@ -32,16 +33,6 @@ class TestResource extends BaseResource
 }
 
 class TimestampResource extends BaseResource
-{
-    protected function fields(Request $request): array
-    {
-        return $this->withTimestamps([
-            'id' => $this->resource->id,
-        ]);
-    }
-}
-
-class TimestampResourceNoTimestamps extends BaseResource
 {
     protected function fields(Request $request): array
     {
@@ -91,11 +82,14 @@ class BaseResourceTest extends PackageTestCase
     public function test_with_timestamps_merges_created_at_and_updated_at(): void
     {
         $now = now();
-        $model = (object) [
-            'id' => 1,
+        $model = new class extends Model {
+            public $id;
+        };
+        $model->id = 1;
+        $model->setRawAttributes([
             'created_at' => $now,
             'updated_at' => $now,
-        ];
+        ], true);
 
         $resource = new TimestampResource($model);
         $result = $resource->toArray(new Request);
@@ -109,13 +103,16 @@ class BaseResourceTest extends PackageTestCase
 
     public function test_with_timestamps_returns_null_when_timestamps_are_null(): void
     {
-        $model = (object) [
-            'id' => 1,
+        $model = new class extends Model {
+            public $id;
+        };
+        $model->id = 1;
+        $model->setRawAttributes([
             'created_at' => null,
             'updated_at' => null,
-        ];
+        ], true);
 
-        $resource = new TimestampResourceNoTimestamps($model);
+        $resource = new TimestampResource($model);
         $result = $resource->toArray(new Request);
 
         $this->assertNull($result['created_at']);
@@ -125,16 +122,19 @@ class BaseResourceTest extends PackageTestCase
     public function test_with_timestamps_does_not_override_existing_fields(): void
     {
         $now = now();
-        $model = (object) [
-            'id' => 42,
+        $model = new class extends Model {
+            public $id;
+        };
+        $model->id = 42;
+        $model->setRawAttributes([
             'created_at' => $now,
             'updated_at' => $now,
-        ];
+        ], true);
 
         $resource = new TimestampResource($model);
         $result = $resource->toArray(new Request);
 
         // id from fields() should survive
-        $this->assertSame(42, $result['id']);
+        $this->assertEquals(42, $result['id']);
     }
 }

@@ -192,7 +192,7 @@ abstract class BaseRepository implements RepositoryContract
      *   // In a tenant-scoped repo:
      *   protected function cacheScope(): CacheScope
      *   {
-     *       return new TenantCacheScope($this->resolveTenantId());
+     *       return new PrefixCacheScope("tenant:{$this->resolveTenantId()}");
      *   }
      *
      * The scope prefixes all read (remember) and write (flush) operations.

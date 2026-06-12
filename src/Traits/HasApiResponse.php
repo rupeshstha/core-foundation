@@ -99,8 +99,8 @@ trait HasApiResponse
      * Appends all current query parameters to pagination links automatically.
      */
     final protected function paginatedResponse(
-        ?string $message = null,
         AbstractPaginator $paginator,
+        ?string $message = null,
     ): JsonResponse {
         $paginator->appends(request()->query());
 
