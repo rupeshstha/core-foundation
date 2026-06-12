@@ -22,6 +22,16 @@ return [
 
     'auth' => [
         'features_middleware' => [],
+        'cookie_name' => env('AUTH_COOKIE_NAME', 'dubdubco_token'),
+        'cookie_ttl' => env('AUTH_COOKIE_TTL', 1440), // 1 day
+        'cookie_domain' => env('AUTH_COOKIE_DOMAIN'), // .dubdubco.com for cross-subdomain
+        'remove_token_from_body' => env('AUTH_REMOVE_TOKEN_FROM_BODY', false),
+    ],
+
+    'tenancy' => [
+        'header' => 'X-Tenant',
+        'require_trusted_source' => env('TENANCY_REQUIRE_TRUSTED_SOURCE', false),
+        'trusted_sources' => explode(',', env('TENANCY_TRUSTED_SOURCES', '127.0.0.1')),
     ],
 
     /*

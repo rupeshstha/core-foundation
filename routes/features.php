@@ -2,23 +2,12 @@
 
 use Illuminate\Support\Facades\Route;
 use CoreFoundation\Http\Controllers\FeatureFlagController;
+use CoreFoundation\Http\Controllers\BroadcastAuthController;
 
 /*
 |--------------------------------------------------------------------------
-| Feature Flag Routes
+| Core Foundation Routes
 |--------------------------------------------------------------------------
-|
-| These routes are registered automatically by CoreFoundationServiceProvider.
-| The middleware stack is config-driven — CoreFoundation does not assume any
-| particular authentication package. The default is Laravel's built-in 'auth'
-| guard. Override in config/core-foundation.php:
-|
-|   'auth' => ['features_middleware' => ['auth:sanctum']]   // Sanctum
-|   'auth' => ['features_middleware' => ['auth:api']]       // Passport
-|   'auth' => ['features_middleware' => []]                 // unprotected (use resolveScope())
-|
-| Prefix: /features (no /api prefix — the host app applies its own prefix)
-|
 */
 
 Route::middleware(config('core-foundation.auth.features_middleware', ['auth']))
@@ -31,3 +20,13 @@ Route::middleware(config('core-foundation.auth.features_middleware', ['auth']))
             ->name('core.features.show')
             ->where('feature', '.+'); // allow forward slashes and backslashes (URL-encoded)
     });
+
+/**
+ * WebSocket Broadcasting Authorization
+ *
+ * This route is used by the frontend SDK to authorize private channels
+ * when using httpOnly cookies (where JS cannot read the token).
+ */
+Route::post('/broadcasting/auth', BroadcastAuthController::class)
+    ->middleware(['api', \CoreFoundation\Http\Middlewares\AuthenticateWithCookie::class])
+    ->name('core.broadcasting.auth');

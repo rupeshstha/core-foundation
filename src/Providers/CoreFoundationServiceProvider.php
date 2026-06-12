@@ -11,8 +11,10 @@ use Illuminate\Foundation\Exceptions\Handler;
 use CoreFoundation\Exceptions\ExceptionRenderer;
 use Composer\ClassMapGenerator\ClassMapGenerator;
 use Illuminate\Foundation\Configuration\Exceptions;
+use CoreFoundation\Console\Commands\WarmCache;
 use CoreFoundation\Console\Commands\GenerateApiDocs;
 use CoreFoundation\Console\Commands\MakeModuleCommand;
+use CoreFoundation\Repositories\Cache\CacheWarmingRegistry;
 use CoreFoundation\Repositories\Cache\CacheBustCollector;
 use CoreFoundation\Repositories\Cache\RepositoryCache;
 
@@ -54,6 +56,7 @@ class CoreFoundationServiceProvider extends ServiceProvider
             $this->commands([
                 GenerateApiDocs::class,
                 MakeModuleCommand::class,
+                WarmCache::class,
             ]);
 
             $this->publishes([
@@ -86,6 +89,8 @@ class CoreFoundationServiceProvider extends ServiceProvider
         // Scoped to ensure RepositoryCache shares the same CacheBustCollector instance
         // as the middleware within the same request lifecycle.
         $this->app->scoped(RepositoryCache::class);
+
+        $this->app->singleton(CacheWarmingRegistry::class);
     }
 
     public function batchRegistrar(array $batchRegistrarPaths): void

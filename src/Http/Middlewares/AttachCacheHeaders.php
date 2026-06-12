@@ -36,6 +36,10 @@ final class AttachCacheHeaders
             );
         }
 
+        if ($this->collector->isCapped()) {
+            $response->headers->set('X-Cache-Full-Bust', 'true');
+        }
+
         return $response;
     }
 }
