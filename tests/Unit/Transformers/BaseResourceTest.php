@@ -4,9 +4,9 @@ namespace CoreFoundation\Tests\Unit\Transformers;
 
 use ReflectionClass;
 use Illuminate\Http\Request;
+use Illuminate\Database\Eloquent\Model;
 use CoreFoundation\Tests\PackageTestCase;
 use CoreFoundation\Transformers\BaseResource;
-use Illuminate\Database\Eloquent\Model;
 
 class TestResource extends BaseResource
 {
@@ -82,7 +82,8 @@ class BaseResourceTest extends PackageTestCase
     public function test_with_timestamps_merges_created_at_and_updated_at(): void
     {
         $now = now();
-        $model = new class extends Model {
+        $model = new class extends Model
+        {
             public $id;
         };
         $model->id = 1;
@@ -103,7 +104,8 @@ class BaseResourceTest extends PackageTestCase
 
     public function test_with_timestamps_returns_null_when_timestamps_are_null(): void
     {
-        $model = new class extends Model {
+        $model = new class extends Model
+        {
             public $id;
         };
         $model->id = 1;
@@ -122,7 +124,8 @@ class BaseResourceTest extends PackageTestCase
     public function test_with_timestamps_does_not_override_existing_fields(): void
     {
         $now = now();
-        $model = new class extends Model {
+        $model = new class extends Model
+        {
             public $id;
         };
         $model->id = 42;

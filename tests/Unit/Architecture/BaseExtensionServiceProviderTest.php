@@ -11,10 +11,13 @@ use CoreFoundation\Services\BaseService;
 use CoreFoundation\Tests\PackageTestCase;
 use Illuminate\Database\Eloquent\Builder;
 use CoreFoundation\Transformers\BaseResource;
+use CoreFoundation\Repositories\BaseRepository;
+use CoreFoundation\Tests\Stubs\Models\TestPost;
 use CoreFoundation\Traits\Models\ModelFillables;
 use CoreFoundation\Traits\Models\ModelSearchable;
 use CoreFoundation\Repositories\Filter\FilterApplicator;
 use CoreFoundation\Providers\BaseExtensionServiceProvider;
+use CoreFoundation\Tests\Unit\Repositories\TestPostRepository;
 use CoreFoundation\Repositories\Filter\Contracts\FilterOperator;
 
 // ---------------------------------------------------------------------------
@@ -98,6 +101,15 @@ class OperatorExtensionProvider extends BaseExtensionServiceProvider
     }
 }
 
+class RepositoryExtensionProvider extends BaseExtensionServiceProvider
+{
+    protected function extendRepositories(): void
+    {
+        $this->repository(TestPostRepository::class)
+            ->scopeable(['fromModule']);
+    }
+}
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
@@ -124,6 +136,13 @@ class BaseExtensionServiceProviderTest extends PackageTestCase
         ExtTestResource::resetRegistry();
         ExtTestService::clearAllPipes();
         FilterApplicator::reset();
+
+        $repositoryRef = new ReflectionClass(BaseRepository::class);
+        $rProp = $repositoryRef->getProperty('additionalScopeable');
+        $rProp->setAccessible(true);
+        $current = $rProp->getValue(null);
+        unset($current[TestPostRepository::class]);
+        $rProp->setValue(null, $current);
 
         parent::tearDown();
     }
@@ -172,6 +191,20 @@ class BaseExtensionServiceProviderTest extends PackageTestCase
 
         $this->expectException(LogicException::class);
         $provider->callService(stdClass::class);
+    }
+
+    public function test_repository_factory_throws_when_class_does_not_extend_base_repository(): void
+    {
+        $provider = new class($this->app) extends BaseExtensionServiceProvider
+        {
+            public function callRepository(string $class): void
+            {
+                $this->repository($class);
+            }
+        };
+
+        $this->expectException(LogicException::class);
+        $provider->callRepository(stdClass::class);
     }
 
     // -----------------------------------------------------------------------
@@ -259,6 +292,56 @@ class BaseExtensionServiceProviderTest extends PackageTestCase
 
         $this->assertArrayHasKey('__like_ext_', $operators);
         $this->assertInstanceOf(ExtTestOperator::class, $operators['__like_ext_']);
+    }
+
+    // -----------------------------------------------------------------------
+    // extendRepositories() — modular scopeable() whitelist extension
+    // -----------------------------------------------------------------------
+
+    public function test_extend_repositories_registers_additional_scope_without_touching_the_class(): void
+    {
+        TestPost::create(['title' => 'Post 1', 'score' => 20]);
+        TestPost::create(['title' => 'Post 2', 'score' => 1]);
+
+        // 'fromModule' is not in TestPostRepository::scopeable() — unregistered, must be
+        // ignored. Paginated so this read never touches the cache, which is keyed on the
+        // raw criteria and would otherwise collide with the identical call made below.
+        $before = $this->app->make(TestPostRepository::class)
+            ->fetchAll(['scopes' => ['fromModule']], paginate: true);
+        $this->assertCount(2, $before);
+
+        $provider = new RepositoryExtensionProvider($this->app);
+        $provider->register();
+        $provider->boot();
+
+        // After the module registers it via addScopeable(), the same repository class allows it —
+        // TestPostRepository's own scopeable() override was never touched.
+        $after = $this->app->make(TestPostRepository::class)
+            ->fetchAll(['scopes' => ['fromModule']], paginate: false);
+
+        $this->assertCount(1, $after);
+        $this->assertEquals('Post 1', $after->first()->title);
+    }
+
+    public function test_extend_repositories_merges_with_the_repository_s_own_whitelist(): void
+    {
+        TestPost::create(['title' => 'Active high score', 'status' => 'active', 'score' => 20]);
+        TestPost::create(['title' => 'Active low score', 'status' => 'active', 'score' => 1]);
+        TestPost::create(['title' => 'Pending high score', 'status' => 'pending', 'score' => 20]);
+
+        $provider = new RepositoryExtensionProvider($this->app);
+        $provider->register();
+        $provider->boot();
+
+        $repository = $this->app->make(TestPostRepository::class);
+
+        // 'active' comes from TestPostRepository::scopeable() — proves the module
+        // addition merges with the repository's own declaration, neither replaces it.
+        $stillWorks = $repository->fetchAll(['scopes' => ['active']], paginate: false);
+        $this->assertCount(2, $stillWorks);
+
+        $fromModule = $repository->fetchAll(['scopes' => ['fromModule']], paginate: false);
+        $this->assertCount(2, $fromModule);
     }
 
     // -----------------------------------------------------------------------

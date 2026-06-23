@@ -47,8 +47,8 @@ abstract class BaseIndexRequest extends BaseRequest
     protected function baseRules(): array
     {
         return [
-            'sort'     => ['sometimes', 'array'],
-            'sort.*'   => ['string'],
+            'sort' => ['sometimes', 'array'],
+            'sort.*' => ['string'],
             'per_page' => ['sometimes', 'integer', 'min:1', 'max:100'],
         ];
     }
@@ -62,7 +62,7 @@ abstract class BaseIndexRequest extends BaseRequest
     {
         return [
             'filters' => $this->extractFilters(),
-            'sort'    => $this->validated('sort', []),
+            'sort' => $this->validated('sort', []),
         ];
     }
 

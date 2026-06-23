@@ -2,8 +2,8 @@
 
 namespace CoreFoundation\Jobs;
 
-use CoreFoundation\Repositories\Cache\CacheWarmingRegistry;
 use Throwable;
+use CoreFoundation\Repositories\Cache\CacheWarmingRegistry;
 
 /**
  * WarmCacheJob
@@ -24,6 +24,7 @@ class WarmCacheJob extends BaseJob
 
         if (! $warmer) {
             logger()->warning("[CacheWarming] Warmer [{$this->warmerName}] not found in registry.");
+
             return;
         }
 

@@ -15,7 +15,7 @@ interface SocketPayloadTransformer
     /**
      * Transform the source data into a broadcastable array.
      *
-     * @param T $data
+     * @param  T  $data
      * @return array<string, mixed>
      */
     public function transform(mixed $data): array;

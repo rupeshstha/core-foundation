@@ -3,11 +3,12 @@
 namespace CoreFoundation\Tests\Feature\Cache;
 
 use Illuminate\Support\Facades\Cache;
-use CoreFoundation\Tests\PackageTestCase;
+use CoreFoundation\Tests\Stubs\TestPost;
 use CoreFoundation\Repositories\BaseRepository;
 use CoreFoundation\Repositories\Cache\CacheScope;
+use CoreFoundation\Repositories\Cache\CacheKeyBuilder;
+use CoreFoundation\Repositories\Cache\RepositoryCache;
 use CoreFoundation\Repositories\Cache\PrefixCacheScope;
-use CoreFoundation\Tests\Stubs\TestPost;
 
 class ScopedProductRepository extends BaseRepository
 {
@@ -26,16 +27,16 @@ class ScopedProductRepository extends BaseRepository
 
 it('surgical cache invalidation across tenants', function () {
     $repo = $this->app->make(ScopedProductRepository::class);
-    $cache = $this->app->make(\CoreFoundation\Repositories\Cache\RepositoryCache::class);
+    $cache = $this->app->make(RepositoryCache::class);
     $model = $repo->getModel();
 
-    $t1_scope = new PrefixCacheScope("tenant:1");
-    $t2_scope = new PrefixCacheScope("tenant:2");
+    $t1_scope = new PrefixCacheScope('tenant:1');
+    $t2_scope = new PrefixCacheScope('tenant:2');
 
     // We verify that the cache tags generated include the scope prefix
     // By manually checking the key builder output which is used by flushModel
-    $keyBuilder = $this->app->make(\CoreFoundation\Repositories\Cache\CacheKeyBuilder::class);
-    
+    $keyBuilder = $this->app->make(CacheKeyBuilder::class);
+
     expect($keyBuilder->buildListingTag($model, $t1_scope))->toBe('tenant:1:test_posts:listing');
     expect($keyBuilder->buildListingTag($model, $t2_scope))->toBe('tenant:2:test_posts:listing');
 });

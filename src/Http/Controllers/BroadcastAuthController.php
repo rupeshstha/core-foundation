@@ -8,9 +8,9 @@ use Symfony\Component\HttpFoundation\Response;
 
 /**
  * BroadcastAuthController
- * 
+ *
  * Handles WebSocket channel authorization.
- * Specifically designed to work with httpOnly cookies by verifying the 
+ * Specifically designed to work with httpOnly cookies by verifying the
  * session/cookie before authorizing the socket connection.
  */
 class BroadcastAuthController extends BaseController
@@ -20,7 +20,7 @@ class BroadcastAuthController extends BaseController
      */
     public function __invoke(Request $request): Response
     {
-        // Broadcast::auth will use the 'api' guard if configured, 
+        // Broadcast::auth will use the 'api' guard if configured,
         // which now supports our httpOnly cookies.
         return Broadcast::auth($request);
     }

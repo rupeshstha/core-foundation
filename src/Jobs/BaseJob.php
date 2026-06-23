@@ -11,8 +11,8 @@ use Illuminate\Queue\InteractsWithQueue;
 use CoreFoundation\Traits\HasNotification;
 use Illuminate\Notifications\Notification;
 use Illuminate\Contracts\Queue\ShouldQueue;
-use CoreFoundation\Exceptions\ExceptionRenderer;
 use Illuminate\Foundation\Bus\Dispatchable;
+use CoreFoundation\Exceptions\ExceptionRenderer;
 use Illuminate\Queue\Middleware\SkipIfBatchCancelled;
 use Illuminate\Support\Facades\Notification as NotificationFacade;
 
@@ -88,7 +88,7 @@ abstract class BaseJob implements ShouldQueue
         return [];
     }
 
-    protected function rollbackPreviousTransactions(): void
+    private function rollbackPreviousTransactions(): void
     {
         if (DB::transactionLevel() > 0) {
             DB::rollBack();
@@ -116,7 +116,7 @@ abstract class BaseJob implements ShouldQueue
     private function logFailure(Throwable $exception): void
     {
         logger()->error('Job failed: '.class_basename($this).'.', [
-            'job'       => static::class,
+            'job' => static::class,
             'exception' => ExceptionRenderer::buildExceptionContext($exception),
             ...$this->logContext($exception),
         ]);
@@ -148,11 +148,19 @@ abstract class BaseJob implements ShouldQueue
 
     final protected function notifyStarted(): void
     {
+        if (! $this->shouldNotify()) {
+            return;
+        }
+
         $this->dispatchNotification(fn () => $this->startedNotification());
     }
 
     final protected function notifyCompleted(): void
     {
+        if (! $this->shouldNotify()) {
+            return;
+        }
+
         $this->dispatchNotification(fn () => $this->completedNotification());
     }
 

@@ -26,11 +26,6 @@ class TestDeferrableService extends BaseService
         return $this->deferCacheBust($tags, $name);
     }
 
-    public function exposedDeferDispatch(string $event, mixed $payload = []): DeferredCallback
-    {
-        return $this->deferDispatch($event, $payload);
-    }
-
     public function exposedDeferAlways(callable $callback, string $name): DeferredCallback
     {
         return $this->deferAlways($callback, $name);
@@ -118,30 +113,6 @@ class HasDeferrableTest extends PackageTestCase
         // We verify neither throws and both return DeferredCallback.
         $first = $this->service->exposedDeferCacheBust(['orders']);
         $second = $this->service->exposedDeferCacheBust(['orders']);
-
-        $this->assertInstanceOf(DeferredCallback::class, $first);
-        $this->assertInstanceOf(DeferredCallback::class, $second);
-    }
-
-    public function test_defer_dispatch_returns_deferred_callback(): void
-    {
-        $result = $this->service->exposedDeferDispatch('order.placed');
-
-        $this->assertInstanceOf(DeferredCallback::class, $result);
-    }
-
-    public function test_defer_dispatch_with_payload_returns_deferred_callback(): void
-    {
-        $result = $this->service->exposedDeferDispatch('order.placed', ['id' => 1]);
-
-        $this->assertInstanceOf(DeferredCallback::class, $result);
-    }
-
-    public function test_defer_dispatch_deduplicates_by_event_name(): void
-    {
-        // Two dispatches for the same event share a named slot (event.{name}).
-        $first = $this->service->exposedDeferDispatch('inventory.updated');
-        $second = $this->service->exposedDeferDispatch('inventory.updated');
 
         $this->assertInstanceOf(DeferredCallback::class, $first);
         $this->assertInstanceOf(DeferredCallback::class, $second);

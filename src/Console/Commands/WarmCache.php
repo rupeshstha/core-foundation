@@ -3,8 +3,8 @@
 namespace CoreFoundation\Console\Commands;
 
 use Illuminate\Console\Command;
-use CoreFoundation\Repositories\Cache\CacheWarmingRegistry;
 use CoreFoundation\Jobs\WarmCacheJob;
+use CoreFoundation\Repositories\Cache\CacheWarmingRegistry;
 
 /**
  * WarmCache
@@ -31,7 +31,8 @@ class WarmCache extends Command
             : $registry->all();
 
         if (empty($warmers)) {
-            $this->error("No warmers found" . ($warmerName ? " with name [{$warmerName}]" : ""));
+            $this->error('No warmers found'.($warmerName ? " with name [{$warmerName}]" : ''));
+
             return 1;
         }
 
@@ -49,7 +50,7 @@ class WarmCache extends Command
             }
         }
 
-        $this->info("All warming tasks have been processed.");
+        $this->info('All warming tasks have been processed.');
 
         return 0;
     }

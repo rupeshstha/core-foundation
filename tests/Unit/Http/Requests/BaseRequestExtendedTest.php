@@ -3,8 +3,8 @@
 namespace CoreFoundation\Tests\Unit\Http\Requests;
 
 use ReflectionClass;
-use CoreFoundation\Tests\PackageTestCase;
 use CoreFoundation\Support\Lang;
+use CoreFoundation\Tests\PackageTestCase;
 use CoreFoundation\Http\Requests\BaseRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
 

@@ -46,7 +46,7 @@ use Illuminate\Pipeline\Pipeline;
  * │                                                                             │
  * │   class ValidateInventoryPipe                                               │
  * │   {                                                                         │
- * │       public function handle(ObjectMutable $data, Closure $next): mixed     │
+ * │       public function handle(BaseDataObject $data, Closure $next): mixed     │
  * │       {                                                                     │
  * │           // Before: validate before core logic runs                        │
  * │           if (! $this->inventoryAvailable($data->get('product_id'))) {      │
@@ -69,14 +69,14 @@ use Illuminate\Pipeline\Pipeline;
  * │                                                                             │
  * │   class OrderService extends BaseService                                    │
  * │   {                                                                         │
- * │       public function place(ObjectMutable $data): ObjectMutable             │
+ * │       public function place(BaseDataObject $data): BaseDataObject             │
  * │       {                                                                     │
  * │           return $this->throughPipes(                                       │
  * │               hook:    'place',                                             │
  * │               payload: $data,                                               │
- * │               core:    function (ObjectMutable $data): ObjectMutable {      │
+ * │               core:    function (BaseDataObject $data): BaseDataObject {      │
  * │                   $order = Order::create($data->toArray());                 │
- * │                   return ObjectMutable::from($order->toArray());            │
+ * │                   return BaseDataObject::from($order->toArray());            │
  * │               },                                                            │
  * │           );                                                                │
  * │       }                                                                     │

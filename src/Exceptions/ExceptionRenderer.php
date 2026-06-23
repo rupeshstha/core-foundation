@@ -6,8 +6,8 @@ use WeakMap;
 use Throwable;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
-use Illuminate\Http\JsonResponse;
 use CoreFoundation\Support\Lang;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Database\QueryException;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Validation\ValidationException;
@@ -55,6 +55,12 @@ use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
 class ExceptionRenderer
 {
     /**
+     * WeakMap<Throwable, string> — reporter stores UUID here, renderer reads it.
+     * Lazily initialised via exceptionIds().
+     */
+    private static ?WeakMap $exceptionIds = null;
+
+    /**
      * Request body keys replaced with '[REDACTED]' before logging.
      * Only top-level keys are checked.
      */
@@ -67,12 +73,6 @@ class ExceptionRenderer
 
     /** Maximum stack frames written to the log. */
     private const TRACE_DEPTH = 20;
-
-    /**
-     * WeakMap<Throwable, string> — reporter stores UUID here, renderer reads it.
-     * Lazily initialised via exceptionIds().
-     */
-    private static ?WeakMap $exceptionIds = null;
 
     /**
      * Register all renderers and reporters with Laravel's exception pipeline.
@@ -93,7 +93,7 @@ class ExceptionRenderer
 
             return response()->json([
                 'message' => $validationException->getMessage(),
-                'errors'  => $validationException->errors(),
+                'errors' => $validationException->errors(),
             ], Response::HTTP_UNPROCESSABLE_ENTITY);
         });
 
@@ -112,7 +112,7 @@ class ExceptionRenderer
 
             return response()->json([
                 'message' => $message,
-                'errors'  => [],
+                'errors' => [],
             ], Response::HTTP_NOT_FOUND);
         });
 
@@ -124,7 +124,7 @@ class ExceptionRenderer
 
             return response()->json([
                 'message' => Lang::get('core-foundation::http.method-not-allowed'),
-                'errors'  => [],
+                'errors' => [],
             ], Response::HTTP_METHOD_NOT_ALLOWED);
         });
 
@@ -136,7 +136,7 @@ class ExceptionRenderer
 
             return response()->json([
                 'message' => Lang::get('core-foundation::http.unauthenticated'),
-                'errors'  => [],
+                'errors' => [],
             ], Response::HTTP_UNAUTHORIZED);
         });
 
@@ -148,7 +148,7 @@ class ExceptionRenderer
 
             return response()->json([
                 'message' => Lang::get('core-foundation::http.unauthorized'),
-                'errors'  => [],
+                'errors' => [],
             ], Response::HTTP_FORBIDDEN);
         });
 
@@ -160,7 +160,7 @@ class ExceptionRenderer
 
             return response()->json([
                 'message' => static::resolveQueryMessage($queryException),
-                'errors'  => [],
+                'errors' => [],
             ], Response::HTTP_BAD_REQUEST);
         });
 
@@ -172,7 +172,7 @@ class ExceptionRenderer
 
             return response()->json([
                 'message' => $httpException->getMessage() ?: Response::$statusTexts[$httpException->getStatusCode()] ?? 'Error.',
-                'errors'  => [],
+                'errors' => [],
             ], $httpException->getStatusCode());
         });
 
@@ -185,13 +185,13 @@ class ExceptionRenderer
                 return null;
             }
 
-            $ids         = static::exceptionIds();
-            $exceptionId = isset($ids[$exception]) ? $ids[$exception] : (string) Str::uuid();
+            $ids = static::exceptionIds();
+            $exceptionId = $ids[$exception] ?? (string) Str::uuid();
             unset($ids[$exception]); // consume — no need to hold after response is built
 
             return response()->json([
-                'message'      => Lang::get('core-foundation::http.server-error'),
-                'errors'       => [],
+                'message' => Lang::get('core-foundation::http.server-error'),
+                'errors' => [],
                 'exception_id' => $exceptionId,
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         });
@@ -209,10 +209,10 @@ class ExceptionRenderer
         // and Laravel's default reporter is also suppressed.
         $exceptions->report(function (QueryException $queryException): false {
             logger()->error('QueryException.', [
-                'sql'       => $queryException->getSql(),
-                'bindings'  => $queryException->getBindings(),
+                'sql' => $queryException->getSql(),
+                'bindings' => $queryException->getBindings(),
                 'exception' => static::buildExceptionContext($queryException),
-                'request'   => static::resolveRequestContext(),
+                'request' => static::resolveRequestContext(),
             ]);
 
             return false;
@@ -233,8 +233,8 @@ class ExceptionRenderer
 
             logger()->error('Unhandled exception.', [
                 'exception_id' => $uuid,
-                'exception'    => static::buildExceptionContext($exception),
-                'request'      => static::resolveRequestContext(),
+                'exception' => static::buildExceptionContext($exception),
+                'request' => static::resolveRequestContext(),
             ]);
 
             return false; // stop Laravel's default reporter from double-logging
@@ -259,13 +259,13 @@ class ExceptionRenderer
         );
 
         return [
-            'method'  => $request->method(),
-            'url'     => $request->fullUrl(),
-            'route'   => $request->route()?->getName(),
-            'params'  => $params,
-            'ip'      => $request->ip(),
+            'method' => $request->method(),
+            'url' => $request->fullUrl(),
+            'route' => $request->route()?->getName(),
+            'params' => $params,
+            'ip' => $request->ip(),
             'user_id' => $request->user()?->getAuthIdentifier(),
-            'body'    => static::redactSensitiveFields(
+            'body' => static::redactSensitiveFields(
                 $request->isJson()
                     ? ($request->json()->all() ?? [])
                     : $request->except(['_token']),
@@ -281,22 +281,22 @@ class ExceptionRenderer
      */
     public static function buildExceptionContext(Throwable $e): array
     {
-        $base = base_path() . DIRECTORY_SEPARATOR;
+        $base = base_path().DIRECTORY_SEPARATOR;
 
         $context = [
-            'class'   => $e::class,
+            'class' => $e::class,
             'message' => $e->getMessage(),
-            'file'    => str_replace($base, '', $e->getFile()),
-            'line'    => $e->getLine(),
-            'trace'   => static::formatTrace($e),
+            'file' => str_replace($base, '', $e->getFile()),
+            'line' => $e->getLine(),
+            'trace' => static::formatTrace($e),
         ];
 
         if ($previous = $e->getPrevious()) {
             $context['caused_by'] = [
-                'class'   => $previous::class,
+                'class' => $previous::class,
                 'message' => $previous->getMessage(),
-                'file'    => str_replace($base, '', $previous->getFile()),
-                'line'    => $previous->getLine(),
+                'file' => str_replace($base, '', $previous->getFile()),
+                'line' => $previous->getLine(),
             ];
         }
 
@@ -310,18 +310,18 @@ class ExceptionRenderer
      */
     private static function formatTrace(Throwable $e): array
     {
-        $base = base_path() . DIRECTORY_SEPARATOR;
+        $base = base_path().DIRECTORY_SEPARATOR;
 
         return array_slice(
             array_map(static function (array $frame) use ($base): array {
                 $at = isset($frame['file'])
-                    ? str_replace($base, '', $frame['file']) . ':' . ($frame['line'] ?? '?')
+                    ? str_replace($base, '', $frame['file']).':'.($frame['line'] ?? '?')
                     : null;
 
                 $call = match (true) {
                     isset($frame['class'], $frame['type']) => "{$frame['class']}{$frame['type']}{$frame['function']}()",
-                    isset($frame['function'])              => "{$frame['function']}()",
-                    default                                => '{closure}',
+                    isset($frame['function']) => "{$frame['function']}()",
+                    default => '{closure}',
                 };
 
                 return array_filter(
@@ -367,7 +367,7 @@ class ExceptionRenderer
      */
     private static function exceptionIds(): WeakMap
     {
-        return static::$exceptionIds ??= new WeakMap();
+        return static::$exceptionIds ??= new WeakMap;
     }
 
     // =========================================================================
@@ -386,8 +386,8 @@ class ExceptionRenderer
      */
     public static function consumeExceptionId(Throwable $e): string
     {
-        $ids         = static::exceptionIds();
-        $exceptionId = isset($ids[$e]) ? $ids[$e] : (string) Str::uuid();
+        $ids = static::exceptionIds();
+        $exceptionId = $ids[$e] ?? (string) Str::uuid();
         unset($ids[$e]);
 
         return $exceptionId;
@@ -396,8 +396,8 @@ class ExceptionRenderer
     private static function resolveQueryMessage(QueryException $e): string
     {
         return match ($e->errorInfo[1] ?? null) {
-            1062    => Lang::get('core-foundation::http.duplicate-entry'),
-            1451    => Lang::get('core-foundation::http.foreign-key-violation'),
+            1062 => Lang::get('core-foundation::http.duplicate-entry'),
+            1451 => Lang::get('core-foundation::http.foreign-key-violation'),
             default => Lang::get('core-foundation::http.database-error'),
         };
     }

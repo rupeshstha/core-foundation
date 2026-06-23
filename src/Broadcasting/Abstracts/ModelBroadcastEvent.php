@@ -2,8 +2,8 @@
 
 namespace CoreFoundation\Broadcasting\Abstracts;
 
-use CoreFoundation\Broadcasting\Contracts\SocketPayloadTransformer;
 use Illuminate\Database\Eloquent\Model;
+use CoreFoundation\Broadcasting\Contracts\SocketPayloadTransformer;
 
 /**
  * ModelBroadcastEvent
@@ -24,7 +24,7 @@ abstract class ModelBroadcastEvent extends ScopedBroadcastEvent
             'action' => $this->action,
             'model' => $this->model->getTable(),
             'id' => $this->model->getKey(),
-            'data' => $this->transformer 
+            'data' => $this->transformer
                 ? $this->transformer->transform($this->model)
                 : $this->model->toArray(),
         ];

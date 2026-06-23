@@ -8,8 +8,18 @@ use CoreFoundation\Traits\HasLang;
 use CoreFoundation\Tests\PackageTestCase;
 
 // ---------------------------------------------------------------------------
-// Controller stub for HasLang instance method tests
+// Controller stubs for HasLang instance method tests
 // ---------------------------------------------------------------------------
+
+class ProductVariantController
+{
+    use HasLang;
+
+    public function getPrefix(): string
+    {
+        return $this->langPrefix();
+    }
+}
 
 class ProductController
 {
@@ -62,15 +72,15 @@ class LangTest extends PackageTestCase
     public function test_lang_get_resolves_all_http_keys(): void
     {
         $keys = [
-            'unauthenticated'       => 'Unauthenticated.',
-            'unauthorized'          => 'This action is unauthorized.',
-            'not-found'             => 'Not found.',
-            'not-found-record'      => 'Record not found.',
-            'method-not-allowed'    => 'Method not allowed.',
-            'database-error'        => 'A database error occurred. Please try again later.',
-            'duplicate-entry'       => 'Duplicate entry.',
+            'unauthenticated' => 'Unauthenticated.',
+            'unauthorized' => 'This action is unauthorized.',
+            'not-found' => 'Not found.',
+            'not-found-record' => 'Record not found.',
+            'method-not-allowed' => 'Method not allowed.',
+            'database-error' => 'A database error occurred. Please try again later.',
+            'duplicate-entry' => 'Duplicate entry.',
             'foreign-key-violation' => 'Cannot delete or update a parent row: a foreign key constraint fails.',
-            'server-error'          => 'An unexpected error occurred. Please contact support with the exception ID.',
+            'server-error' => 'An unexpected error occurred. Please contact support with the exception ID.',
         ];
 
         foreach ($keys as $key => $expected) {
@@ -165,6 +175,22 @@ class LangTest extends PackageTestCase
 
         // No translation file for 'orders.create-success' — Laravel returns key
         $this->assertStringContainsString('orders.create-success', $result);
+    }
+
+    public function test_lang_prefix_derived_from_multi_word_controller_class_name(): void
+    {
+        $controller = new ProductVariantController;
+
+        // ProductVariantController → strips 'Controller' → kebab → 'product-variant'
+        $this->assertEquals('product-variant', $controller->getPrefix());
+    }
+
+    public function test_lang_prefix_method_is_overridable(): void
+    {
+        $reflection = new ReflectionClass(HasLang::class);
+        $method = $reflection->getMethod('langPrefix');
+
+        $this->assertFalse($method->isFinal());
     }
 
     public function test_lang_method_is_final_and_cannot_be_overridden(): void

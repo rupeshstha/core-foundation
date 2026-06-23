@@ -13,9 +13,15 @@ use Illuminate\Support\Facades\Cache;
  * ┌─────────────────────────────────────────────────────────────────────────────┐
  * │ DRIVER REQUIREMENT                                                          │
  * │                                                                             │
- * │ Tag-based caching requires Redis or Memcached.                              │
- * │ File and database cache drivers do NOT support tags.                        │
- * │ Set CACHE_DRIVER=redis in your .env for this to work.                       │
+ * │ Every built-in Laravel cache driver supports tags (file, database, array,   │
+ * │ redis, memcached) — all extend TaggableStore.                               │
+ * │                                                                             │
+ * │ Redis and Memcached track tags natively server-side — flush() is O(1)       │
+ * │ regardless of how many keys share the tag.                                  │
+ * │                                                                             │
+ * │ File, database, and array drivers emulate tags via a version-bumped         │
+ * │ TagSet — correct, but never use them for tag-based caching in production.   │
+ * │ Set CACHE_DRIVER=redis in your .env for production workloads.               │
  * └─────────────────────────────────────────────────────────────────────────────┘
  *
  * ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -30,12 +36,12 @@ use Illuminate\Support\Facades\Cache;
  * │ USAGE PATTERN                                                               │
  * │                                                                             │
  * │   // Read-through cache (forever, busted on write):                         │
- * │   public function find(int $id): ObjectMutable                              │
+ * │   public function find(int $id): BaseDataObject                              │
  * │   {                                                                         │
  * │       return $this->cacheForever(                                           │
  * │           tags:    ['orders'],                                              │
  * │           key:     "orders.detail.{$id}",                                   │
- * │           closure: fn () => ObjectMutable::from(                            │
+ * │           closure: fn () => BaseDataObject::fromArray(                       │
  * │               Order::findOrFail($id)->toArray()                             │
  * │           ),                                                                │
  * │       );                                                                    │
@@ -53,7 +59,7 @@ use Illuminate\Support\Facades\Cache;
  * │   }                                                                         │
  * │                                                                             │
  * │   // Always flush on write:                                                 │
- * │   public function place(ObjectMutable $data): ObjectMutable                 │
+ * │   public function place(BaseDataObject $data): BaseDataObject                 │
  * │   {                                                                         │
  * │       $result = ...;                                                        │
  * │       $this->bustCache(['orders']);                                          │

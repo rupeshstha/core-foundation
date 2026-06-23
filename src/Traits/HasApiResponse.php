@@ -41,9 +41,8 @@ use Illuminate\Http\Resources\Json\JsonResource;
  * │   );                                                                        │
  * │                                                                             │
  * │   return $this->paginatedResponse(                                          │
- * │       message: 'Users fetched.',                                            │
  * │       paginator: $users,                                                    │
- * │       resource: UserResource::class,                                        │
+ * │       message: 'Users fetched.',                                            │
  * │   );                                                                        │
  * │                                                                             │
  * │   return $this->createdResponse(                                            │

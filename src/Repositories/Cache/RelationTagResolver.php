@@ -49,7 +49,7 @@ final class RelationTagResolver
      * query. Do not pass all possible model relations.
      *
      * @param  array<string>  $relations  Relation names e.g. ['profile', 'order.items']
-     * @return array<string>  Deduplicated table-name tags
+     * @return array<string> Deduplicated table-name tags
      */
     public function resolve(array $relations): array
     {

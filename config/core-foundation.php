@@ -48,9 +48,9 @@ return [
     */
 
     'cache' => [
-        'global'        => env('CORE_CACHE_GLOBAL', true),
-        'cache_prefix'  => env('APP_NAME'),
-        'cache_ttl'     => env('CORE_CACHE_TTL', 20),
+        'global' => env('CORE_CACHE_GLOBAL', true),
+        'cache_prefix' => env('APP_NAME'),
+        'cache_ttl' => env('CORE_CACHE_TTL', 20),
     ],
 
     /*
@@ -66,12 +66,12 @@ return [
     'notifications' => [
         'channel' => env('CORE_NOTIFY_CHANNEL', 'slack'),
         'jobs' => [
-            'failed'    => JobFailedNotification::class,
-            'started'   => JobStartedNotification::class,
+            'failed' => JobFailedNotification::class,
+            'started' => JobStartedNotification::class,
             'completed' => JobCompletedNotification::class,
             'notifiables' => [
                 'channel' => env('CORE_NOTIFY_CHANNEL', 'slack'),
-                'route'   => env('CORE_NOTIFY_ROUTE'),
+                'route' => env('CORE_NOTIFY_ROUTE'),
             ],
         ],
     ],

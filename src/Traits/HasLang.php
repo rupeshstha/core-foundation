@@ -2,6 +2,7 @@
 
 namespace CoreFoundation\Traits;
 
+use Illuminate\Support\Str;
 use CoreFoundation\Support\Lang;
 
 /**
@@ -16,7 +17,8 @@ use CoreFoundation\Support\Lang;
  * │ USAGE IN CONTROLLERS                                                        │
  * │                                                                             │
  * │   $this->lang('fetch-success')                                              │
- * │   // UserController → trans('user.fetch-success')                           │
+ * │   // UserController           → trans('user.fetch-success')                 │
+ * │   // ProductVariantController → trans('product-variant.fetch-success')      │
  * │                                                                             │
  * │   $this->lang('core-foundation::http.not-found')                            │
  * │   // key contains dot → bypasses prefix → trans('core-foundation::http.not-found')
@@ -35,7 +37,7 @@ use CoreFoundation\Support\Lang;
  * │                                                                             │
  * │   protected function langPrefix(): string                                   │
  * │   {                                                                         │
- * │       return 'orders';                                                      │
+ * │       return 'product-variant';                                             │
  * │   }                                                                         │
  * └─────────────────────────────────────────────────────────────────────────────┘
  */
@@ -61,17 +63,26 @@ trait HasLang
      * The translation namespace prefix for this controller.
      * Derived from the class name by default — override to customise.
      *
-     * UserController  → 'user'
-     * OrderController → 'order'
+     * Strips the '{baseClassSuffix}' suffix then applies kebab-case:
+     *   UserController           → 'user'
+     *   OrderController          → 'order'
+     *   ProductVariantController → 'product-variant'
      */
     protected function langPrefix(): string
     {
         $class = class_basename(static::class);
+        $stripped = str_ends_with($class, $this->baseClassSuffix())
+            ? substr($class, 0, -strlen($this->baseClassSuffix()))
+            : $class;
 
-        return strtolower(
-            str_ends_with($class, 'Controller')
-                ? substr($class, 0, -10)
-                : $class
-        );
+        return Str::kebab($stripped);
+    }
+
+    /**
+     * Returns the suffix of the base class name.
+     */
+    protected function baseClassSuffix(): string
+    {
+        return 'Service';
     }
 }

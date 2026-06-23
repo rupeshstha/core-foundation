@@ -2,6 +2,7 @@
 
 namespace CoreFoundation\Broadcasting\Abstracts;
 
+use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\PrivateChannel;
 
 /**
@@ -14,7 +15,7 @@ abstract class ScopedBroadcastEvent extends BaseBroadcastEvent
     /**
      * Get the channels the event should broadcast on.
      *
-     * @return array<int, \Illuminate\Broadcasting\Channel>
+     * @return array<int, Channel>
      */
     public function broadcastOn(): array
     {
@@ -25,7 +26,7 @@ abstract class ScopedBroadcastEvent extends BaseBroadcastEvent
 
     /**
      * The name of the private channel to broadcast on.
-     * 
+     *
      * Example: "tenant.1"
      */
     abstract protected function broadcastChannelName(): string;

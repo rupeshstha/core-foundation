@@ -3,16 +3,23 @@
 namespace CoreFoundation\Tests\Unit\Repositories;
 
 use ReflectionClass;
+use BadMethodCallException;
 use CoreFoundation\Tests\PackageTestCase;
 use CoreFoundation\Repositories\BaseRepository;
 use CoreFoundation\Tests\Stubs\Models\TestPost;
 use CoreFoundation\Exceptions\StaleDataException;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class TestPostRepository extends BaseRepository
 {
     protected function setModel(): string
     {
         return TestPost::class;
+    }
+
+    protected function scopeable(): array
+    {
+        return ['active', 'ofStatus'];
     }
 }
 
@@ -51,6 +58,39 @@ class BaseRepositoryTest extends PackageTestCase
         $this->assertEquals('B', $results->first()->title);
     }
 
+    public function test_it_can_fetch_all_with_a_whitelisted_scope(): void
+    {
+        TestPost::create(['title' => 'Post 1', 'status' => 'active']);
+        TestPost::create(['title' => 'Post 2', 'status' => 'pending']);
+
+        $results = $this->repository->fetchAll(['scopes' => ['active']], paginate: false);
+
+        $this->assertCount(1, $results);
+        $this->assertEquals('Post 1', $results->first()->title);
+    }
+
+    public function test_it_can_fetch_all_with_a_scope_that_takes_arguments(): void
+    {
+        TestPost::create(['title' => 'Post 1', 'status' => 'active']);
+        TestPost::create(['title' => 'Post 2', 'status' => 'pending']);
+
+        $results = $this->repository->fetchAll(['scopes' => ['ofStatus' => ['pending']]], paginate: false);
+
+        $this->assertCount(1, $results);
+        $this->assertEquals('Post 2', $results->first()->title);
+    }
+
+    public function test_it_silently_skips_a_scope_not_in_the_repository_whitelist(): void
+    {
+        TestPost::create(['title' => 'Post 1', 'status' => 'active']);
+        TestPost::create(['title' => 'Post 2', 'status' => 'pending']);
+
+        // 'archived' is not returned by TestPostRepository::scopeable()
+        $results = $this->repository->fetchAll(['scopes' => ['archived']], paginate: false);
+
+        $this->assertCount(2, $results);
+    }
+
     public function test_it_can_fetch_by_id(): void
     {
         $post = TestPost::create(['title' => 'Post 1']);
@@ -59,6 +99,94 @@ class BaseRepositoryTest extends PackageTestCase
 
         $this->assertNotNull($result);
         $this->assertEquals($post->id, $result->id);
+    }
+
+    public function test_it_can_apply_a_fluent_scope_to_fetch_by_id(): void
+    {
+        $post = TestPost::create(['title' => 'Post 1', 'status' => 'active']);
+
+        $result = $this->repository->scope('active')->fetchById($post->id);
+
+        $this->assertEquals($post->id, $result->id);
+    }
+
+    public function test_a_fluent_scope_excludes_non_matching_records_on_fetch_by_id(): void
+    {
+        $post = TestPost::create(['title' => 'Post 1', 'status' => 'pending']);
+
+        $this->expectException(ModelNotFoundException::class);
+        $this->repository->scope('active')->fetchById($post->id);
+    }
+
+    public function test_it_can_apply_a_fluent_scope_to_fetch_all(): void
+    {
+        TestPost::create(['title' => 'Post 1', 'status' => 'active']);
+        TestPost::create(['title' => 'Post 2', 'status' => 'pending']);
+
+        $results = $this->repository->scope('active')->fetchAll(paginate: false);
+
+        $this->assertCount(1, $results);
+        $this->assertEquals('Post 1', $results->first()->title);
+    }
+
+    public function test_a_fluent_scope_accepts_arguments(): void
+    {
+        TestPost::create(['title' => 'Post 1', 'status' => 'active']);
+        TestPost::create(['title' => 'Post 2', 'status' => 'pending']);
+
+        $results = $this->repository->scope('ofStatus', ['pending'])->fetchAll(paginate: false);
+
+        $this->assertCount(1, $results);
+        $this->assertEquals('Post 2', $results->first()->title);
+    }
+
+    public function test_fluent_scopes_can_be_chained(): void
+    {
+        TestPost::create(['title' => 'Post 1', 'status' => 'active', 'score' => 5]);
+        TestPost::create(['title' => 'Post 2', 'status' => 'active', 'score' => 1]);
+
+        $results = $this->repository
+            ->scope('active')
+            ->scope('ofStatus', ['active'])
+            ->fetchAll(paginate: false);
+
+        $this->assertCount(2, $results);
+    }
+
+    public function test_a_fluent_scope_is_not_whitelist_gated_and_throws_on_an_unknown_name(): void
+    {
+        $this->expectException(BadMethodCallException::class);
+        $this->repository->scope('nonexistentScope')->fetchAll(paginate: false);
+    }
+
+    public function test_a_fluent_scope_only_applies_to_the_next_call(): void
+    {
+        TestPost::create(['title' => 'Post 1', 'status' => 'active']);
+        TestPost::create(['title' => 'Post 2', 'status' => 'pending']);
+
+        $scoped = $this->repository->scope('active')->fetchAll(paginate: false);
+        $unscoped = $this->repository->fetchAll(paginate: false);
+
+        $this->assertCount(1, $scoped);
+        $this->assertCount(2, $unscoped);
+    }
+
+    public function test_a_fluent_scope_does_not_poison_the_cache_for_unscoped_calls(): void
+    {
+        TestPost::create(['title' => 'Post 1', 'status' => 'active']);
+        TestPost::create(['title' => 'Post 2', 'status' => 'pending']);
+
+        // Warm the unscoped cache entry first.
+        $before = $this->repository->fetchAll(paginate: false);
+        $this->assertCount(2, $before);
+
+        // A scoped call must hit a different cache key, not the one just warmed.
+        $scoped = $this->repository->scope('active')->fetchAll(paginate: false);
+        $this->assertCount(1, $scoped);
+
+        // The original unscoped entry must still be intact.
+        $after = $this->repository->fetchAll(paginate: false);
+        $this->assertCount(2, $after);
     }
 
     public function test_it_applies_pessimistic_lock_for_update(): void

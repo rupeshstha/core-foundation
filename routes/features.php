@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use CoreFoundation\Http\Controllers\FeatureFlagController;
+use CoreFoundation\Http\Middlewares\AuthenticateWithCookie;
 use CoreFoundation\Http\Controllers\BroadcastAuthController;
 
 /*
@@ -28,5 +29,5 @@ Route::middleware(config('core-foundation.auth.features_middleware', ['auth']))
  * when using httpOnly cookies (where JS cannot read the token).
  */
 Route::post('/broadcasting/auth', BroadcastAuthController::class)
-    ->middleware(['api', \CoreFoundation\Http\Middlewares\AuthenticateWithCookie::class])
+    ->middleware(['api', AuthenticateWithCookie::class])
     ->name('core.broadcasting.auth');

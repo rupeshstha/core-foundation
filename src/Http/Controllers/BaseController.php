@@ -85,24 +85,20 @@ use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
  * └─────────────────────────────────────────────────────────────────────────────┘
  *
  * ┌─────────────────────────────────────────────────────────────────────────────┐
- * │ EXTENDING THE EXCEPTION MAP                                                 │
+ * │ DOMAIN EXCEPTIONS — DO NOT MAP IN CONTROLLERS                               │
  * │                                                                             │
- * │   class OrderController extends BaseController                              │
+ * │ Domain exceptions (InsufficientInventory, PaymentDeclined, etc.) should     │
+ * │ extend BaseApiException and carry their own render() logic.                 │
+ * │ Laravel calls render() automatically — no controller mapping needed.        │
+ * │                                                                             │
+ * │   class InsufficientInventoryException extends BaseApiException             │
  * │   {                                                                         │
- * │       protected function knownExceptions(): array                           │
+ * │       public function render(Request $request): JsonResponse                │
  * │       {                                                                     │
- * │           return array_merge(parent::knownExceptions(), [                   │
- * │               InsufficientInventoryException::class => [                    │
- * │                   'status'  => Response::HTTP_UNPROCESSABLE_ENTITY,        │
- * │                   'message' => 'Insufficient inventory for this order.',    │
- * │                   'errors'  => [],                                          │
- * │               ],                                                            │
- * │               PaymentDeclinedException::class => [                          │
- * │                   'status'  => Response::HTTP_PAYMENT_REQUIRED,            │
- * │                   'message' => 'Payment was declined.',                     │
- * │                   'errors'  => [],                                          │
- * │               ],                                                            │
- * │           ]);                                                               │
+ * │           return response()->json([                                         │
+ * │               'message' => 'Insufficient inventory for this order.',        │
+ * │               'errors'  => [],                                              │
+ * │           ], 422);                                                          │
  * │       }                                                                     │
  * │   }                                                                         │
  * └─────────────────────────────────────────────────────────────────────────────┘
@@ -125,4 +121,9 @@ abstract class BaseController extends Controller
     use HasApiResponse;
     use HasExceptionHandler;
     use HasLang;
+
+    protected function baseClassSuffix(): string
+    {
+        return 'Controller';
+    }
 }

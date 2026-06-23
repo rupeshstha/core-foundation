@@ -1,18 +1,17 @@
 <?php
 
 use Illuminate\Support\Facades\Broadcast;
-use Illuminate\Support\Facades\Route;
 
 it('authorizes broadcasting requests', function () {
     Broadcast::shouldReceive('auth')
         ->once()
         ->andReturn(response(['auth' => 'signed-token']));
-        
+
     $response = $this->postJson('/broadcasting/auth', [
         'channel_name' => 'private-tenant.1',
-        'socket_id' => '123.456'
+        'socket_id' => '123.456',
     ]);
-    
+
     $response->assertStatus(200)
         ->assertJson(['auth' => 'signed-token']);
 });

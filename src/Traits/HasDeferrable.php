@@ -66,7 +66,7 @@ use Illuminate\Support\Defer\DeferredCallbackCollection;
  * │           }, name: 'order.audit');                                          │
  * │                                                                             │
  * │           // Events dispatch immediately — they may have return-path deps  │
- * │           $this->dispatch('placed', $result);                               │
+ * │           OrderPlaced::dispatch($result);                                   │
  * │                                                                             │
  * │           return $result;                                                   │
  * │       }                                                                     │
@@ -146,6 +146,9 @@ trait HasDeferrable
      * but if the transaction rolls back after the response is sent, the cache will
      * be busted for data that was never persisted.
      *
+     * Depends on HasCacheable::bustCache() — fulfilled by HasServiceCache on BaseService.
+     * Do not use this trait standalone without also using HasServiceCache.
+     *
      * @param  array<string>  $tags  Cache tags to flush
      * @param  string|null  $name  Override the deferred callback name (for cancellability)
      */
@@ -160,31 +163,6 @@ trait HasDeferrable
                 $this->bustCache($tags);
             },
             name: $callbackName,
-        );
-    }
-
-    /**
-     * Defer an event dispatch post-response.
-     *
-     * Use ONLY when the event's listeners have no return-path dependency
-     * (i.e. the response does not depend on anything the listener does).
-     *
-     * For events where listeners must complete before the response is built
-     * (e.g. listeners that write to a DB that the response reads), use
-     * $this->dispatch() directly — not this method.
-     *
-     * @param  string  $event  Event key (will be prefixed by eventPrefix if set)
-     * @param  mixed  $payload  Event payload
-     */
-    final protected function deferDispatch(
-        string $event,
-        mixed $payload = [],
-    ): DeferredCallback {
-        return $this->defer(
-            callback: function () use ($event, $payload) {
-                $this->dispatch($event, $payload);
-            },
-            name: 'event.'.$event,
         );
     }
 

@@ -4,8 +4,8 @@ namespace CoreFoundation\Http\Middlewares;
 
 use Closure;
 use Illuminate\Http\Request;
-use Symfony\Component\HttpFoundation\Response;
 use Illuminate\Http\JsonResponse;
+use Symfony\Component\HttpFoundation\Response;
 
 /**
  * SetAuthCookie

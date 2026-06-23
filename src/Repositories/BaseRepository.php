@@ -2,9 +2,8 @@
 
 namespace CoreFoundation\Repositories;
 
-use CoreFoundation\Traits\HasEvent;
-use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Foundation\Application;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
@@ -13,64 +12,42 @@ use CoreFoundation\Exceptions\StaleDataException;
 use CoreFoundation\Repositories\Cache\CacheScope;
 use CoreFoundation\Repositories\Sort\SortApplicator;
 use CoreFoundation\Repositories\Cache\RepositoryCache;
+use CoreFoundation\Repositories\Scope\ScopeApplicator;
 use CoreFoundation\Repositories\Filter\FilterApplicator;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use CoreFoundation\Entities\Contracts\HasSearchableColumns;
 use CoreFoundation\Repositories\Contracts\RepositoryContract;
 use CoreFoundation\Repositories\Exceptions\ModelNotInstantiableException;
 
-/**
- * BaseRepository
- *
- * Foundation for all Eloquent repositories. Composes:
- *   - FilterApplicator    — operator-based query filtering
- *   - SortApplicator      — request-driven sorting
- *   - RepositoryCache     — tag-based cache-first strategy with smart invalidation
- *   - HasEvent            — domain event dispatch around write operations
- *
- * ┌─────────────────────────────────────────────────────────────────────────────┐
- * │ DEFINING A REPOSITORY                                                       │
- * │                                                                             │
- * │   class OrderRepository extends BaseRepository                              │
- * │   {                                                                         │
- * │       protected function setModel(): string                                 │
- * │       {                                                                     │
- * │           return Order::class;                                              │
- * │       }                                                                     │
- * │                                                                             │
- * │       // Override searchable columns (or add on the model via $searchable)  │
- * │       protected function searchable(): array                                │
- * │       {                                                                     │
- * │           return ['status', 'created_at', ...Order::getSearchable()];       │
- * │       }                                                                     │
- * │                                                                             │
- * │       // Override which methods cache their results                         │
- * │       protected function cachedMethods(): array                             │
- * │       {                                                                     │
- * │           return ['fetchAll', 'fetchById'];                                 │
- * │       }                                                                     │
- * │                                                                             │
- * │       // Custom query (implements QueryRepositoryContract)                  │
- * │       public function pendingOlderThan(int $days): Collection               │
- * │       {                                                                     │
- * │           return $this->query()                                             │
- * │               ->where('status', 'pending')                                  │
- * │               ->where('created_at', '<', now()->subDays($days))             │
- * │               ->get();                                                      │
- * │       }                                                                     │
- * │   }                                                                         │
- * └─────────────────────────────────────────────────────────────────────────────┘
- *
- * ┌─────────────────────────────────────────────────────────────────────────────┐
- * │ EXTENDING FILTER OPERATORS (from ServiceProvider::boot())                   │
- * │                                                                             │
- * │   FilterApplicator::addOperator(new BetweenOperator);                       │
- * │   Order::addSearchable(['subscription_id']);                                 │
- * └─────────────────────────────────────────────────────────────────────────────┘
- */
 abstract class BaseRepository implements RepositoryContract
 {
-    use HasEvent;
+    /**
+     * Per-repository cache bypass flag.
+     *
+     * Scoped to this repository instance only — does NOT touch the shared
+     * RepositoryCache instance, so other repositories in the same request
+     * are unaffected. Consumed and reset on the next read call.
+     */
+    private bool $bypassCache = false;
+
+    /**
+     * Pending fluent scopes for the next read call on this repository only.
+     * Set via scope(), consumed and reset by the next fetchAll() or fetchById() call.
+     *
+     * @var array<string, array>
+     */
+    private array $pendingScopes = [];
+
+    /**
+     * Scope names registered by other modules, keyed by the concrete
+     * repository class (static::class) they were added to. Same pattern as
+     * ModelFillables::$additionalFillable / ModelSearchable::$additionalSearchable —
+     * lets Module B extend Module A's repository whitelist without touching
+     * Module A's source.
+     *
+     * @var array<class-string, array<string>>
+     */
+    protected static array $additionalScopeable = [];
 
     protected Model $model;
 
@@ -81,28 +58,26 @@ abstract class BaseRepository implements RepositoryContract
      */
     protected string|false $lockMode = false;
 
-    /**
-     * Per-repository cache bypass flag.
-     *
-     * Scoped to this repository instance only — does NOT touch the shared
-     * RepositoryCache instance, so other repositories in the same request
-     * are unaffected. Consumed and reset on the next read call.
-     */
-    private bool $bypassCache = false;
-
     public function __construct(
         protected readonly Application $app,
         protected readonly FilterApplicator $filterApplicator,
         protected readonly SortApplicator $sortApplicator,
+        protected readonly ScopeApplicator $scopeApplicator,
         protected readonly RepositoryCache $cache,
     ) {
         $this->boot();
     }
 
-    // =========================================================================
-    // Pessimistic Locking
-    // =========================================================================
+    /**
+     * Return the FQCN of the model this repository manages.
+     */
+    abstract protected function setModel(): string;
 
+    /**
+     * Pessimistic Locking
+     *
+     * @return static
+     */
     public function lockForUpdate(): static
     {
         $this->lockMode = 'update';
@@ -129,9 +104,48 @@ abstract class BaseRepository implements RepositoryContract
     }
 
     /**
-     * Return the FQCN of the model this repository manages.
+     * Apply a named Eloquent local scope to the next fetchAll() or fetchById()
+     * call on this repository instance. Chainable — call multiple times to
+     * stack scopes.
+     *
+     * Resolves directly against the model via Laravel's native
+     * Builder::scopes() — NOT whitelist-gated. This is a direct call from
+     * application code (a service), not request input, so it follows the
+     * same trust model as lockForUpdate()/sharedLock(): the caller is
+     * trusted, and an unknown scope name throws BadMethodCallException
+     * immediately, same as calling the scope directly on the model would.
+     *
+     * Use criteria['scopes'] on fetchAll() instead for request-driven
+     * scoping (e.g. a `?scopes[]=active` query string) — that path is
+     * whitelist-gated via scopeable() because the input is untrusted.
+     *
+     *   $this->userRepository->scope('active')->fetchById($id);
+     *   $this->userRepository->scope('ofType', ['admin'])->fetchAll();
+     *   $this->userRepository->scope('active')->scope('verified')->fetchAll();
+     *
+     * @param  array  $arguments  Positional arguments forwarded to the scope method
      */
-    abstract protected function setModel(): string;
+    public function scope(string $name, array $arguments = []): static
+    {
+        $this->pendingScopes[$name] = $arguments;
+
+        return $this;
+    }
+
+    /**
+     * Apply a snapshot of pending fluent scopes to the given Builder.
+     * Takes the snapshot as a parameter rather than reading $this->pendingScopes
+     * directly — the caller resets the instance property up front (before the
+     * cache layer decides hit or miss) so a cache hit can never skip the reset.
+     */
+    private function applyScope(Builder $query, array $scopes): void
+    {
+        if ($scopes === []) {
+            return;
+        }
+
+        $query->scopes($scopes);
+    }
 
     /**
      * Columns allowed for filtering in this repository.
@@ -158,6 +172,69 @@ abstract class BaseRepository implements RepositoryContract
     protected function sortable(): array
     {
         return $this->searchable();
+    }
+
+    /**
+     * Eloquent local scope names this repository allows callers to apply via
+     * criteria['scopes'] — e.g. ['active', 'recent'] invokes Model::scopeActive()
+     * and Model::scopeRecent().
+     *
+     * Default: none. Unlike searchable()/sortable(), there is no model-level
+     * source to derive this from — every scope must be explicitly opted in,
+     * since a local scope can run arbitrary query logic, not just compare a
+     * column. Override per-repository to declare this repository's own base
+     * list — to add MORE scopes from another module, use addScopeable()
+     * instead of editing this method (see below).
+     *
+     * @return array<string>
+     */
+    protected function scopeable(): array
+    {
+        return [];
+    }
+
+    /**
+     * Register additional scope names for this repository from an external
+     * module, without touching the repository's source — same pattern as
+     * Model::addFillable()/addSearchable().
+     *
+     * In a modular monolith, Module B (e.g. Promotions) may need
+     * ProductRepository (owned by Module A, Catalog) to allow an extra scope.
+     * Without this, Module B would have to edit Module A's repository class
+     * directly to override scopeable() — breaking module isolation.
+     *
+     *   // From PromotionsServiceProvider::boot():
+     *   ProductRepository::addScopeable(['onSale', 'lowStock']);
+     *
+     * Keyed by static::class (late static binding) — registering on
+     * ProductRepository never leaks into a sibling repository's whitelist.
+     *
+     * Only gates criteria['scopes'] (request-driven input). The fluent
+     * scope() method is intentionally unwhitelisted — see its docblock.
+     *
+     * @param  array<string>  $scopes
+     */
+    public static function addScopeable(array $scopes): void
+    {
+        static::$additionalScopeable[static::class] = array_unique(array_merge(
+            static::$additionalScopeable[static::class] ?? [],
+            $scopes,
+        ));
+    }
+
+    /**
+     * All scope names this repository allows via criteria['scopes'] — its own
+     * scopeable() declaration merged with anything registered by other
+     * modules via addScopeable(). This is the list actually enforced.
+     *
+     * @return array<string>
+     */
+    private function resolveScopeable(): array
+    {
+        return array_values(array_unique(array_merge(
+            $this->scopeable(),
+            static::$additionalScopeable[static::class] ?? [],
+        )));
     }
 
     /**
@@ -202,203 +279,22 @@ abstract class BaseRepository implements RepositoryContract
         return null;
     }
 
-    public function fetchAll(
-        array $criteria = [],
-        array $relations = [],
-        array $columns = ['*'],
-        bool $paginate = true,
-        int $perPage = 25,
-    ): Collection|LengthAwarePaginator {
-        // Events fire on every call including cache hits. Listeners must be
-        // idempotent — avoid side effects (counters, audit writes) here.
-        $this->dispatch('fetch-all.before', compact('criteria', 'relations'));
-
-        $isLocked          = $this->lockMode !== false;
-        $bypass            = $this->bypassCache;
-        $this->bypassCache = false;
-
-        // Paginated results are request-bound (current page lives in the request).
-        // Caching them would return page 1 data for every subsequent page request
-        // that shares the same criteria. Only cache non-paginated collections.
-        $shouldCache = $this->isCached(__FUNCTION__) && ! $bypass && ! $isLocked && ! $paginate;
-
-        if ($this->isCached(__FUNCTION__) && $paginate) {
-            Log::debug('[Cache] fetchAll bypassed — paginate:true on a cached method. Pass paginate:false to cache.', [
-                'model' => $this->model::class,
-            ]);
-        }
-
-        $result = $this->cache->remember(
-            model: $this->model,
-            method: __FUNCTION__,
-            criteria: $criteria,
-            relations: $relations,
-            columns: $columns,
-            extra: [],
-            shouldCache: $shouldCache,
-            queryType: QueryType::Listing,
-            scope: $this->cacheScope(),
-            callback: function () use ($criteria, $relations, $columns, $paginate, $perPage) {
-                /** @var Builder<Model> $query */
-                $query = $this->model->newQuery();
-                $query->select($columns);
-
-                $this->applyLock($query);
-
-                if ($relations) {
-                    $query->with($relations);
-                }
-
-                $this->filterApplicator->apply($query, $criteria['filters'] ?? [], $this->searchable());
-                $this->sortApplicator->apply($query, $criteria['sort'] ?? [], $this->sortable());
-
-                return $paginate
-                    ? $query->paginate($perPage)
-                    : $query->get();
-            },
-        );
-
-        $this->dispatch('fetch-all.after', $result);
-
-        return $result;
-    }
-
-    public function fetchById(
-        int|string $id,
-        array $relations = [],
-        array $columns = ['*'],
-    ): ?Model {
-        $this->dispatch('fetch-by-id.before', compact('id', 'relations'));
-
-        $isLocked          = $this->lockMode !== false;
-        $bypass            = $this->bypassCache;
-        $this->bypassCache = false;
-        $shouldCache       = $this->isCached(__FUNCTION__) && ! $bypass && ! $isLocked;
-
-        $result = $this->cache->remember(
-            model: $this->model,
-            method: __FUNCTION__,
-            criteria: [],
-            relations: $relations,
-            columns: $columns,
-            extra: ['id' => $id],
-            shouldCache: $shouldCache,
-            queryType: QueryType::Record,
-            recordId: $id,
-            scope: $this->cacheScope(),
-            callback: function () use ($id, $relations, $columns) {
-                /** @var Builder<Model> $query */
-                $query = $this->model->newQuery();
-                $query->select($columns);
-
-                $this->applyLock($query);
-
-                if ($relations) {
-                    $query->with($relations);
-                }
-
-                return $query->find($id);
-            },
-        );
-
-        $this->dispatch('fetch-by-id.after', $result);
-
-        return $result;
-    }
-
-    public function create(array $attributes): Model
-    {
-        $this->dispatch('create.before', $attributes);
-
-        $model = $this->model->newQuery()->create($attributes);
-
-        // Observer handles cache invalidation by default.
-        // Call explicitly here only if the observer is not registered.
-        // $this->cache->flushModel($this->model);
-
-        $this->dispatch('create.after', $model);
-
-        return $model;
-    }
-
-    public function update(int|string $id, array $attributes): Model
-    {
-        $this->dispatch('update.before', compact('id', 'attributes'));
-
-        $model = $this->model->newQuery()->findOrFail($id);
-        $model->update($attributes);
-
-        // Observer handles cache invalidation by default.
-        // Call explicitly: $this->cache->flushRecord($model, $id);
-
-        $this->dispatch('update.after', $model);
-
-        return $model;
-    }
-
-    public function updateAtomic(int|string $id, array $attributes, array $conditions): Model
-    {
-        $this->dispatch('update-atomic.before', compact('id', 'attributes', 'conditions'));
-
-        $model = $this->model->newQuery()->findOrFail($id);
-
-        $affected = $this->model->newQuery()
-            ->where($model->getKeyName(), $id)
-            ->where($conditions)
-            ->update($attributes);
-
-        // A zero affected count could mean either:
-        // 1. Stale data (conditions didn't match)
-        // 2. Data was already identical (no-op update)
-        if ($affected === 0) {
-            $isStillValid = $this->model->newQuery()
-                ->where($model->getKeyName(), $id)
-                ->where($conditions)
-                ->exists();
-
-            if (! $isStillValid) {
-                throw new StaleDataException;
-            }
-        }
-
-        // Direct updates bypass Eloquent observers, so we must flush cache manually.
-        $this->cache->flushRecord($model, $id, $this->cacheScope());
-
-        $model->refresh();
-
-        $this->dispatch('update-atomic.after', $model);
-
-        return $model;
-    }
-
-    public function delete(int|string $id): bool
-    {
-        $this->dispatch('delete.before', compact('id'));
-
-        $model = $this->model->newQuery()->findOrFail($id);
-        $result = (bool) $model->delete();
-
-        // Observer handles cache invalidation by default.
-        // Call explicitly: $this->cache->flushModel($this->model);
-
-        $this->dispatch('delete.after', compact('id', 'result'));
-
-        return $result;
-    }
-
     /**
      * Return a fresh Builder for custom queries.
      * Starting point for all domain-specific queries in concrete repositories.
+     *
+     * @return Builder<Model>
      */
     public function query(): Builder
     {
         return $this->model::query();
     }
 
-    // =========================================================================
-    // RepositoryContract — Model access
-    // =========================================================================
-
+    /**
+      * Return the underlying model instance.
+     *
+     * @return Model
+     */
     public function getModel(): Model
     {
         return $this->model;
@@ -456,11 +352,164 @@ abstract class BaseRepository implements RepositoryContract
         );
 
         $this->model = $instance;
-        $this->eventPrefix = $this->model->getTable();
     }
 
     private function isCached(string $method): bool
     {
         return in_array($method, $this->cachedMethods(), true);
+    }
+
+    public function fetchAll(
+        array $criteria = [],
+        array $relations = [],
+        array $columns = ['*'],
+        bool $paginate = true,
+        int $perPage = 25,
+    ): Collection|LengthAwarePaginator {
+        $isLocked = $this->lockMode !== false;
+        $bypass = $this->bypassCache;
+        $this->bypassCache = false;
+        $pendingScopes = $this->pendingScopes;
+        $this->pendingScopes = [];
+
+        /**
+         * Paginated results are request-bound (current page lives in the request).
+         * Caching them would return page 1 data for every subsequent page request
+         * that shares the same criteria. Only cache non-paginated collections.
+         */
+        $shouldCache = $this->isCached(__FUNCTION__)
+            && ! $bypass
+            && ! $isLocked
+            && ! $paginate;
+
+        $result = $this->cache->remember(
+            model: $this->model,
+            method: __FUNCTION__,
+            criteria: $criteria,
+            relations: $relations,
+            columns: $columns,
+            extra: ['scopes' => $pendingScopes],
+            shouldCache: $shouldCache,
+            queryType: QueryType::Listing,
+            scope: $this->cacheScope(),
+            callback: function () use ($criteria, $relations, $columns, $paginate, $perPage, $pendingScopes) {
+                /** @var Builder<Model> $query */
+                $query = $this->model->newQuery();
+                $query->select($columns);
+
+                $this->applyLock($query);
+
+                if ($relations) {
+                    $query->with($relations);
+                }
+
+                $this->filterApplicator->apply($query, $criteria['filters'] ?? [], $this->searchable());
+                $this->sortApplicator->apply($query, $criteria['sort'] ?? [], $this->sortable());
+                $this->scopeApplicator->apply($query, $criteria['scopes'] ?? [], $this->resolveScopeable());
+                $this->applyScope($query, $pendingScopes);
+
+                return $paginate
+                    ? $query->paginate($perPage)
+                    : $query->get();
+            },
+        );
+
+        return $result;
+    }
+
+    public function fetchById(
+        int|string $id,
+        array $relations = [],
+        array $columns = ['*'],
+    ): Model {
+        $isLocked = $this->lockMode !== false;
+        $bypass = $this->bypassCache;
+        $this->bypassCache = false;
+        $pendingScopes = $this->pendingScopes;
+        $this->pendingScopes = [];
+        $shouldCache = $this->isCached(__FUNCTION__) && ! $bypass && ! $isLocked;
+
+        $result = $this->cache->remember(
+            model: $this->model,
+            method: __FUNCTION__,
+            criteria: [],
+            relations: $relations,
+            columns: $columns,
+            extra: ['id' => $id, 'scopes' => $pendingScopes],
+            shouldCache: $shouldCache,
+            queryType: QueryType::Record,
+            recordId: $id,
+            scope: $this->cacheScope(),
+            callback: function () use ($id, $relations, $columns, $pendingScopes) {
+                /** @var Builder<Model> $query */
+                $query = $this->model->newQuery();
+                $query->select($columns);
+
+                $this->applyLock($query);
+                $this->applyScope($query, $pendingScopes);
+
+                if ($relations) {
+                    $query->with($relations);
+                }
+
+                return $query->findOrFail($id);
+            },
+        );
+
+        return $result;
+    }
+
+    public function create(array $attributes): Model
+    {
+        $model = $this->model->newQuery()->create($attributes);
+
+        return $model;
+    }
+
+    public function update(int|string $id, array $attributes): Model
+    {
+        $model = $this->model->newQuery()->findOrFail($id);
+        $model->update($attributes);
+
+        return $model;
+    }
+
+    public function updateAtomic(int|string $id, array $attributes, array $conditions): Model
+    {
+        $model = $this->model->newQuery()->findOrFail($id);
+
+        $affected = $this->model->newQuery()
+            ->where($model->getKeyName(), $id)
+            ->where($conditions)
+            ->update($attributes);
+
+        // A zero affected count could mean either:
+        // 1. Stale data (conditions didn't match)
+        // 2. Data was already identical (no-op update)
+        if ($affected === 0) {
+            $isStillValid = $this->model->newQuery()
+                ->where($model->getKeyName(), $id)
+                ->where($conditions)
+                ->exists();
+
+            if (! $isStillValid) {
+                throw new StaleDataException;
+            }
+        }
+
+        // Direct updates bypass Eloquent observers, so we must flush cache manually.
+        $this->cache->flushRecord($model, $id, $this->cacheScope());
+
+        $model->refresh();
+
+        return $model;
+    }
+
+    public function delete(int|string $id): bool
+    {
+        $model = $this->model->newQuery()->findOrFail($id);
+        $result = (bool) $model->delete();
+
+        return $result;
     }
 }

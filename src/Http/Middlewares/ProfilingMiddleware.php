@@ -10,21 +10,19 @@ use CoreFoundation\DevTools\ServerTiming\ServerTimingService;
 /**
  * ProfilingMiddleware
  *
- * Activates the full profiling layer for a request.
- * Works alongside ServerTimingMiddleware — this middleware enables
- * per-layer profiling flags that #[Profile]-marked methods check.
+ * Records controller dispatch time in the Server-Timing header.
+ * Works alongside ServerTimingMiddleware — place this AFTER it so bootstrap
+ * is measured separately from controller execution.
  *
  * ┌─────────────────────────────────────────────────────────────────────────────┐
  * │ PLACEMENT IN MIDDLEWARE STACK                                                │
- * │                                                                             │
- * │ Place AFTER ServerTimingMiddleware (which measures bootstrap):               │
  * │                                                                             │
  * │   ->withMiddleware(function (Middleware $middleware) {                       │
  * │       $middleware->prepend(ServerTimingMiddleware::class);                   │
  * │       $middleware->append(ProfilingMiddleware::class);                       │
  * │   })                                                                        │
  * │                                                                             │
- * │ Or apply only to specific routes via route middleware:                      │
+ * │ Or apply only to specific routes:                                           │
  * │                                                                             │
  * │   Route::middleware(['profiling'])->group(function () {                     │
  * │       Route::get('/orders', [OrderController::class, 'index']);             │
@@ -35,41 +33,21 @@ use CoreFoundation\DevTools\ServerTiming\ServerTimingService;
  * │ WHAT THIS MIDDLEWARE DOES                                                   │
  * │                                                                             │
  * │ 1. Checks profiling.enabled and environment gates                           │
- * │ 2. Records the Controller dispatch time as a Server-Timing metric           │
- * │ 3. Sets a request attribute that HasProfilable checks to decide             │
- * │    whether to wrap #[Profile]-marked methods                                │
- * │ 4. Adds a "profiling-active" label to the Server-Timing header so          │
- * │    DevTools shows that profiling was running for this request              │
- * └─────────────────────────────────────────────────────────────────────────────┘
- *
- * ┌─────────────────────────────────────────────────────────────────────────────┐
- * │ WHAT IT DOES NOT DO                                                         │
+ * │ 2. Records full controller dispatch time as a Server-Timing metric          │
+ * │ 3. Adds a "profiling-active" label so DevTools shows profiling is running  │
+ * │ 4. Records a "slow-Controller" warning metric when threshold is exceeded    │
  * │                                                                             │
- * │ It does NOT use debug_backtrace() or AOP to intercept every method call.   │
- * │ PHP does not support AOP natively. Intercepting all calls would require     │
- * │ xdebug (not for production), a proxy pattern (complex), or debug_backtrace  │
- * │ (fragile, expensive). None of these are acceptable.                         │
- * │                                                                             │
- * │ Instead: developers mark methods they care about with #[Profile].          │
- * │ Selective explicit profiling > carpet-bombing every method call.            │
+ * │ For fine-grained service/repository measurement, use MeasuresPerformance   │
+ * │ or MeasuresCachePerformance inside the service class itself.                │
  * └─────────────────────────────────────────────────────────────────────────────┘
  */
 class ProfilingMiddleware
 {
-    /**
-     * Request attribute key — set to true when profiling is active.
-     * HasProfilable reads this via request() helper to decide whether to measure.
-     */
-    public const ACTIVE_KEY = 'core-foundation.profiling.active';
-
     public function handle(Request $request, Closure $next): Response
     {
-        if (! $this->isEnabled($request)) {
+        if (! $this->isEnabled()) {
             return $next($request);
         }
-
-        // Mark request as profiling-active — HasProfilable reads this
-        $request->attributes->set(self::ACTIVE_KEY, true);
 
         /** @var ServerTimingService $timing */
         $timing = app(ServerTimingService::class);
@@ -102,7 +80,7 @@ class ProfilingMiddleware
     // Internals
     // =========================================================================
 
-    private function isEnabled(Request $request): bool
+    private function isEnabled(): bool
     {
         if (! config('profiling.enabled', false)) {
             return false;

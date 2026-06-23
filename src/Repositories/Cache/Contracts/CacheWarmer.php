@@ -15,7 +15,7 @@ interface CacheWarmer
      *
      * Should be designed to be run as a background job or a scheduled task.
      *
-     * @param array $context Optional context (e.g. ['tenant_id' => 1])
+     * @param  array  $context  Optional context (e.g. ['tenant_id' => 1])
      */
     public function warm(array $context = []): void;
 

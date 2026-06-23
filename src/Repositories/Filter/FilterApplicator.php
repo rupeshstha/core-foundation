@@ -9,53 +9,83 @@ use CoreFoundation\Repositories\Filter\Contracts\FilterOperator;
 /**
  * FilterApplicator
  *
- * Applies request filter parameters to an Eloquent Builder.
+ * Applies request filter parameters to an Eloquent Builder using a config-driven
+ * operator registry. Operators are identified by a `__xxx_` prefix on query keys.
  *
- * The operator registry is driven by config/repository.php (operators key).
- * Operators can be overridden, disabled, or extended via config or the
- * programmatic API (addOperator / removeOperator) from ServiceProviders.
+ * Registered as a singleton — stateless instance, static registry persists across
+ * requests (Octane-safe). Configuration: ServiceProvider → static API → apply().
  *
  * ┌─────────────────────────────────────────────────────────────────────────────┐
  * │ OPERATOR REGISTRY — three ways to customise                                 │
  * │                                                                             │
- * │ 1. Config override (config/repository.php):                                 │
- * │      '__like_' => CustomLikeOperator::class,  // replace built-in          │
- * │      '__null_' => null,                        // disable                  │
- * │      '__between_' => BetweenOperator::class,   // add new                  │
+ * │ 1. Config (config/repository.php) — the base set:                           │
+ * │      'operators' => [                                                       │
+ * │          '__like_'    => CustomLikeOperator::class,  // replace built-in   │
+ * │          '__null_'    => null,                        // disable operator   │
+ * │          '__between_' => BetweenOperator::class,      // add custom         │
+ * │      ]                                                                      │
  * │                                                                             │
- * │ 2. ServiceProvider::boot() — programmatic:                                  │
+ * │ 2. ServiceProvider::boot() — programmatic overrides:                        │
  * │      FilterApplicator::addOperator(new BetweenOperator);                    │
  * │      FilterApplicator::removeOperator('__null_');                           │
  * │      FilterApplicator::overrideOperator('__like_', new CustomLikeOperator); │
+ * │   Pre-boot registrations are preserved and take precedence over config.    │
  * │                                                                             │
- * │ 3. Per-repository — override resolveOperators() in the concrete repo        │
- * │    to return a completely custom set just for that resource.                │
+ * │ 3. Per-repository — pass a custom operator set to apply() directly          │
+ * │    by overriding the repository's filter invocation.                        │
  * └─────────────────────────────────────────────────────────────────────────────┘
  *
  * ┌─────────────────────────────────────────────────────────────────────────────┐
- * │ FILTER FORMAT                                                               │
+ * │ FILTER FORMAT — query params as received after $request->query()            │
  * │                                                                             │
- * │   __eq_name=John           WHERE name = 'John'                             │
- * │   __like_email=@gmail      WHERE email LIKE '%@gmail%'                     │
- * │   __gt_age=18              WHERE age > 18                                  │
- * │   __in_status[]=a&[]=b     WHERE status IN ('a','b')                       │
- * │   __null_deleted_at=1      WHERE deleted_at IS NULL                        │
- * │   __or_[__eq_s]=a&[__eq_s]=b   WHERE (s='a' OR s='b')                     │
+ * │   Flat operators:                                                           │
+ * │   '__eq_name'        => 'John'       WHERE name = 'John'                   │
+ * │   '__like_email'     => '@gmail'     WHERE email LIKE '%@gmail%'            │
+ * │   '__gt_age'         => 18           WHERE age > 18                        │
+ * │   '__in_status'      => ['a', 'b']   WHERE status IN ('a', 'b')            │
+ * │   '__null_deleted_at' => 1           WHERE deleted_at IS NULL               │
+ * │   '__nnull_deleted_at' => 1          WHERE deleted_at IS NOT NULL           │
+ * │                                                                             │
+ * │   Nested boolean groups:                                                    │
+ * │   '__or_'  => [['__eq_status' => 'a'], ['__eq_status' => 'b']]             │
+ * │              WHERE (status = 'a' OR status = 'b')                          │
+ * │                                                                             │
+ * │   '__and_' => [['__gte_price' => 10], ['__lte_price' => 100]]              │
+ * │              WHERE (price >= 10 AND price <= 100)                           │
+ * │                                                                             │
+ * │   __andor_ groups (opt-in, not in default config):                          │
+ * │   '__andor_' => [[...or-conditions...], [...or-conditions...]]              │
+ * │              WHERE (A OR B) AND (C OR D)                                   │
+ * └─────────────────────────────────────────────────────────────────────────────┘
+ *
+ * ┌─────────────────────────────────────────────────────────────────────────────┐
+ * │ SECURITY — column whitelist enforcement                                     │
+ * │                                                                             │
+ * │ Every flat filter column is validated against the $allowedColumns array     │
+ * │ (the repository's searchable() list) before any SQL is generated.           │
+ * │ Columns not in the whitelist are silently skipped — never thrown.           │
+ * │ Unknown operators are also skipped silently.                                │
+ * │                                                                             │
+ * │ This prevents SQL injection via filter keys regardless of what a client     │
+ * │ sends. Nested operators (or/and) inherit the same whitelist.                │
  * └─────────────────────────────────────────────────────────────────────────────┘
  *
  * ┌─────────────────────────────────────────────────────────────────────────────┐
  * │ WRITING A CUSTOM OPERATOR                                                   │
  * │                                                                             │
- * │   class BetweenOperator implements FilterOperator                           │
+ * │   final class BetweenOperator implements FilterOperator                     │
  * │   {                                                                         │
  * │       public function identifier(): string { return '__between_'; }         │
  * │                                                                             │
  * │       public function apply(Builder $builder, string $column, mixed $value): void
  * │       {                                                                     │
- * │           // $value expected as [min, max]                                  │
- * │           $builder->whereBetween($column, (array) $value);                  │
+ * │           [$min, $max] = (array) $value;                                    │
+ * │           $builder->whereBetween($column, [$min, $max]);                    │
  * │       }                                                                     │
  * │   }                                                                         │
+ * │                                                                             │
+ * │   // Register in ServiceProvider::boot():                                   │
+ * │   FilterApplicator::addOperator(new BetweenOperator);                       │
  * └─────────────────────────────────────────────────────────────────────────────┘
  */
 final class FilterApplicator

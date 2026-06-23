@@ -2,10 +2,11 @@
 
 namespace CoreFoundation\Tests\Feature\Exceptions;
 
-use Illuminate\Support\Str;
 use RuntimeException;
-use CoreFoundation\Tests\PackageTestCase;
+use Illuminate\Support\Str;
+use InvalidArgumentException;
 use CoreFoundation\Support\Lang;
+use CoreFoundation\Tests\PackageTestCase;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Exceptions\Handler;
 use Illuminate\Contracts\Debug\ShouldntReport;
@@ -13,7 +14,6 @@ use Illuminate\Validation\ValidationException;
 use CoreFoundation\Exceptions\BaseApiException;
 use CoreFoundation\Exceptions\ExceptionRenderer;
 use Illuminate\Auth\Access\AuthorizationException;
-use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Symfony\Component\HttpKernel\Exception\HttpException;
@@ -55,48 +55,38 @@ class ExceptionRendererTest extends PackageTestCase
         $handler = $this->app->make(Handler::class);
         ExceptionRenderer::register(new Exceptions($handler));
 
-        $this->app['router']->get('/_test/validation', fn () =>
-            throw ValidationException::withMessages(['field' => ['The field is required.']])
+        $this->app['router']->get('/_test/validation', fn () => throw ValidationException::withMessages(['field' => ['The field is required.']])
         );
 
-        $this->app['router']->get('/_test/model-not-found', fn () =>
-            throw (new ModelNotFoundException)->setModel('App\Models\User')
+        $this->app['router']->get('/_test/model-not-found', fn () => throw (new ModelNotFoundException)->setModel('App\Models\User')
         );
 
-        $this->app['router']->get('/_test/not-found', fn () =>
-            throw new NotFoundHttpException('Route not found.')
+        $this->app['router']->get('/_test/not-found', fn () => throw new NotFoundHttpException('Route not found.')
         );
 
-        $this->app['router']->get('/_test/method-not-allowed', fn () =>
-            throw new MethodNotAllowedHttpException(['GET', 'POST'])
+        $this->app['router']->get('/_test/method-not-allowed', fn () => throw new MethodNotAllowedHttpException(['GET', 'POST'])
         );
 
-        $this->app['router']->get('/_test/unauthenticated', fn () =>
-            throw new AuthenticationException
+        $this->app['router']->get('/_test/unauthenticated', fn () => throw new AuthenticationException
         );
 
-        $this->app['router']->get('/_test/unauthorized', fn () =>
-            throw new AuthorizationException
+        $this->app['router']->get('/_test/unauthorized', fn () => throw new AuthorizationException
         );
 
-        $this->app['router']->get('/_test/http-exception', fn () =>
-            throw new HttpException(418, 'I am a teapot.')
+        $this->app['router']->get('/_test/http-exception', fn () => throw new HttpException(418, 'I am a teapot.')
         );
 
-        $this->app['router']->get('/_test/unexpected', fn () =>
-            throw new RuntimeException('Something broke')
+        $this->app['router']->get('/_test/unexpected', fn () => throw new RuntimeException('Something broke')
         );
 
         $this->app['router']->post('/_test/unexpected-with-sensitive', function () {
             throw new RuntimeException('Failure');
         });
 
-        $this->app['router']->get('/_test/domain-silent', fn () =>
-            throw new SilentDomainException
+        $this->app['router']->get('/_test/domain-silent', fn () => throw new SilentDomainException
         );
 
-        $this->app['router']->get('/_test/domain-reportable', fn () =>
-            throw new ReportableDomainException
+        $this->app['router']->get('/_test/domain-reportable', fn () => throw new ReportableDomainException
         );
     }
 
@@ -107,11 +97,11 @@ class ExceptionRendererTest extends PackageTestCase
     public function test_all_error_responses_include_errors_key(): void
     {
         $routes = [
-            '/_test/not-found'          => 404,
+            '/_test/not-found' => 404,
             '/_test/method-not-allowed' => 405,
-            '/_test/unauthenticated'    => 401,
-            '/_test/unauthorized'       => 403,
-            '/_test/unexpected'         => 500,
+            '/_test/unauthenticated' => 401,
+            '/_test/unauthorized' => 403,
+            '/_test/unexpected' => 500,
         ];
 
         foreach ($routes as $route => $status) {
@@ -241,7 +231,7 @@ class ExceptionRendererTest extends PackageTestCase
 
     public function test_each_fatal_request_gets_a_unique_exception_id(): void
     {
-        $first  = $this->getJson('/_test/unexpected')->json('exception_id');
+        $first = $this->getJson('/_test/unexpected')->json('exception_id');
         $second = $this->getJson('/_test/unexpected')->json('exception_id');
 
         $this->assertNotEquals($first, $second);
@@ -286,13 +276,13 @@ class ExceptionRendererTest extends PackageTestCase
 
     public function test_build_exception_context_includes_caused_by_for_wrapped_exceptions(): void
     {
-        $cause  = new \InvalidArgumentException('Root cause');
-        $outer  = new RuntimeException('Wrapper', 0, $cause);
+        $cause = new InvalidArgumentException('Root cause');
+        $outer = new RuntimeException('Wrapper', 0, $cause);
 
         $context = ExceptionRenderer::buildExceptionContext($outer);
 
         $this->assertArrayHasKey('caused_by', $context);
-        $this->assertEquals(\InvalidArgumentException::class, $context['caused_by']['class']);
+        $this->assertEquals(InvalidArgumentException::class, $context['caused_by']['class']);
         $this->assertEquals('Root cause', $context['caused_by']['message']);
     }
 
@@ -314,7 +304,7 @@ class ExceptionRendererTest extends PackageTestCase
         // Verify via a request containing sensitive fields — send to a test route
         // and assert the response UUID exists (proof that reporter ran with redaction active)
         $response = $this->postJson('/_test/unexpected-with-sensitive', [
-            'name'     => 'John',
+            'name' => 'John',
             'password' => 'super-secret',
         ]);
 

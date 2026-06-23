@@ -2,8 +2,8 @@
 
 namespace CoreFoundation\Observers;
 
-use CoreFoundation\Broadcasting\Abstracts\ScopedBroadcastEvent;
 use Illuminate\Database\Eloquent\Model;
+use CoreFoundation\Broadcasting\Abstracts\ScopedBroadcastEvent;
 
 /**
  * BroadcastObserver
@@ -18,7 +18,7 @@ use Illuminate\Database\Eloquent\Model;
 class BroadcastObserver
 {
     /**
-     * @param class-string<ScopedBroadcastEvent> $eventClass
+     * @param  class-string<ScopedBroadcastEvent>  $eventClass
      */
     public function __construct(
         protected string $eventClass

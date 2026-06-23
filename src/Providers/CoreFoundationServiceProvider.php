@@ -4,20 +4,19 @@ namespace CoreFoundation\Providers;
 
 use ReflectionClass;
 use ReflectionAttribute;
-use Laravel\Pennant\Feature;
 use Illuminate\Support\ServiceProvider;
 use CoreFoundation\Attributes\BatchRegistrar;
 use Illuminate\Foundation\Exceptions\Handler;
+use CoreFoundation\Console\Commands\WarmCache;
 use CoreFoundation\Exceptions\ExceptionRenderer;
 use Composer\ClassMapGenerator\ClassMapGenerator;
 use Illuminate\Foundation\Configuration\Exceptions;
-use CoreFoundation\Console\Commands\WarmCache;
 use CoreFoundation\Console\Commands\GenerateApiDocs;
 use CoreFoundation\Console\Commands\MakeModuleCommand;
-use CoreFoundation\Repositories\Cache\CacheWarmingRegistry;
-use CoreFoundation\Repositories\Cache\CacheBustCollector;
 use CoreFoundation\Repositories\Cache\RepositoryCache;
+use CoreFoundation\Repositories\Cache\CacheBustCollector;
 use CoreFoundation\Support\Maintenance\MaintenanceManager;
+use CoreFoundation\Repositories\Cache\CacheWarmingRegistry;
 
 class CoreFoundationServiceProvider extends ServiceProvider
 {

@@ -96,7 +96,7 @@ abstract class BaseModel extends Model implements HasRelationRegistry, HasSearch
     }
 
     /**
-     * Get resolved relations that are binded from service container.
+     * Get relations bound via the modular extensibility registry.
      */
     public static function getBindRelations(): array
     {

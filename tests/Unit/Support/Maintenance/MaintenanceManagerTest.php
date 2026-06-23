@@ -3,19 +3,20 @@
 namespace CoreFoundation\Tests\Unit\Support\Maintenance;
 
 use CoreFoundation\Tests\PackageTestCase;
+use CoreFoundation\Exceptions\MaintenanceModeException;
 use CoreFoundation\Support\Maintenance\MaintenanceManager;
 use CoreFoundation\Support\Maintenance\MaintenanceProvider;
-use CoreFoundation\Exceptions\MaintenanceModeException;
 
 class MaintenanceManagerTest extends PackageTestCase
 {
     private MaintenanceManager $manager;
+
     private $provider;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->manager = new MaintenanceManager();
+        $this->manager = new MaintenanceManager;
         $this->provider = mock(MaintenanceProvider::class);
     }
 
@@ -32,7 +33,7 @@ class MaintenanceManagerTest extends PackageTestCase
         $this->provider->shouldReceive('data')->with(null)->andReturn([
             'message' => 'Down for maintenance',
             'retry_after' => 60,
-            'reason' => 'Testing'
+            'reason' => 'Testing',
         ]);
 
         $this->manager->setProvider($this->provider);
@@ -55,11 +56,11 @@ class MaintenanceManagerTest extends PackageTestCase
         $this->provider->shouldReceive('data')->with('tenant:1')->andReturn([
             'message' => 'Tenant 1 is down',
             'retry_after' => null,
-            'reason' => null
+            'reason' => null,
         ]);
 
         $this->manager->setProvider($this->provider);
-        $this->manager->resolveScopeUsing(fn() => 'tenant:1');
+        $this->manager->resolveScopeUsing(fn () => 'tenant:1');
 
         $this->expectException(MaintenanceModeException::class);
         $this->expectExceptionMessage('Tenant 1 is down');
@@ -70,9 +71,9 @@ class MaintenanceManagerTest extends PackageTestCase
     public function test_it_continues_if_not_down(): void
     {
         $this->provider->shouldReceive('isDown')->with('tenant:2')->andReturn(false);
-        
+
         $this->manager->setProvider($this->provider);
-        $this->manager->resolveScopeUsing(fn() => 'tenant:2');
+        $this->manager->resolveScopeUsing(fn () => 'tenant:2');
 
         $this->manager->check();
         $this->assertTrue(true);

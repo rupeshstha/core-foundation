@@ -6,11 +6,13 @@ use LogicException;
 use CoreFoundation\Entities\BaseModel;
 use Illuminate\Support\ServiceProvider;
 use CoreFoundation\Services\BaseService;
+use CoreFoundation\Repositories\BaseRepository;
 use CoreFoundation\Transformers\BaseResource;
 use CoreFoundation\Providers\Extensions\ModelExtension;
 use CoreFoundation\Repositories\Filter\FilterApplicator;
 use CoreFoundation\Providers\Extensions\ServiceExtension;
 use CoreFoundation\Providers\Extensions\ResourceExtension;
+use CoreFoundation\Providers\Extensions\RepositoryExtension;
 use CoreFoundation\Repositories\Filter\Contracts\FilterOperator;
 
 /**
@@ -66,6 +68,12 @@ use CoreFoundation\Repositories\Filter\Contracts\FilterOperator;
  *       {
  *           $this->operator(new BetweenDateOperator);
  *       }
+ *
+ *       protected function extendRepositories(): void
+ *       {
+ *           $this->repository(OrderRepository::class)
+ *               ->scopeable(['onSale']);
+ *       }
  *   }
  *
  * ADDITIONAL BOOT / REGISTER WORK:
@@ -106,6 +114,7 @@ abstract class BaseExtensionServiceProvider extends ServiceProvider
         $this->extendResources();
         $this->extendServices();
         $this->extendOperators();
+        $this->extendRepositories();
     }
 
     // =========================================================================
@@ -169,6 +178,17 @@ abstract class BaseExtensionServiceProvider extends ServiceProvider
      *   }
      */
     protected function extendOperators(): void {}
+
+    /**
+     * Extend BaseRepository subclasses — request-driven local scope whitelist.
+     *
+     *   protected function extendRepositories(): void
+     *   {
+     *       $this->repository(ProductRepository::class)
+     *           ->scopeable(['onSale', 'lowStock']);
+     *   }
+     */
+    protected function extendRepositories(): void {}
 
     // =========================================================================
     // Fluent factories — type-validated, return chainable builders
@@ -236,5 +256,23 @@ abstract class BaseExtensionServiceProvider extends ServiceProvider
     final protected function operator(FilterOperator $operator): void
     {
         FilterApplicator::addOperator($operator);
+    }
+
+    /**
+     * Begin extending a BaseRepository subclass.
+     *
+     * @param  class-string<BaseRepository>  $repository
+     *
+     * @throws LogicException if $repository does not extend BaseRepository.
+     */
+    final protected function repository(string $repository): RepositoryExtension
+    {
+        if (! class_exists($repository) || ! is_a($repository, BaseRepository::class, true)) {
+            throw new LogicException(
+                "[{$repository}] must extend ".BaseRepository::class.'.'
+            );
+        }
+
+        return new RepositoryExtension($repository);
     }
 }

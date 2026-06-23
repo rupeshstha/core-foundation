@@ -2,7 +2,6 @@
 
 namespace CoreFoundation\Services;
 
-use CoreFoundation\Traits\HasEvent;
 use CoreFoundation\Traits\HasFactory;
 use CoreFoundation\Traits\HasPipeline;
 use CoreFoundation\Traits\HasDeferrable;
@@ -18,7 +17,6 @@ use CoreFoundation\Manipulators\BaseDataObject;
  * ┌─────────────────────────────────────────────────────────────────────────────┐
  * │ CAPABILITIES AT A GLANCE                                                    │
  * │                                                                             │
- * │  HasEvent     → namespaced pub/sub event dispatch (fire-and-forget)         │
  * │  HasPipeline  → before/after execution hooks via Laravel's Pipeline         │
  * │  HasServiceCache → dependency-aware cache (wraps HasCacheable)              │
  * │  HasFactory   → conditional class preference (Magento-style swap)           │
@@ -30,8 +28,6 @@ use CoreFoundation\Manipulators\BaseDataObject;
  * │                                                                             │
  * │   class OrderService extends BaseService                                    │
  * │   {                                                                         │
- * │       protected ?string $eventPrefix = 'order';                             │
- * │                                                                             │
  * │       public function place(BaseDataObject $data): BaseDataObject             │
  * │       {                                                                     │
  * │           return $this->throughPipes('place', $data, function ($data) {     │
@@ -39,7 +35,7 @@ use CoreFoundation\Manipulators\BaseDataObject;
  * │               $result = BaseDataObject::from($order->toArray());             │
  * │                                                                             │
  * │               $this->bustCache(['orders']);                                 │
- * │               $this->dispatch('placed', $result);                           │
+ * │               OrderPlaced::dispatch($result);                               │
  * │                                                                             │
  * │               return $result;                                               │
  * │           });                                                               │
@@ -84,8 +80,6 @@ use CoreFoundation\Manipulators\BaseDataObject;
  * │                                                                             │
  * │   class OrderService extends BaseService                                    │
  * │   {                                                                         │
- * │       protected ?string $eventPrefix = 'order';                             │
- * │                                                                             │
  * │       public function __construct(                                          │
  * │           private readonly PlaceOrderAction   $placeOrder,                  │
  * │           private readonly ReserveStockAction $reserveStock,                │
@@ -100,7 +94,7 @@ use CoreFoundation\Manipulators\BaseDataObject;
  * │               $this->notifyBuyer->execute($result);                         │
  * │                                                                             │
  * │               $this->bustCache(['orders']);                                 │
- * │               $this->dispatch('placed', $result);                           │
+ * │               OrderPlaced::dispatch($result);                               │
  * │                                                                             │
  * │               return $result;                                               │
  * │           });                                                               │
@@ -163,7 +157,7 @@ use CoreFoundation\Manipulators\BaseDataObject;
  *           $this->deferCacheBust(['orders']);
  *
  *           // 3. Events — immediate (listeners may have return-path deps)
- *           $this->dispatch('placed', $result);
+ *           OrderPlaced::dispatch($result);
  *
  *           // 4. Non-critical side effects — deferred
  *           $this->defer(fn () => AuditLog::record('order.placed', $order->id), 'order.audit');
@@ -177,7 +171,7 @@ use CoreFoundation\Manipulators\BaseDataObject;
  * │   defer()               Post-response, same process, no retry              │
  * │                         Use for: cache busting, audit logs, analytics      │
  * │                                                                             │
- * │   dispatch()            Immediate, same request, listeners block response   │
+ * │   Event::dispatch()     Immediate, same request, listeners block response   │
  * │                         Use for: events where listeners affect the response │
  * │                                                                             │
  * │   dispatch()->onQueue() Async, separate worker, retry, persistent          │
@@ -187,7 +181,6 @@ use CoreFoundation\Manipulators\BaseDataObject;
 abstract class BaseService
 {
     use HasDeferrable;
-    use HasEvent;
     use HasFactory;
     use HasPipeline;
     use HasServiceCache;

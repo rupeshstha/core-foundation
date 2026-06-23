@@ -26,7 +26,7 @@ class AuthenticateWithCookie
 
         if (! $request->headers->has('Authorization') && $request->hasCookie($cookieName)) {
             $token = $request->cookie($cookieName);
-            $request->headers->set('Authorization', 'Bearer ' . $token);
+            $request->headers->set('Authorization', 'Bearer '.$token);
         }
 
         return $next($request);

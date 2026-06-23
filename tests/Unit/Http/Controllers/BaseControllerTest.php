@@ -3,8 +3,8 @@
 namespace CoreFoundation\Tests\Unit\Http\Controllers;
 
 use Exception;
-use Illuminate\Http\JsonResponse;
 use CoreFoundation\Support\Lang;
+use Illuminate\Http\JsonResponse;
 use CoreFoundation\Tests\PackageTestCase;
 use Symfony\Component\HttpFoundation\Response;
 use CoreFoundation\Http\Controllers\BaseController;
