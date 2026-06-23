@@ -35,7 +35,7 @@ class MaintenanceManager
 
     /**
      * Check if maintenance mode is active and throw if it is.
-     * 
+     *
      * @throws MaintenanceModeException
      */
     public function check(): void
