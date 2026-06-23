@@ -28,7 +28,7 @@ Before applying any rule, check what the application already does. If a pattern 
 ### 2. BaseService → `rules/base-service.md`
 
 - Services return `BaseDataObject`, never `JsonResponse`, never a raw model, never a plain array
-- `HasPipeline` for execution hooks that can modify data; `HasEvent` for fire-and-forget side effects
+- `HasPipeline` for execution hooks that can modify data; class-based `SomeEvent::dispatch()` for fire-and-forget side effects
 - Register pipes from a ServiceProvider, never inside the service class
 - `defer()` for post-response non-critical work; `dispatch('event')` for immediate pub/sub; `->onQueue()` for critical async
 - `static::class` in all static registries — never `self::class`

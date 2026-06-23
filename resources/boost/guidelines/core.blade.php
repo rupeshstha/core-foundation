@@ -122,32 +122,25 @@ always a `BaseDataObject` subclass — never `JsonResponse`, never a raw Eloquen
 
 <code-snippet name="Service method with pipeline and event" lang="php">
 use CoreFoundation\Services\BaseService;
-use CoreFoundation\Traits\HasEvent;
-use CoreFoundation\Traits\HasPipeline;
 
 class OrderService extends BaseService
 {
-    use HasPipeline, HasEvent;
-
     public function place(array $validated): PlaceOrderData
     {
         return $this->throughPipes('place', $validated, function (array $data): PlaceOrderData {
             $order = $this->repository->create($data);
+            $result = PlaceOrderData::fromArray($order->toArray());
 
-            $this->dispatch('order.placed', $order);
+            OrderPlaced::dispatch($result);
 
-            return PlaceOrderData::fromArray($order->toArray());
+            return $result;
         });
     }
 }
 </code-snippet>
 
-`HasEvent` vs `HasPipeline` — they are not interchangeable:
-
-| Trait | Purpose | Can modify data? |
-|---|---|---|
-| `HasEvent` | Fire-and-forget pub/sub (audit, notifications, side-effects) | No |
-| `HasPipeline` | Execution hooks — before/after core logic | Yes |
+Use class-based events (`OrderPlaced::dispatch($result)`) for fire-and-forget pub/sub.
+Use `HasPipeline` (`$this->throughPipes(...)`) for execution hooks that must modify data — never events for this.
 
 Register pipes from a ServiceProvider, never inside the service itself:
 
@@ -569,7 +562,7 @@ between requests. Static registries (operators, relation tags) are intentionally
 - Exception class maps in controllers — put `render()` on the exception class
 - `JsonResponse` returned from a service method
 - Override `rules()` directly — use `baseRules()` / `storeRules()` / `updateRules()`
-- `HasEvent` for execution hooks — that is `HasPipeline`'s job
+- String-keyed events (`Event::dispatch('order.placed', ...)`) — use class-based events instead
 - Models registered as singletons
 - Calling the Context facade directly — use `ApplicationContext` subclasses
 - Calling `Notification` facade directly from a service — use `HasNotification`

@@ -23,17 +23,30 @@ public function place(array $validated): PlaceOrderData
 }
 ```
 
-## `HasPipeline` vs `HasEvent` — Never Confuse Them
+## Events — Class-Based, Never String-Keyed
 
-| Trait | Can modify data? | Purpose |
-|---|---|---|
-| `HasPipeline` | **Yes** | Execution hooks — before/after core logic |
-| `HasEvent` | No | Fire-and-forget pub/sub (audit, notifications, side-effects) |
+Use Laravel's class-based events. Never dispatch string-keyed events.
 
-Incorrect (using HasEvent for data modification):
+Incorrect:
 ```php
-$this->dispatch('validate-inventory', $data); // can't modify $data
+Event::dispatch('order.placed', $data);
 ```
+
+Correct:
+```php
+OrderPlaced::dispatch($result);
+```
+
+If listeners don't affect the response, defer the dispatch post-response:
+```php
+$this->defer(fn () => OrderPlaced::dispatch($result), 'event.order.placed');
+```
+
+## `HasPipeline` — Execution Hooks Only
+
+`HasPipeline` = before/after hooks that can modify the payload. Use for validation, enrichment, transformation.
+
+NEVER use events to hook execution flow — that is `HasPipeline`'s job.
 
 Correct (using HasPipeline for data modification):
 ```php
@@ -93,7 +106,7 @@ final class ValidateInventoryPipe
 | Method | Timing | Retries | Use for |
 |---|---|---|---|
 | `$this->defer($fn)` | After HTTP response, same process | None | Cache busting, audit logs, analytics |
-| `$this->dispatch('event', $data)` | Immediate, same request | N/A | Listeners that affect the response |
+| `Event::dispatch()` / `SomeEvent::dispatch()` | Immediate, same request | N/A | Listeners that affect the response |
 | `Job::dispatch()->onQueue()` | Async worker | Yes | Email, critical processing |
 
 ```php
@@ -104,7 +117,7 @@ public function place(array $validated): PlaceOrderData
         $result = PlaceOrderData::fromArray($order->toArray());
 
         $this->deferCacheBust(['orders']);                                    // non-critical
-        $this->dispatch('placed', $result);                                   // immediate pub/sub
+        OrderPlaced::dispatch($result);                                       // immediate pub/sub
         $this->defer(fn () => AuditLog::record($order->id), 'order.audit'); // non-critical
 
         return $result;
