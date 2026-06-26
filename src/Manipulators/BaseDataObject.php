@@ -95,10 +95,6 @@ use Illuminate\Contracts\Support\Arrayable;
  */
 class BaseDataObject extends Fluent
 {
-    // =========================================================================
-    // Construction
-    // =========================================================================
-
     /**
      * Build from a plain array — primary path for generic (Pattern A) use
      * and the override target for typed (Pattern B) DTOs.
@@ -128,10 +124,6 @@ class BaseDataObject extends Fluent
     {
         return static::fromArray($source->toArray());
     }
-
-    // =========================================================================
-    // Attribute introspection — used by future doc generation tooling
-    // =========================================================================
 
     /**
      * Read the #[ApiResponse] attribute from this class, if present.

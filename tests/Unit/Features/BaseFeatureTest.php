@@ -2,7 +2,6 @@
 
 namespace CoreFoundation\Tests\Unit\Features;
 
-use stdClass;
 use Laravel\Pennant\Feature;
 use CoreFoundation\Features\BaseFeature;
 use CoreFoundation\Tests\PackageTestCase;
@@ -207,7 +206,9 @@ class BaseFeatureTest extends PackageTestCase
             $this->markTestSkipped('laravel/pennant is not installed.');
         }
 
-        $user = new stdClass;
+        // Pennant only serializes null/string/numeric/Eloquent-Model scopes —
+        // a plain object would throw "Unable to serialize the feature scope".
+        $user = 'user:1';
         Feature::define(SimpleFeature::class, fn () => true);
 
         $this->assertTrue(SimpleFeature::activeFor($user));
@@ -219,7 +220,9 @@ class BaseFeatureTest extends PackageTestCase
             $this->markTestSkipped('laravel/pennant is not installed.');
         }
 
-        $user = new stdClass;
+        // Pennant only serializes null/string/numeric/Eloquent-Model scopes —
+        // a plain object would throw "Unable to serialize the feature scope".
+        $user = 'user:1';
         Feature::define(RichMetaFeature::class, fn () => 'pro');
 
         $this->assertSame('pro', RichMetaFeature::valueFor($user));

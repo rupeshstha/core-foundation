@@ -76,10 +76,6 @@ class ProfilingMiddleware
         return $response;
     }
 
-    // =========================================================================
-    // Internals
-    // =========================================================================
-
     private function isEnabled(): bool
     {
         if (! config('profiling.enabled', false)) {

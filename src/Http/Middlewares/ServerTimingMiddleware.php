@@ -87,10 +87,6 @@ class ServerTimingMiddleware
         return $response;
     }
 
-    // =========================================================================
-    // Internals
-    // =========================================================================
-
     /**
      * Whether Server-Timing is enabled for the current environment.
      * Reads from config/server-timing.php.

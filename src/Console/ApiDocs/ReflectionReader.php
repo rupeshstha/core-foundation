@@ -52,10 +52,6 @@ class ReflectionReader
         );
     }
 
-    // =========================================================================
-    // Class discovery via type hints
-    // =========================================================================
-
     /**
      * Find the BaseRequest subclass from the controller method's parameters.
      * Looks for a parameter whose type hint extends BaseRequest.
@@ -111,10 +107,6 @@ class ReflectionReader
 
         return null;
     }
-
-    // =========================================================================
-    // Attribute reading
-    // =========================================================================
 
     private function readRequestMeta(string $class): ?ApiRequest
     {

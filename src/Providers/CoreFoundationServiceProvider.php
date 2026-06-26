@@ -2,14 +2,10 @@
 
 namespace CoreFoundation\Providers;
 
-use ReflectionClass;
-use ReflectionAttribute;
 use Illuminate\Support\ServiceProvider;
-use CoreFoundation\Attributes\BatchRegistrar;
 use Illuminate\Foundation\Exceptions\Handler;
 use CoreFoundation\Console\Commands\WarmCache;
 use CoreFoundation\Exceptions\ExceptionRenderer;
-use Composer\ClassMapGenerator\ClassMapGenerator;
 use Illuminate\Foundation\Configuration\Exceptions;
 use CoreFoundation\Console\Commands\GenerateApiDocs;
 use CoreFoundation\Console\Commands\MakeModuleCommand;
@@ -20,8 +16,6 @@ use CoreFoundation\Repositories\Cache\CacheWarmingRegistry;
 
 class CoreFoundationServiceProvider extends ServiceProvider
 {
-    protected static $bindable = [];
-
     /**
      * Bootstrap the application services.
      */
@@ -29,7 +23,7 @@ class CoreFoundationServiceProvider extends ServiceProvider
     {
         $this->registerExceptionHandling();
 
-        $this->loadTranslationsFrom(__DIR__.'/../../lang', 'core-foundation');
+        $this->loadTranslationsFrom(__DIR__.'/../../resources/lang', 'core-foundation');
 
         // Load routes from the package.
         if (file_exists(__DIR__.'/../../routes/features.php')) {
@@ -49,7 +43,7 @@ class CoreFoundationServiceProvider extends ServiceProvider
             ], 'core-foundation');
 
             $this->publishes([
-                __DIR__.'/../../lang' => lang_path('vendor/core-foundation'),
+                __DIR__.'/../../resources/lang' => lang_path('vendor/core-foundation'),
             ], 'core-foundation-lang');
 
             $this->commands([
@@ -91,36 +85,6 @@ class CoreFoundationServiceProvider extends ServiceProvider
 
         $this->app->singleton(CacheWarmingRegistry::class);
         $this->app->singleton(MaintenanceManager::class);
-    }
-
-    public function batchRegistrar(array $batchRegistrarPaths): void
-    {
-        foreach ($batchRegistrarPaths as $batchRegistrarPath) {
-            if (! isset(static::$bindable[$batchRegistrarPath])) {
-                static::$bindable[$batchRegistrarPath] = ClassMapGenerator::createMap(realpath($batchRegistrarPath));
-            }
-            $classMap = static::$bindable[$batchRegistrarPath];
-            foreach ($classMap as $namespace => $realPath) {
-                $attributes = $this->getBindAttributes($namespace);
-                /** @var ReflectionAttribute $bind */
-                foreach ($attributes as $bind) {
-                    $implement = $bind->getArguments()[0] ?? null;
-                    if ($implement) {
-                        // Repositories must always be transient (bind, not singleton).
-                        // A singleton repository holds request-scoped state across
-                        // Octane requests, which causes cross-request data leaks.
-                        $this->app->bind($namespace, $implement);
-                    }
-                }
-            }
-        }
-    }
-
-    private function getBindAttributes(string $port): array
-    {
-        $reflectionClass = new ReflectionClass($port);
-
-        return $reflectionClass->getAttributes(BatchRegistrar::class);
     }
 
     /**

@@ -55,10 +55,6 @@ use Illuminate\Http\Resources\Json\JsonResource;
  */
 trait HasApiResponse
 {
-    // =========================================================================
-    // Success responses
-    // =========================================================================
-
     /**
      * 200 OK — generic success with a payload.
      */
@@ -110,10 +106,6 @@ trait HasApiResponse
         );
     }
 
-    // =========================================================================
-    // Error responses (used internally by HasExceptionHandler)
-    // =========================================================================
-
     /**
      * Build an error JsonResponse.
      * Called by HasExceptionHandler::handleException() — not typically called directly.
@@ -129,10 +121,6 @@ trait HasApiResponse
             status: $status,
         );
     }
-
-    // =========================================================================
-    // Envelope builders — override to customise the response shape
-    // =========================================================================
 
     /**
      * Build the success response envelope.
@@ -169,10 +157,6 @@ trait HasApiResponse
 
         return $envelope;
     }
-
-    // =========================================================================
-    // Internals
-    // =========================================================================
 
     /**
      * Resolve the payload to a plain array.

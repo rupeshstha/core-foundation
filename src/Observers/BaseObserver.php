@@ -2,6 +2,8 @@
 
 namespace CoreFoundation\Observers;
 
+use Illuminate\Database\Eloquent\Model;
+
 /**
  * BaseObserver
  *
@@ -12,12 +14,12 @@ namespace CoreFoundation\Observers;
  *
  *   class OrderObserver extends BaseObserver
  *   {
- *       public function created(mixed $model): void
+ *       public function created(Model $model): void
  *       {
  *           // runs after an Order is persisted for the first time
  *       }
  *
- *       public function deleting(mixed $model): void
+ *       public function deleting(Model $model): void
  *       {
  *           // runs before an Order is deleted — return false to cancel
  *       }
@@ -32,7 +34,7 @@ namespace CoreFoundation\Observers;
  * The before-event methods (creating, updating, saving, deleting, restoring,
  * forceDeleting) can cancel the operation by returning false:
  *
- *   public function deleting(mixed $model): bool
+ *   public function deleting(Model $model): bool
  *   {
  *       return $model->canBeDeleted(); // false cancels the delete
  *   }
@@ -49,28 +51,20 @@ namespace CoreFoundation\Observers;
  */
 abstract class BaseObserver
 {
-    // =========================================================================
-    // Creating / Created
-    // =========================================================================
-
     /**
      * Before the model is persisted for the first time.
      * Return false to cancel the creation.
      *
      * @param  TModel  $model
      */
-    public function creating(mixed $model): void {}
+    public function creating(Model $model): void {}
 
     /**
      * After the model has been persisted for the first time.
      *
      * @param  TModel  $model
      */
-    public function created(mixed $model): void {}
-
-    // =========================================================================
-    // Updating / Updated
-    // =========================================================================
+    public function created(Model $model): void {}
 
     /**
      * Before changes are persisted to an existing record.
@@ -78,18 +72,14 @@ abstract class BaseObserver
      *
      * @param  TModel  $model
      */
-    public function updating(mixed $model): void {}
+    public function updating(Model $model): void {}
 
     /**
      * After changes have been persisted to an existing record.
      *
      * @param  TModel  $model
      */
-    public function updated(mixed $model): void {}
-
-    // =========================================================================
-    // Saving / Saved (fires on both create and update)
-    // =========================================================================
+    public function updated(Model $model): void {}
 
     /**
      * Before a create or update is persisted.
@@ -97,18 +87,14 @@ abstract class BaseObserver
      *
      * @param  TModel  $model
      */
-    public function saving(mixed $model): void {}
+    public function saving(Model $model): void {}
 
     /**
      * After a create or update has been persisted.
      *
      * @param  TModel  $model
      */
-    public function saved(mixed $model): void {}
-
-    // =========================================================================
-    // Deleting / Deleted
-    // =========================================================================
+    public function saved(Model $model): void {}
 
     /**
      * Before a record is deleted.
@@ -116,18 +102,14 @@ abstract class BaseObserver
      *
      * @param  TModel  $model
      */
-    public function deleting(mixed $model): void {}
+    public function deleting(Model $model): void {}
 
     /**
      * After a record has been deleted.
      *
      * @param  TModel  $model
      */
-    public function deleted(mixed $model): void {}
-
-    // =========================================================================
-    // Soft-delete lifecycle — only fires when the model uses SoftDeletes
-    // =========================================================================
+    public function deleted(Model $model): void {}
 
     /**
      * Before a soft-deleted record is restored.
@@ -135,14 +117,14 @@ abstract class BaseObserver
      *
      * @param  TModel  $model
      */
-    public function restoring(mixed $model): void {}
+    public function restoring(Model $model): void {}
 
     /**
      * After a soft-deleted record has been restored.
      *
      * @param  TModel  $model
      */
-    public function restored(mixed $model): void {}
+    public function restored(Model $model): void {}
 
     /**
      * Before a record is permanently deleted from the database.
@@ -150,23 +132,19 @@ abstract class BaseObserver
      *
      * @param  TModel  $model
      */
-    public function forceDeleting(mixed $model): void {}
+    public function forceDeleting(Model $model): void {}
 
     /**
      * After a record has been permanently deleted from the database.
      *
      * @param  TModel  $model
      */
-    public function forceDeleted(mixed $model): void {}
-
-    // =========================================================================
-    // Replicating
-    // =========================================================================
+    public function forceDeleted(Model $model): void {}
 
     /**
      * When a model instance is being replicated via $model->replicate().
      *
      * @param  TModel  $model
      */
-    public function replicating(mixed $model): void {}
+    public function replicating(Model $model): void {}
 }

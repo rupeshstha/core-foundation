@@ -28,7 +28,7 @@ class {{ class }}Controller extends BaseController
         }
 
         return $this->successResponse(
-            ,
+            
         );
     }
 

@@ -99,19 +99,12 @@ use Illuminate\Support\Facades\Context;
 /** @phpstan-consistent-constructor */
 abstract class ApplicationContext
 {
-    // =========================================================================
-    // Static factory
-    // =========================================================================
-
     /**
      * No-arg constructor — enforces that all subclasses remain constructable
      * without arguments, making new static() safe from the make() factory.
      * Subclasses must not add required constructor parameters.
      */
     public function __construct() {}
-    // =========================================================================
-    // Contract — subclasses must declare this
-    // =========================================================================
 
     /**
      * The unique namespace prefix for this domain state.
@@ -134,10 +127,6 @@ abstract class ApplicationContext
     {
         return new static;
     }
-
-    // =========================================================================
-    // Public context — written to logs
-    // =========================================================================
 
     /**
      * Store a value in public context under this domain's namespace.
@@ -225,10 +214,6 @@ abstract class ApplicationContext
         return $this;
     }
 
-    // =========================================================================
-    // Hidden context — never written to logs
-    // =========================================================================
-
     /**
      * Store a value in hidden context under this domain's namespace.
      * Hidden context is NEVER written to logs — use for tokens, PII, secrets.
@@ -294,10 +279,6 @@ abstract class ApplicationContext
         return $this;
     }
 
-    // =========================================================================
-    // Stacks — ordered lists in public context
-    // =========================================================================
-
     /**
      * Push one or more values onto a named stack in public context.
      *
@@ -347,10 +328,6 @@ abstract class ApplicationContext
         return Context::popHidden($this->namespacedKey($key));
     }
 
-    // =========================================================================
-    // Scoped context
-    // =========================================================================
-
     /**
      * Execute a callback with temporary context data that is automatically
      * rolled back when the callback finishes.
@@ -366,10 +343,6 @@ abstract class ApplicationContext
     {
         Context::scope(fn () => $callback($this), $data, $hidden);
     }
-
-    // =========================================================================
-    // Snapshot — read all state for this domain
-    // =========================================================================
 
     /**
      * Return all public context entries belonging to this domain.
@@ -437,10 +410,6 @@ abstract class ApplicationContext
 
         return $this;
     }
-
-    // =========================================================================
-    // Internal
-    // =========================================================================
 
     /**
      * Build the namespaced context key: {prefix}.{key}

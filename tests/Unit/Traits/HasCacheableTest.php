@@ -2,8 +2,8 @@
 
 namespace CoreFoundation\Tests\Unit\Traits;
 
-use CoreFoundation\Tests\PackageTestCase;
 use CoreFoundation\Traits\HasCacheable;
+use CoreFoundation\Tests\PackageTestCase;
 
 /**
  * A concrete class exposing the protected cache methods for testing.

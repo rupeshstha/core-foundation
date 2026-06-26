@@ -95,10 +95,6 @@ abstract class BaseApiException extends Exception
         parent::__construct($this->message, $this->status, $previous);
     }
 
-    // =========================================================================
-    // Laravel exception pipeline hooks
-    // =========================================================================
-
     /**
      * Render the exception as a JSON response.
      * Laravel calls this automatically — no handler registration needed.
@@ -108,8 +104,7 @@ abstract class BaseApiException extends Exception
      */
     public function render(Request $request): JsonResponse
     {
-        return response()->json(
-            [
+        return response()->json([
                 'message' => $this->getMessage(),
                 'errors' => $this->errors,
             ],
@@ -137,10 +132,6 @@ abstract class BaseApiException extends Exception
             'status' => $this->status,
         ];
     }
-
-    // =========================================================================
-    // Accessors
-    // =========================================================================
 
     public function getStatus(): int
     {

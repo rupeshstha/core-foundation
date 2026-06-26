@@ -74,10 +74,6 @@ abstract class BaseIndexRequest extends BaseRequest
         return (int) ($this->validated('per_page') ?? 25);
     }
 
-    // =========================================================================
-    // Internals
-    // =========================================================================
-
     /**
      * Extract all operator-prefixed keys from the raw request input.
      *

@@ -94,10 +94,6 @@ use Illuminate\Support\Defer\DeferredCallbackCollection;
  */
 trait HasDeferrable
 {
-    // =========================================================================
-    // Core defer helper
-    // =========================================================================
-
     /**
      * Register a callback to run after the HTTP response is sent.
      *
@@ -128,10 +124,6 @@ trait HasDeferrable
     {
         app(DeferredCallbackCollection::class)->forget($name);
     }
-
-    // =========================================================================
-    // Structured deferred operations — pre-built for common service patterns
-    // =========================================================================
 
     /**
      * Flush cache tags after the response is sent.

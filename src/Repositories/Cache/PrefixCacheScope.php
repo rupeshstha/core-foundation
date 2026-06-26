@@ -2,6 +2,8 @@
 
 namespace CoreFoundation\Repositories\Cache;
 
+use InvalidArgumentException;
+
 /**
  * PrefixCacheScope
  *
@@ -10,8 +12,20 @@ namespace CoreFoundation\Repositories\Cache;
  */
 final readonly class PrefixCacheScope implements CacheScope
 {
-    public function __construct(private string $prefix) {}
+    /**
+     * @param  non-empty-string  $prefix
+     */
+    public function __construct(private string $prefix)
+    {
+        throw_if(
+            condition: $prefix === '',
+            exception: new InvalidArgumentException('PrefixCacheScope prefix must not be empty — an empty prefix provides no cache isolation.'),
+        );
+    }
 
+    /**
+     * @return non-empty-string
+     */
     public function prefix(): string
     {
         return $this->prefix;

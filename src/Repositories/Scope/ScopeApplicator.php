@@ -56,10 +56,6 @@ final class ScopeApplicator
         return $builder->scopes($allowed);
     }
 
-    // =========================================================================
-    // Internals
-    // =========================================================================
-
     /**
      * Reduce the requested scopes to only those present in the whitelist.
      * Preserves Eloquent's two input shapes: indexed (name only) and

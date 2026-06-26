@@ -185,10 +185,6 @@ abstract class BaseService
     use HasPipeline;
     use HasServiceCache;
 
-    // =========================================================================
-    // Container-aware static entry point
-    // =========================================================================
-
     /**
      * Resolve this service through Laravel's container.
      * Constructor dependencies are injected automatically.
@@ -199,10 +195,6 @@ abstract class BaseService
     {
         return app(static::class);
     }
-
-    // =========================================================================
-    // BaseDataObject factory — available to all services
-    // =========================================================================
 
     /**
      * Instantiate an BaseDataObject data carrier.

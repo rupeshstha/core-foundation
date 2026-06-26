@@ -120,10 +120,6 @@ class AnalyseCommand extends Command
         return $hasCritical ? self::FAILURE : self::SUCCESS;
     }
 
-    // =========================================================================
-    // Internals
-    // =========================================================================
-
     private function resolvePaths(): array
     {
         $optionPaths = $this->option('path');

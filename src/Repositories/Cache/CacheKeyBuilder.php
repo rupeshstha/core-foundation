@@ -32,7 +32,7 @@ final class CacheKeyBuilder
      *
      * @param  Model  $model  The model being queried (schema reference only)
      * @param  string  $method  Repository method name e.g. 'fetchAll', 'fetchById'
-     * @param  array  $filters  Applied filter parameters
+     * @param  array  $criteria  Applied filter/sort/scope parameters
      * @param  array  $relations  Eager-loaded relation names
      * @param  array  $columns  Selected columns
      * @param  array  $extra  Additional discriminators (record ID, pagination params)
@@ -102,10 +102,6 @@ final class CacheKeyBuilder
             ? sprintf('%s:%s', $scope->prefix(), $base)
             : $base;
     }
-
-    // =========================================================================
-    // Internals
-    // =========================================================================
 
     /**
      * Sort keys recursively so parameter order does not affect the hash.

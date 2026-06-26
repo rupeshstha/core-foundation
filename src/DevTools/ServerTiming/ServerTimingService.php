@@ -68,10 +68,6 @@ final class ServerTimingService
         private readonly Stopwatch $stopwatch,
     ) {}
 
-    // =========================================================================
-    // Core measurement API
-    // =========================================================================
-
     /**
      * Start a named measurement.
      * Safe to call multiple times — subsequent calls are ignored if already started.
@@ -174,10 +170,6 @@ final class ServerTimingService
         return $this;
     }
 
-    // =========================================================================
-    // Lifecycle
-    // =========================================================================
-
     /**
      * Stop all measurements that were started but never explicitly stopped.
      * Called by the middleware before building the response header.
@@ -209,10 +201,6 @@ final class ServerTimingService
             }
         }
     }
-
-    // =========================================================================
-    // Header generation
-    // =========================================================================
 
     /**
      * Build the W3C Server-Timing header value from all completed measurements.
@@ -258,10 +246,6 @@ final class ServerTimingService
     {
         return $this->completed;
     }
-
-    // =========================================================================
-    // Internal
-    // =========================================================================
 
     /**
      * Convert a measurement name to a valid Server-Timing metric identifier.

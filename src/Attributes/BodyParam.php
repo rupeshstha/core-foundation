@@ -73,18 +73,10 @@ final class BodyParam
         $this->name = $name;
     }
 
-    // =========================================================================
-    // Static entry point
-    // =========================================================================
-
     public static function make(string $name): self
     {
         return new self($name);
     }
-
-    // =========================================================================
-    // Fluent setters
-    // =========================================================================
 
     /**
      * OpenAPI-compatible type: 'string' | 'integer' | 'number' | 'boolean' | 'array' | 'object'
@@ -165,10 +157,6 @@ final class BodyParam
 
         return $this;
     }
-
-    // =========================================================================
-    // Read — used by future doc generation tooling
-    // =========================================================================
 
     public function getName(): string
     {

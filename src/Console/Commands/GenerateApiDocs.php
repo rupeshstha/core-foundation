@@ -115,10 +115,6 @@ class GenerateApiDocs extends Command
         return self::SUCCESS;
     }
 
-    // =========================================================================
-    // Writers
-    // =========================================================================
-
     private function writeYaml(array $spec, string $path): void
     {
         // Symfony Yaml component — already available in Laravel

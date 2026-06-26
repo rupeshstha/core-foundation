@@ -80,10 +80,6 @@ final class Analyser
         return $results;
     }
 
-    // =========================================================================
-    // Internals
-    // =========================================================================
-
     /**
      * @param  array<string>  $excludePaths
      * @return MethodMetrics[]

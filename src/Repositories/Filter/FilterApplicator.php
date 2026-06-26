@@ -104,10 +104,6 @@ final class FilterApplicator
      */
     private static bool $booted = false;
 
-    // =========================================================================
-    // Programmatic registry API — call from ServiceProvider::boot()
-    // =========================================================================
-
     /**
      * Add or replace an operator at runtime.
      * Merges over any config-defined operator with the same identifier.
@@ -167,10 +163,6 @@ final class FilterApplicator
         self::$booted = false;
     }
 
-    // =========================================================================
-    // Application
-    // =========================================================================
-
     /**
      * Apply filter parameters to the given Builder.
      *
@@ -189,10 +181,6 @@ final class FilterApplicator
 
         return $builder;
     }
-
-    // =========================================================================
-    // Internals
-    // =========================================================================
 
     private function applyFilter(
         Builder $builder,
@@ -271,12 +259,8 @@ final class FilterApplicator
         return $matches[1] ?? null;
     }
 
-    // =========================================================================
-    // Boot — build registry from config on first use
-    // =========================================================================
-
     /**
-     * Initialise the operator registry from config/repository.php.
+     * Initialize the operator registry from config/repository.php.
      *
      * Config structure:
      *   'operators' => [

@@ -62,10 +62,6 @@ trait HasFactory
      */
     protected static array $preferences = [];
 
-    // =========================================================================
-    // Registration
-    // =========================================================================
-
     /**
      * Register a conditional preference for this service class.
      *
@@ -90,10 +86,6 @@ trait HasFactory
     {
         unset(static::$preferences[static::class]);
     }
-
-    // =========================================================================
-    // Resolution
-    // =========================================================================
 
     /**
      * Resolve to the registered concrete if the condition passes,

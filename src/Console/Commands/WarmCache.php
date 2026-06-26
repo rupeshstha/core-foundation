@@ -23,6 +23,7 @@ class WarmCache extends Command
     public function handle(CacheWarmingRegistry $registry): int
     {
         $warmerName = $this->option('warmer');
+        $warmerName = is_string($warmerName) ? $warmerName : null;
         $tenantId = $this->option('tenant');
         $sync = $this->option('sync');
 

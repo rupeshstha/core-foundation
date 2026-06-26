@@ -37,10 +37,6 @@ use Illuminate\Testing\TestResponse;
  */
 trait AssertsApiResponse
 {
-    // =========================================================================
-    // Success responses
-    // =========================================================================
-
     /**
      * Assert a 200 OK response with the CoreFoundation success envelope.
      * Pass $message to assert the exact message string.

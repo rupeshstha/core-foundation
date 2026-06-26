@@ -79,6 +79,156 @@ parameters:
 			path: src/Attributes/Property.php
 
 		-
+			message: '#^Method CoreFoundation\\Broadcasting\\Abstracts\\ModelBroadcastEvent\:\:__construct\(\) has parameter \$transformer with generic interface CoreFoundation\\Broadcasting\\Contracts\\SocketPayloadTransformer but does not specify its types\: T$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Broadcasting/Abstracts/ModelBroadcastEvent.php
+
+		-
+			message: '#^Method CoreFoundation\\Console\\ApiDocs\\OperationBuilder\:\:bodyParamToSchema\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Console/ApiDocs/OperationBuilder.php
+
+		-
+			message: '#^Method CoreFoundation\\Console\\ApiDocs\\OperationBuilder\:\:build\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Console/ApiDocs/OperationBuilder.php
+
+		-
+			message: '#^Method CoreFoundation\\Console\\ApiDocs\\OperationBuilder\:\:build422Response\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Console/ApiDocs/OperationBuilder.php
+
+		-
+			message: '#^Method CoreFoundation\\Console\\ApiDocs\\OperationBuilder\:\:buildPathParameters\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Console/ApiDocs/OperationBuilder.php
+
+		-
+			message: '#^Method CoreFoundation\\Console\\ApiDocs\\OperationBuilder\:\:buildRequestBody\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Console/ApiDocs/OperationBuilder.php
+
+		-
+			message: '#^Method CoreFoundation\\Console\\ApiDocs\\OperationBuilder\:\:buildResponses\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Console/ApiDocs/OperationBuilder.php
+
+		-
+			message: '#^Method CoreFoundation\\Console\\ApiDocs\\OperationBuilder\:\:buildSuccessResponse\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Console/ApiDocs/OperationBuilder.php
+
+		-
+			message: '#^Method CoreFoundation\\Console\\ApiDocs\\OperationBuilder\:\:propertyToSchema\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Console/ApiDocs/OperationBuilder.php
+
+		-
+			message: '#^Method CoreFoundation\\Console\\ApiDocs\\ReadResult\:\:__construct\(\) has parameter \$bodyParams with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Console/ApiDocs/ReadResult.php
+
+		-
+			message: '#^Method CoreFoundation\\Console\\ApiDocs\\ReadResult\:\:__construct\(\) has parameter \$properties with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Console/ApiDocs/ReadResult.php
+
+		-
+			message: '#^Method CoreFoundation\\Console\\ApiDocs\\ReadResult\:\:resolveTags\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Console/ApiDocs/ReadResult.php
+
+		-
+			message: '#^Method CoreFoundation\\Console\\ApiDocs\\ReflectionReader\:\:readBodyParams\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Console/ApiDocs/ReflectionReader.php
+
+		-
+			message: '#^Method CoreFoundation\\Console\\ApiDocs\\ReflectionReader\:\:readProperties\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Console/ApiDocs/ReflectionReader.php
+
+		-
+			message: '#^Method CoreFoundation\\Console\\ApiDocs\\RouteScanner\:\:__construct\(\) has parameter \$config with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Console/ApiDocs/RouteScanner.php
+
+		-
+			message: '#^Method CoreFoundation\\Console\\ApiDocs\\RouteScanner\:\:httpMethods\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Console/ApiDocs/RouteScanner.php
+
+		-
+			message: '#^Property CoreFoundation\\Console\\ApiDocs\\RouteScanner\:\:\$config type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Console/ApiDocs/RouteScanner.php
+
+		-
+			message: '#^Method CoreFoundation\\Console\\ApiDocs\\ScannedRoute\:\:__construct\(\) has parameter \$middleware with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Console/ApiDocs/ScannedRoute.php
+
+		-
+			message: '#^Method CoreFoundation\\Console\\ApiDocs\\SpecBuilder\:\:__construct\(\) has parameter \$config with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Console/ApiDocs/SpecBuilder.php
+
+		-
+			message: '#^Method CoreFoundation\\Console\\ApiDocs\\SpecBuilder\:\:addOperation\(\) has parameter \$operation with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Console/ApiDocs/SpecBuilder.php
+
+		-
+			message: '#^Method CoreFoundation\\Console\\ApiDocs\\SpecBuilder\:\:build\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Console/ApiDocs/SpecBuilder.php
+
+		-
+			message: '#^Method CoreFoundation\\Console\\ApiDocs\\SpecBuilder\:\:buildInfo\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Console/ApiDocs/SpecBuilder.php
+
+		-
+			message: '#^Method CoreFoundation\\Console\\ApiDocs\\SpecBuilder\:\:buildServers\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Console/ApiDocs/SpecBuilder.php
+
+		-
+			message: '#^Property CoreFoundation\\Console\\ApiDocs\\SpecBuilder\:\:\$config type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Console/ApiDocs/SpecBuilder.php
+
+		-
+			message: '#^Property CoreFoundation\\Console\\ApiDocs\\SpecBuilder\:\:\$paths type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Console/ApiDocs/SpecBuilder.php
+
+		-
 			message: '#^Method CoreFoundation\\Console\\Commands\\AnalyseCommand\:\:filterByBaseline\(\) has parameter \$metrics with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
@@ -101,180 +251,6 @@ parameters:
 			identifier: argument.type
 			count: 1
 			path: src/Console/Commands/AnalyseCommand.php
-
-		-
-			message: '#^Method CoreFoundation\\Console\\ApiDocs\\OperationBuilder\:\:bodyParamToSchema\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Console/Commands/ApiDocs/OperationBuilder.php
-
-		-
-			message: '#^Method CoreFoundation\\Console\\ApiDocs\\OperationBuilder\:\:build\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Console/Commands/ApiDocs/OperationBuilder.php
-
-		-
-			message: '#^Method CoreFoundation\\Console\\ApiDocs\\OperationBuilder\:\:build422Response\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Console/Commands/ApiDocs/OperationBuilder.php
-
-		-
-			message: '#^Method CoreFoundation\\Console\\ApiDocs\\OperationBuilder\:\:buildPathParameters\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Console/Commands/ApiDocs/OperationBuilder.php
-
-		-
-			message: '#^Method CoreFoundation\\Console\\ApiDocs\\OperationBuilder\:\:buildRequestBody\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Console/Commands/ApiDocs/OperationBuilder.php
-
-		-
-			message: '#^Method CoreFoundation\\Console\\ApiDocs\\OperationBuilder\:\:buildResponses\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Console/Commands/ApiDocs/OperationBuilder.php
-
-		-
-			message: '#^Method CoreFoundation\\Console\\ApiDocs\\OperationBuilder\:\:buildSuccessResponse\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Console/Commands/ApiDocs/OperationBuilder.php
-
-		-
-			message: '#^Method CoreFoundation\\Console\\ApiDocs\\OperationBuilder\:\:propertyToSchema\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Console/Commands/ApiDocs/OperationBuilder.php
-
-		-
-			message: '#^Using nullsafe property access "\?\-\>description" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: src/Console/Commands/ApiDocs/OperationBuilder.php
-
-		-
-			message: '#^Method CoreFoundation\\Console\\ApiDocs\\ReadResult\:\:__construct\(\) has parameter \$bodyParams with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Console/Commands/ApiDocs/ReadResult.php
-
-		-
-			message: '#^Method CoreFoundation\\Console\\ApiDocs\\ReadResult\:\:__construct\(\) has parameter \$properties with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Console/Commands/ApiDocs/ReadResult.php
-
-		-
-			message: '#^Method CoreFoundation\\Console\\ApiDocs\\ReadResult\:\:resolveTags\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Console/Commands/ApiDocs/ReadResult.php
-
-		-
-			message: '#^Using nullsafe property access "\?\-\>deprecated" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: src/Console/Commands/ApiDocs/ReadResult.php
-
-		-
-			message: '#^Using nullsafe property access "\?\-\>description" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 2
-			path: src/Console/Commands/ApiDocs/ReadResult.php
-
-		-
-			message: '#^Using nullsafe property access "\?\-\>status" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: src/Console/Commands/ApiDocs/ReadResult.php
-
-		-
-			message: '#^Using nullsafe property access "\?\-\>tags" in empty\(\) is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 2
-			path: src/Console/Commands/ApiDocs/ReadResult.php
-
-		-
-			message: '#^Method CoreFoundation\\Console\\ApiDocs\\ReflectionReader\:\:readBodyParams\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Console/Commands/ApiDocs/ReflectionReader.php
-
-		-
-			message: '#^Method CoreFoundation\\Console\\ApiDocs\\ReflectionReader\:\:readProperties\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Console/Commands/ApiDocs/ReflectionReader.php
-
-		-
-			message: '#^Method CoreFoundation\\Console\\ApiDocs\\RouteScanner\:\:__construct\(\) has parameter \$config with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Console/Commands/ApiDocs/RouteScanner.php
-
-		-
-			message: '#^Method CoreFoundation\\Console\\ApiDocs\\RouteScanner\:\:httpMethods\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Console/Commands/ApiDocs/RouteScanner.php
-
-		-
-			message: '#^Property CoreFoundation\\Console\\ApiDocs\\RouteScanner\:\:\$config type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Console/Commands/ApiDocs/RouteScanner.php
-
-		-
-			message: '#^Method CoreFoundation\\Console\\ApiDocs\\ScannedRoute\:\:__construct\(\) has parameter \$middleware with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Console/Commands/ApiDocs/ScannedRoute.php
-
-		-
-			message: '#^Method CoreFoundation\\Console\\ApiDocs\\SpecBuilder\:\:__construct\(\) has parameter \$config with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Console/Commands/ApiDocs/SpecBuilder.php
-
-		-
-			message: '#^Method CoreFoundation\\Console\\ApiDocs\\SpecBuilder\:\:addOperation\(\) has parameter \$operation with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Console/Commands/ApiDocs/SpecBuilder.php
-
-		-
-			message: '#^Method CoreFoundation\\Console\\ApiDocs\\SpecBuilder\:\:build\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Console/Commands/ApiDocs/SpecBuilder.php
-
-		-
-			message: '#^Method CoreFoundation\\Console\\ApiDocs\\SpecBuilder\:\:buildInfo\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Console/Commands/ApiDocs/SpecBuilder.php
-
-		-
-			message: '#^Method CoreFoundation\\Console\\ApiDocs\\SpecBuilder\:\:buildServers\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Console/Commands/ApiDocs/SpecBuilder.php
-
-		-
-			message: '#^Property CoreFoundation\\Console\\ApiDocs\\SpecBuilder\:\:\$config type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Console/Commands/ApiDocs/SpecBuilder.php
-
-		-
-			message: '#^Property CoreFoundation\\Console\\ApiDocs\\SpecBuilder\:\:\$paths type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Console/Commands/ApiDocs/SpecBuilder.php
 
 		-
 			message: '#^Method CoreFoundation\\Console\\Commands\\GenerateApiDocs\:\:writeJson\(\) has parameter \$spec with no value type specified in iterable type array\.$#'
@@ -367,12 +343,6 @@ parameters:
 			path: src/DevTools/ServerTiming/ServerTimingService.php
 
 		-
-			message: '#^Method CoreFoundation\\Entities\\BaseModel\:\:getBindRelations\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Entities/BaseModel.php
-
-		-
 			message: '#^Method CoreFoundation\\Exceptions\\BaseApiException\:\:__construct\(\) has parameter \$errors with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
@@ -391,27 +361,57 @@ parameters:
 			path: src/Exceptions/BaseApiException.php
 
 		-
-			message: '#^Call to an undefined method Psr\\Log\\LoggerInterface\:\:withContext\(\)\.$#'
-			identifier: method.notFound
+			message: '#^Method CoreFoundation\\Exceptions\\ExceptionRenderer\:\:buildExceptionContext\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
 			count: 1
 			path: src/Exceptions/ExceptionRenderer.php
 
 		-
-			message: '#^Unsafe call to private method CoreFoundation\\Exceptions\\ExceptionRenderer\:\:registerRenderers\(\) through static\:\:\.$#'
-			identifier: staticClassAccess.privateMethod
+			message: '#^Method CoreFoundation\\Exceptions\\ExceptionRenderer\:\:buildRequestContext\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
 			count: 1
 			path: src/Exceptions/ExceptionRenderer.php
 
 		-
-			message: '#^Unsafe call to private method CoreFoundation\\Exceptions\\ExceptionRenderer\:\:registerReporters\(\) through static\:\:\.$#'
-			identifier: staticClassAccess.privateMethod
+			message: '#^Method CoreFoundation\\Exceptions\\ExceptionRenderer\:\:exceptionIds\(\) return type with generic class WeakMap does not specify its types\: TKey, TValue$#'
+			identifier: missingType.generics
 			count: 1
 			path: src/Exceptions/ExceptionRenderer.php
 
 		-
-			message: '#^Unsafe call to private method CoreFoundation\\Exceptions\\ExceptionRenderer\:\:resolveQueryMessage\(\) through static\:\:\.$#'
-			identifier: staticClassAccess.privateMethod
+			message: '#^Method CoreFoundation\\Exceptions\\ExceptionRenderer\:\:formatTrace\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
 			count: 1
+			path: src/Exceptions/ExceptionRenderer.php
+
+		-
+			message: '#^Method CoreFoundation\\Exceptions\\ExceptionRenderer\:\:redactSensitiveFields\(\) has parameter \$data with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Exceptions/ExceptionRenderer.php
+
+		-
+			message: '#^Method CoreFoundation\\Exceptions\\ExceptionRenderer\:\:redactSensitiveFields\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Exceptions/ExceptionRenderer.php
+
+		-
+			message: '#^Method CoreFoundation\\Exceptions\\ExceptionRenderer\:\:resolveRequestContext\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Exceptions/ExceptionRenderer.php
+
+		-
+			message: '#^Property CoreFoundation\\Exceptions\\ExceptionRenderer\:\:\$exceptionIds with generic class WeakMap does not specify its types\: TKey, TValue$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Exceptions/ExceptionRenderer.php
+
+		-
+			message: '#^Using nullsafe method call on non\-nullable type Illuminate\\Routing\\Route\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 2
 			path: src/Exceptions/ExceptionRenderer.php
 
 		-
@@ -421,46 +421,10 @@ parameters:
 			path: src/Facades/ServerTiming.php
 
 		-
-			message: '#^Call to static method activate\(\) on an unknown class Laravel\\Pennant\\Feature\.$#'
-			identifier: class.notFound
-			count: 1
-			path: src/Features/BaseFeature.php
-
-		-
-			message: '#^Call to static method active\(\) on an unknown class Laravel\\Pennant\\Feature\.$#'
-			identifier: class.notFound
-			count: 1
-			path: src/Features/BaseFeature.php
-
-		-
-			message: '#^Call to static method deactivate\(\) on an unknown class Laravel\\Pennant\\Feature\.$#'
-			identifier: class.notFound
-			count: 1
-			path: src/Features/BaseFeature.php
-
-		-
-			message: '#^Call to static method for\(\) on an unknown class Laravel\\Pennant\\Feature\.$#'
-			identifier: class.notFound
-			count: 5
-			path: src/Features/BaseFeature.php
-
-		-
-			message: '#^Call to static method forget\(\) on an unknown class Laravel\\Pennant\\Feature\.$#'
-			identifier: class.notFound
-			count: 1
-			path: src/Features/BaseFeature.php
-
-		-
 			message: '#^Method CoreFoundation\\Features\\BaseFeature\:\:tags\(\) return type has no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
 			path: src/Features/BaseFeature.php
-
-		-
-			message: '#^Call to an undefined method Illuminate\\Contracts\\Auth\\Factory\:\:id\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: src/Http/Controllers/BaseController.php
 
 		-
 			message: '#^Call to an undefined method Illuminate\\Pagination\\AbstractPaginator\:\:lastPage\(\)\.$#'
@@ -471,12 +435,6 @@ parameters:
 		-
 			message: '#^Call to an undefined method Illuminate\\Pagination\\AbstractPaginator\:\:nextPageUrl\(\)\.$#'
 			identifier: method.notFound
-			count: 1
-			path: src/Http/Controllers/BaseController.php
-
-		-
-			message: '#^Cannot cast array\|string to string\.$#'
-			identifier: cast.string
 			count: 1
 			path: src/Http/Controllers/BaseController.php
 
@@ -535,16 +493,22 @@ parameters:
 			path: src/Http/Controllers/BaseController.php
 
 		-
-			message: '#^Call to static method for\(\) on an unknown class Laravel\\Pennant\\Feature\.$#'
-			identifier: class.notFound
-			count: 2
-			path: src/Http/Controllers/FeatureFlagController.php
-
-		-
 			message: '#^Method CoreFoundation\\Http\\Middlewares\\ServerTimingMiddleware\:\:isEnabled\(\) should return bool but returns bool\|string\.$#'
 			identifier: return.type
 			count: 1
 			path: src/Http/Middlewares/ServerTimingMiddleware.php
+
+		-
+			message: '#^Method CoreFoundation\\Http\\Requests\\BaseIndexRequest\:\:baseRules\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Http/Requests/BaseIndexRequest.php
+
+		-
+			message: '#^Method CoreFoundation\\Http\\Requests\\BaseIndexRequest\:\:criteria\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Http/Requests/BaseIndexRequest.php
 
 		-
 			message: '#^Method CoreFoundation\\Http\\Requests\\BaseRequest\:\:baseRules\(\) return type has no value type specified in iterable type array\.$#'
@@ -571,12 +535,6 @@ parameters:
 			path: src/Http/Requests/BaseRequest.php
 
 		-
-			message: '#^Method CoreFoundation\\Http\\Requests\\ValidateFilterableRequest\:\:baseRules\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Http/Requests/ValidateFilterableRequest.php
-
-		-
 			message: '#^Method CoreFoundation\\Jobs\\BaseJob\:\:additionalNotifiables\(\) return type has no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
@@ -589,7 +547,7 @@ parameters:
 			path: src/Jobs/BaseJob.php
 
 		-
-			message: '#^Method CoreFoundation\\Jobs\\BaseJob\:\:errorContext\(\) return type has no value type specified in iterable type array\.$#'
+			message: '#^Method CoreFoundation\\Jobs\\BaseJob\:\:logContext\(\) return type has no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
 			path: src/Jobs/BaseJob.php
@@ -623,6 +581,18 @@ parameters:
 			identifier: argument.type
 			count: 3
 			path: src/Jobs/BaseJob.php
+
+		-
+			message: '#^Method CoreFoundation\\Jobs\\WarmCacheJob\:\:__construct\(\) has parameter \$context with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Jobs/WarmCacheJob.php
+
+		-
+			message: '#^Method CoreFoundation\\Jobs\\WarmCacheJob\:\:logContext\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Jobs/WarmCacheJob.php
 
 		-
 			message: '#^Class CoreFoundation\\Manipulators\\BaseDataObject extends generic class Illuminate\\Support\\Fluent but does not specify its types\: TKey, TValue$#'
@@ -721,42 +691,6 @@ parameters:
 			path: src/Providers/AppMonitorServiceProvider.php
 
 		-
-			message: '#^Method CoreFoundation\\Providers\\CoreFoundationServiceProvider\:\:batchRegistrar\(\) has parameter \$batchRegistrarPaths with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Providers/CoreFoundationServiceProvider.php
-
-		-
-			message: '#^Method CoreFoundation\\Providers\\CoreFoundationServiceProvider\:\:getBindAttributes\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Providers/CoreFoundationServiceProvider.php
-
-		-
-			message: '#^PHPDoc tag @var for variable \$bind contains generic class ReflectionAttribute but does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: src/Providers/CoreFoundationServiceProvider.php
-
-		-
-			message: '#^Parameter \#1 \$objectOrClass of class ReflectionClass constructor expects class\-string\<T of object\>\|T of object, string given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Providers/CoreFoundationServiceProvider.php
-
-		-
-			message: '#^Parameter \#1 \$path of static method Composer\\ClassMapGenerator\\ClassMapGenerator\:\:createMap\(\) expects array\<SplFileInfo\>\|string\|Traversable\<mixed, SplFileInfo\>, string\|false given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Providers/CoreFoundationServiceProvider.php
-
-		-
-			message: '#^Property CoreFoundation\\Providers\\CoreFoundationServiceProvider\:\:\$bindable has no type specified\.$#'
-			identifier: missingType.property
-			count: 1
-			path: src/Providers/CoreFoundationServiceProvider.php
-
-		-
 			message: '#^Method CoreFoundation\\Providers\\Extensions\\ModelExtension\:\:casts\(\) has parameter \$casts with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
@@ -775,28 +709,10 @@ parameters:
 			path: src/Providers/Extensions/ModelExtension.php
 
 		-
-			message: '#^Call to an undefined static method CoreFoundation\\Entities\\BaseModel\:\:create\(\)\.$#'
-			identifier: staticMethod.notFound
+			message: '#^Method CoreFoundation\\Providers\\Extensions\\RepositoryExtension\:\:scopeable\(\) has parameter \$scopes with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
 			count: 1
-			path: src/Repositories/BaseRepository.php
-
-		-
-			message: '#^Call to an undefined static method CoreFoundation\\Entities\\BaseModel\:\:findOrFail\(\)\.$#'
-			identifier: staticMethod.notFound
-			count: 3
-			path: src/Repositories/BaseRepository.php
-
-		-
-			message: '#^Call to an undefined static method CoreFoundation\\Entities\\BaseModel\:\:select\(\)\.$#'
-			identifier: staticMethod.notFound
-			count: 2
-			path: src/Repositories/BaseRepository.php
-
-		-
-			message: '#^Call to an undefined static method CoreFoundation\\Entities\\BaseModel\:\:where\(\)\.$#'
-			identifier: staticMethod.notFound
-			count: 2
-			path: src/Repositories/BaseRepository.php
+			path: src/Providers/Extensions/RepositoryExtension.php
 
 		-
 			message: '#^Method CoreFoundation\\Repositories\\BaseRepository\:\:applyLock\(\) has parameter \$query with generic class Illuminate\\Database\\Eloquent\\Builder but does not specify its types\: TModel$#'
@@ -805,7 +721,31 @@ parameters:
 			path: src/Repositories/BaseRepository.php
 
 		-
+			message: '#^Method CoreFoundation\\Repositories\\BaseRepository\:\:applyScope\(\) has parameter \$query with generic class Illuminate\\Database\\Eloquent\\Builder but does not specify its types\: TModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Repositories/BaseRepository.php
+
+		-
+			message: '#^Method CoreFoundation\\Repositories\\BaseRepository\:\:applyScope\(\) has parameter \$scopes with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Repositories/BaseRepository.php
+
+		-
+			message: '#^Method CoreFoundation\\Repositories\\BaseRepository\:\:count\(\) has parameter \$criteria with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Repositories/BaseRepository.php
+
+		-
 			message: '#^Method CoreFoundation\\Repositories\\BaseRepository\:\:create\(\) has parameter \$attributes with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Repositories/BaseRepository.php
+
+		-
+			message: '#^Method CoreFoundation\\Repositories\\BaseRepository\:\:exists\(\) has parameter \$criteria with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
 			path: src/Repositories/BaseRepository.php
@@ -817,7 +757,7 @@ parameters:
 			path: src/Repositories/BaseRepository.php
 
 		-
-			message: '#^Method CoreFoundation\\Repositories\\BaseRepository\:\:fetchAll\(\) has parameter \$filters with no value type specified in iterable type array\.$#'
+			message: '#^Method CoreFoundation\\Repositories\\BaseRepository\:\:fetchAll\(\) has parameter \$criteria with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
 			path: src/Repositories/BaseRepository.php
@@ -853,8 +793,32 @@ parameters:
 			path: src/Repositories/BaseRepository.php
 
 		-
-			message: '#^Method CoreFoundation\\Repositories\\BaseRepository\:\:query\(\) return type with generic class Illuminate\\Database\\Eloquent\\Builder does not specify its types\: TModel$#'
-			identifier: missingType.generics
+			message: '#^Method CoreFoundation\\Repositories\\BaseRepository\:\:fetchOneByCriteria\(\) has parameter \$columns with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Repositories/BaseRepository.php
+
+		-
+			message: '#^Method CoreFoundation\\Repositories\\BaseRepository\:\:fetchOneByCriteria\(\) has parameter \$criteria with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Repositories/BaseRepository.php
+
+		-
+			message: '#^Method CoreFoundation\\Repositories\\BaseRepository\:\:fetchOneByCriteria\(\) has parameter \$relations with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Repositories/BaseRepository.php
+
+		-
+			message: '#^Method CoreFoundation\\Repositories\\BaseRepository\:\:scope\(\) has parameter \$arguments with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Repositories/BaseRepository.php
+
+		-
+			message: '#^Method CoreFoundation\\Repositories\\BaseRepository\:\:sync\(\) has parameter \$relations with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
 			count: 1
 			path: src/Repositories/BaseRepository.php
 
@@ -877,19 +841,31 @@ parameters:
 			path: src/Repositories/BaseRepository.php
 
 		-
+			message: '#^Property CoreFoundation\\Repositories\\BaseRepository\:\:\$pendingScopes type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Repositories/BaseRepository.php
+
+		-
+			message: '#^Property CoreFoundation\\Repositories\\Cache\\CacheBustCollector\:\:\$bustedTags type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Repositories/Cache/CacheBustCollector.php
+
+		-
 			message: '#^Method CoreFoundation\\Repositories\\Cache\\CacheKeyBuilder\:\:build\(\) has parameter \$columns with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
 			path: src/Repositories/Cache/CacheKeyBuilder.php
 
 		-
-			message: '#^Method CoreFoundation\\Repositories\\Cache\\CacheKeyBuilder\:\:build\(\) has parameter \$extra with no value type specified in iterable type array\.$#'
+			message: '#^Method CoreFoundation\\Repositories\\Cache\\CacheKeyBuilder\:\:build\(\) has parameter \$criteria with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
 			path: src/Repositories/Cache/CacheKeyBuilder.php
 
 		-
-			message: '#^Method CoreFoundation\\Repositories\\Cache\\CacheKeyBuilder\:\:build\(\) has parameter \$filters with no value type specified in iterable type array\.$#'
+			message: '#^Method CoreFoundation\\Repositories\\Cache\\CacheKeyBuilder\:\:build\(\) has parameter \$extra with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
 			path: src/Repositories/Cache/CacheKeyBuilder.php
@@ -913,6 +889,12 @@ parameters:
 			path: src/Repositories/Cache/CacheKeyBuilder.php
 
 		-
+			message: '#^Method CoreFoundation\\Repositories\\Cache\\Contracts\\CacheWarmer\:\:warm\(\) has parameter \$context with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Repositories/Cache/Contracts/CacheWarmer.php
+
+		-
 			message: '#^Method CoreFoundation\\Repositories\\Cache\\RepositoryCache\:\:buildTags\(\) has parameter \$relations with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
@@ -925,13 +907,13 @@ parameters:
 			path: src/Repositories/Cache/RepositoryCache.php
 
 		-
-			message: '#^Method CoreFoundation\\Repositories\\Cache\\RepositoryCache\:\:remember\(\) has parameter \$extra with no value type specified in iterable type array\.$#'
+			message: '#^Method CoreFoundation\\Repositories\\Cache\\RepositoryCache\:\:remember\(\) has parameter \$criteria with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
 			path: src/Repositories/Cache/RepositoryCache.php
 
 		-
-			message: '#^Method CoreFoundation\\Repositories\\Cache\\RepositoryCache\:\:remember\(\) has parameter \$filters with no value type specified in iterable type array\.$#'
+			message: '#^Method CoreFoundation\\Repositories\\Cache\\RepositoryCache\:\:remember\(\) has parameter \$extra with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
 			path: src/Repositories/Cache/RepositoryCache.php
@@ -955,7 +937,7 @@ parameters:
 			path: src/Repositories/Contracts/ReadRepositoryContract.php
 
 		-
-			message: '#^Method CoreFoundation\\Repositories\\Contracts\\ReadRepositoryContract\:\:fetchAll\(\) has parameter \$filters with no value type specified in iterable type array\.$#'
+			message: '#^Method CoreFoundation\\Repositories\\Contracts\\ReadRepositoryContract\:\:fetchAll\(\) has parameter \$criteria with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
 			path: src/Repositories/Contracts/ReadRepositoryContract.php
@@ -1163,6 +1145,42 @@ parameters:
 			identifier: missingType.generics
 			count: 1
 			path: src/Repositories/Filter/Operators/OrOperator.php
+
+		-
+			message: '#^Method CoreFoundation\\Repositories\\Scope\\ScopeApplicator\:\:apply\(\) has parameter \$builder with generic class Illuminate\\Database\\Eloquent\\Builder but does not specify its types\: TModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Repositories/Scope/ScopeApplicator.php
+
+		-
+			message: '#^Method CoreFoundation\\Repositories\\Scope\\ScopeApplicator\:\:apply\(\) has parameter \$scopes with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Repositories/Scope/ScopeApplicator.php
+
+		-
+			message: '#^Method CoreFoundation\\Repositories\\Scope\\ScopeApplicator\:\:apply\(\) return type with generic class Illuminate\\Database\\Eloquent\\Builder does not specify its types\: TModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Repositories/Scope/ScopeApplicator.php
+
+		-
+			message: '#^Method CoreFoundation\\Repositories\\Scope\\ScopeApplicator\:\:filterAllowed\(\) has parameter \$allowedScopes with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Repositories/Scope/ScopeApplicator.php
+
+		-
+			message: '#^Method CoreFoundation\\Repositories\\Scope\\ScopeApplicator\:\:filterAllowed\(\) has parameter \$scopes with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Repositories/Scope/ScopeApplicator.php
+
+		-
+			message: '#^Method CoreFoundation\\Repositories\\Scope\\ScopeApplicator\:\:filterAllowed\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Repositories/Scope/ScopeApplicator.php
 
 		-
 			message: '#^Method CoreFoundation\\Repositories\\Sort\\SortApplicator\:\:apply\(\) has parameter \$builder with generic class Illuminate\\Database\\Eloquent\\Builder but does not specify its types\: TModel$#'
@@ -1405,16 +1423,22 @@ parameters:
 			path: src/Traits/Devtools/MeasuresPerformance.php
 
 		-
-			message: '#^Trait CoreFoundation\\Traits\\HasProfilable is used zero times and is not analysed\.$#'
-			identifier: trait.unused
-			count: 1
-			path: src/Traits/HasProfilable.php
-
-		-
 			message: '#^Property Illuminate\\Http\\Resources\\Json\\ResourceCollection\:\:\$collects \(string\) in isset\(\) is not nullable\.$#'
 			identifier: isset.property
 			count: 1
 			path: src/Transformers/BaseCollection.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Transformers/BaseResource.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$updated_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Transformers/BaseResource.php
 
 		-
 			message: '#^Method CoreFoundation\\Transformers\\BaseResource\:\:fields\(\) return type has no value type specified in iterable type array\.$#'

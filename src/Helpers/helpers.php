@@ -8,7 +8,6 @@ if (! function_exists('measureTiming')) {
      *
      * USAGE:
      *   measureTiming('my-op'); // Start
-     *   // ...
      *   measureTiming('my-op'); // Stop
      *
      *   measureTiming('my-op', fn() => ...); // Wrap

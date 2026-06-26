@@ -2,6 +2,7 @@
 
 namespace CoreFoundation\Tests;
 
+use Laravel\Pennant\Feature;
 use Orchestra\Testbench\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use CoreFoundation\Repositories\Filter\FilterApplicator;
@@ -31,6 +32,14 @@ abstract class PackageTestCase extends TestCase
         // Package tests run without an application auth layer.
         // Auth guard selection is application-specific — not the package's concern.
         $app['config']->set('core-foundation.auth.features_middleware', []);
+
+        // Pennant's own config is never merged in a bare Testbench app. The
+        // package's default store ('database') needs a migration this test
+        // suite has no reason to carry — the in-memory 'array' store needs none.
+        if (class_exists(Feature::class)) {
+            $app['config']->set('pennant.default', 'array');
+            $app['config']->set('pennant.stores.array', ['driver' => 'array']);
+        }
     }
 
     protected function defineDatabaseMigrations(): void

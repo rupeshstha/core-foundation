@@ -39,11 +39,11 @@ readonly class ReadResult
      */
     public function resolveTags(): array
     {
-        if (! empty($this->requestMeta?->tags)) {
+        if (! empty($this->requestMeta->tags)) {
             return $this->requestMeta->tags;
         }
 
-        if (! empty($this->responseMeta?->tags)) {
+        if (! empty($this->responseMeta->tags)) {
             return $this->responseMeta->tags;
         }
 
@@ -64,18 +64,18 @@ readonly class ReadResult
 
     public function resolveDescription(): string
     {
-        return $this->requestMeta?->description
-            ?? $this->responseMeta?->description
+        return $this->requestMeta->description
+            ?? $this->responseMeta->description
             ?? '';
     }
 
     public function isDeprecated(): bool
     {
-        return $this->requestMeta?->deprecated ?? false;
+        return $this->requestMeta->deprecated ?? false;
     }
 
     public function responseStatus(): int
     {
-        return $this->responseMeta?->status ?? 200;
+        return $this->responseMeta->status ?? 200;
     }
 }

@@ -2,11 +2,12 @@
 
 namespace CoreFoundation\Repositories;
 
-use Illuminate\Support\Facades\Log;
+use InvalidArgumentException;
 use Illuminate\Foundation\Application;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Symfony\Component\HttpFoundation\Response;
 use CoreFoundation\Repositories\Cache\QueryType;
 use CoreFoundation\Exceptions\StaleDataException;
 use CoreFoundation\Repositories\Cache\CacheScope;
@@ -37,6 +38,14 @@ abstract class BaseRepository implements RepositoryContract
      * @var array<string, array>
      */
     private array $pendingScopes = [];
+
+    /**
+     * Pending fluent eager-loads for the next read call on this repository only.
+     * Set via with(), consumed and reset by the next fetchAll() or fetchById() call.
+     *
+     * @var array<string>
+     */
+    private array $pendingRelations = [];
 
     /**
      * Scope names registered by other modules, keyed by the concrete
@@ -75,8 +84,6 @@ abstract class BaseRepository implements RepositoryContract
 
     /**
      * Pessimistic Locking
-     *
-     * @return static
      */
     public function lockForUpdate(): static
     {
@@ -145,6 +152,31 @@ abstract class BaseRepository implements RepositoryContract
         }
 
         $query->scopes($scopes);
+    }
+
+    /**
+     * Eager-load relations on the next fetchAll() or fetchById() call, without
+     * threading a $relations array through every call site. Chainable — call
+     * multiple times to stack relations, same as Eloquent's own with().
+     *
+     * Merges with the $relations parameter passed directly to fetchAll()/
+     * fetchById() — neither replaces the other — and participates in the
+     * cache key exactly like an explicit $relations argument would, so a
+     * call with extra eager-loads never collides with one without them.
+     *
+     *   $this->orderRepository->with('items')->fetchById($id);
+     *   $this->orderRepository->with(['items', 'customer'])->fetchAll();
+     *
+     * @param  array<string>|string  $relations
+     */
+    public function with(array|string $relations): static
+    {
+        $this->pendingRelations = array_values(array_unique(array_merge(
+            $this->pendingRelations,
+            is_array($relations) ? $relations : [$relations],
+        )));
+
+        return $this;
     }
 
     /**
@@ -247,7 +279,7 @@ abstract class BaseRepository implements RepositoryContract
      */
     protected function cachedMethods(): array
     {
-        return ['fetchAll', 'fetchById'];
+        return config('repository.cache.methods', ['fetchAll', 'fetchById']);
     }
 
     /**
@@ -291,9 +323,7 @@ abstract class BaseRepository implements RepositoryContract
     }
 
     /**
-      * Return the underlying model instance.
-     *
-     * @return Model
+     * Return the underlying model instance.
      */
     public function getModel(): Model
     {
@@ -371,6 +401,8 @@ abstract class BaseRepository implements RepositoryContract
         $this->bypassCache = false;
         $pendingScopes = $this->pendingScopes;
         $this->pendingScopes = [];
+        $relations = array_values(array_unique(array_merge($relations, $this->pendingRelations)));
+        $this->pendingRelations = [];
 
         /**
          * Paginated results are request-bound (current page lives in the request).
@@ -427,12 +459,17 @@ abstract class BaseRepository implements RepositoryContract
         $this->bypassCache = false;
         $pendingScopes = $this->pendingScopes;
         $this->pendingScopes = [];
-        $shouldCache = $this->isCached(__FUNCTION__) && ! $bypass && ! $isLocked;
+        $relations = array_values(array_unique(array_merge($relations, $this->pendingRelations)));
+        $this->pendingRelations = [];
+
+        $shouldCache = $this->isCached(__FUNCTION__)
+            && ! $bypass
+            && ! $isLocked;
 
         $result = $this->cache->remember(
             model: $this->model,
             method: __FUNCTION__,
-            criteria: [],
+            criteria: ['id' => $id, 'scopes' => $pendingScopes],
             relations: $relations,
             columns: $columns,
             extra: ['id' => $id, 'scopes' => $pendingScopes],
@@ -446,11 +483,11 @@ abstract class BaseRepository implements RepositoryContract
                 $query->select($columns);
 
                 $this->applyLock($query);
-                $this->applyScope($query, $pendingScopes);
-
                 if ($relations) {
                     $query->with($relations);
                 }
+
+                $this->applyScope($query, $pendingScopes);
 
                 return $query->findOrFail($id);
             },
@@ -459,9 +496,150 @@ abstract class BaseRepository implements RepositoryContract
         return $result;
     }
 
+    public function fetchOneByCriteria(
+        array $criteria = [],
+        array $relations = [],
+        array $columns = ['*'],
+    ): Model {
+        $shouldCache = $this->isCached(__FUNCTION__) && ! $this->bypassCache;
+        $bypass = $this->bypassCache;
+        $this->bypassCache = false;
+        $pendingScopes = $this->pendingScopes;
+        $this->pendingScopes = [];
+        $relations = array_values(array_unique(array_merge($relations, $this->pendingRelations)));
+        $this->pendingRelations = [];
+
+        $result = $this->cache->remember(
+            model: $this->model,
+            method: __FUNCTION__,
+            criteria: $criteria,
+            relations: $relations,
+            columns: $columns,
+            extra: ['scopes' => $pendingScopes],
+            shouldCache: $shouldCache,
+            queryType: QueryType::Record,
+            scope: $this->cacheScope(),
+            callback: function () use ($criteria, $relations, $columns, $pendingScopes) {
+                /** @var Builder<Model> $query */
+                $query = $this->model->newQuery();
+                $query->select($columns);
+
+                if ($relations) {
+                    $query->with($relations);
+                }
+
+                $this->filterApplicator->apply($query, $criteria['filters'] ?? [], $this->searchable());
+                $this->scopeApplicator->apply($query, $criteria['scopes'] ?? [], $this->resolveScopeable());
+                $this->applyScope($query, $pendingScopes);
+
+                return $query->firstOrFail();
+            },
+        );
+
+        return $result;
+    }
+
+    public function count(array $criteria = []): int
+    {
+        $shouldCache = $this->isCached(__FUNCTION__)
+            && ! $this->bypassCache;
+
+        $bypass = $this->bypassCache;
+        $this->bypassCache = false;
+        $pendingScopes = $this->pendingScopes;
+        $this->pendingScopes = [];
+
+        $result = $this->cache->remember(
+            model: $this->model,
+            method: __FUNCTION__,
+            criteria: $criteria,
+            relations: [],
+            columns: ['*'],
+            extra: ['scopes' => $pendingScopes],
+            shouldCache: $shouldCache,
+            queryType: QueryType::Listing,
+            scope: $this->cacheScope(),
+            callback: function () use ($criteria, $pendingScopes) {
+                /** @var Builder<Model> $query */
+                $query = $this->model->newQuery();
+
+                $this->filterApplicator->apply($query, $criteria['filters'] ?? [], $this->searchable());
+                $this->scopeApplicator->apply($query, $criteria['scopes'] ?? [], $this->resolveScopeable());
+                $this->applyScope($query, $pendingScopes);
+
+                return $query->count();
+            },
+        );
+
+        return $result;
+    }
+
+    public function exists(array $criteria = []): bool
+    {
+        $shouldCache = $this->isCached(__FUNCTION__)
+            && ! $this->bypassCache;
+        $bypass = $this->bypassCache;
+        $this->bypassCache = false;
+        $pendingScopes = $this->pendingScopes;
+        $this->pendingScopes = [];
+
+        $result = $this->cache->remember(
+            model: $this->model,
+            method: __FUNCTION__,
+            criteria: $criteria,
+            relations: [],
+            columns: ['*'],
+            extra: ['scopes' => $pendingScopes],
+            shouldCache: $shouldCache,
+            queryType: QueryType::Listing,
+            scope: $this->cacheScope(),
+            callback: function () use ($criteria, $pendingScopes) {
+                /** @var Builder<Model> $query */
+                $query = $this->model->newQuery();
+
+                $this->filterApplicator->apply($query, $criteria['filters'] ?? [], $this->searchable());
+                $this->scopeApplicator->apply($query, $criteria['scopes'] ?? [], $this->resolveScopeable());
+                $this->applyScope($query, $pendingScopes);
+
+                return $query->exists();
+            },
+        );
+
+        return $result;
+    }
+
+    public function sync(Model $model, array $relations): Model
+    {
+        $modelClass = $model::class;
+        $repositoryModelClass = $this->model::class;
+        throw_if(
+            condition: is_subclass_of($modelClass, $repositoryModelClass) === false,
+            exception: new InvalidArgumentException("Model class [{$modelClass}] does not match repository model [{$repositoryModelClass}]."),
+        );
+
+        foreach ($relations as $relation => $relatedIds) {
+            throw_if(
+                condition: ! method_exists($model, $relation),
+                exception: new InvalidArgumentException("Relation [{$relation}] does not exist on model [{$modelClass}].", Response::HTTP_BAD_REQUEST),
+            );
+
+            $model->{$relation}()->sync($relatedIds);
+        }
+
+        $this->cache->flushAll($model, $this->cacheScope());
+
+        // fresh() returns null if the record was deleted concurrently between
+        // the sync above and this re-fetch — fall back to the in-memory instance
+        // (already carries the synced relations) rather than breaking the
+        // non-nullable return contract for a race this method can't prevent.
+        return $model->fresh() ?? $model;
+    }
+
     public function create(array $attributes): Model
     {
         $model = $this->model->newQuery()->create($attributes);
+
+        $this->cache->flushAll($model, $this->cacheScope());
 
         return $model;
     }
@@ -471,9 +649,29 @@ abstract class BaseRepository implements RepositoryContract
         $model = $this->model->newQuery()->findOrFail($id);
         $model->update($attributes);
 
+        $this->cache->flushRecord($model, $id, $this->cacheScope());
+
         return $model;
     }
 
+    /**
+     * Update a record only if it still matches $conditions — optimistic locking
+     * in a single atomic SQL statement, instead of a read-then-write race.
+     *
+     * Throws StaleDataException if $conditions no longer match (someone else
+     * wrote to this record first). A zero affected-row count that still matches
+     * $conditions is a genuine no-op (data was already identical) and returns
+     * normally.
+     *
+     * CAVEAT — bypasses Eloquent model events: the update runs as a query-builder
+     * mass update (->where($conditions)->update($attributes)), not $model->save().
+     * Eloquent never fires updating/updated for query-builder mass updates, so any
+     * BaseObserver hook registered on this model (search-index sync, audit
+     * logging, anything wired to updating/updated) will NOT run for an atomic
+     * update. Cache invalidation is unaffected — it's the explicit flushRecord()
+     * call below, not an event listener. If an observer-driven side effect must
+     * run on every update including atomic ones, put it in the calling service.
+     */
     public function updateAtomic(int|string $id, array $attributes, array $conditions): Model
     {
         $model = $this->model->newQuery()->findOrFail($id);
@@ -497,7 +695,6 @@ abstract class BaseRepository implements RepositoryContract
             }
         }
 
-        // Direct updates bypass Eloquent observers, so we must flush cache manually.
         $this->cache->flushRecord($model, $id, $this->cacheScope());
 
         $model->refresh();
@@ -509,6 +706,8 @@ abstract class BaseRepository implements RepositoryContract
     {
         $model = $this->model->newQuery()->findOrFail($id);
         $result = (bool) $model->delete();
+
+        $this->cache->flushRecord($model, $id, $this->cacheScope());
 
         return $result;
     }

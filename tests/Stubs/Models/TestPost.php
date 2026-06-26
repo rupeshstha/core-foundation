@@ -2,8 +2,9 @@
 
 namespace CoreFoundation\Tests\Stubs\Models;
 
-use Illuminate\Database\Eloquent\Builder;
 use CoreFoundation\Entities\BaseModel;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class TestPost extends BaseModel
 {
@@ -12,6 +13,11 @@ class TestPost extends BaseModel
     protected $fillable = ['title', 'body', 'status', 'score', 'version', 'deleted_at', 'tenant_id'];
 
     protected static array $searchable = ['title', 'status', 'score', 'deleted_at'];
+
+    public function comments(): HasMany
+    {
+        return $this->hasMany(TestComment::class);
+    }
 
     public function scopeActive(Builder $query): Builder
     {

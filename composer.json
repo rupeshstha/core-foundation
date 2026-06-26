@@ -24,17 +24,17 @@
     ],
     "require": {
         "php": "^8.3|^8.4",
-        "composer/class-map-generator": "^1.7",
-        "illuminate/database": "*",
-        "illuminate/support": "*",
+        "illuminate/database": "^11.0|^12.0",
+        "illuminate/support": "^11.0|^12.0",
         "laravel/slack-notification-channel": "^3.8",
         "symfony/stopwatch": "^7.0 | ^8.0"
     },
     "suggest": {
         "laravel/pennant": "Required for BaseFeature and FeatureFlagController (GET /features)."
     },
-     "require-dev": {
+    "require-dev": {
         "laravel/boost": "^2.4",
+        "laravel/pennant": "^1.23",
         "laravel/pint": "^1.29",
         "nikic/php-parser": "^5.7",
         "orchestra/testbench": "^10.0",
@@ -69,17 +69,17 @@
     "prefer-stable": true,
     "support": {
         "email": "contact@rupeshstha.com.np",
-        "issues":"https://github.com/rupeshstha/core-foundation/issues",
-        "source":"https://github.com/rupeshstha/core-foundation",
+        "issues": "https://github.com/rupeshstha/core-foundation/issues",
+        "source": "https://github.com/rupeshstha/core-foundation",
         "docs": "https://rupesh-shrestha.gitbook.io/core-foundation/"
-      },
+    },
     "extra": {
         "laravel": {
             "providers": [
                 "CoreFoundation\\Providers\\CoreFoundationServiceProvider"
             ],
             "aliases": {
-
+                "ServerTiming": "CoreFoundation\\Facades\\ServerTiming"
             }
         }
     }

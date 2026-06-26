@@ -94,10 +94,6 @@ abstract class BaseTestCase extends TestCase
 {
     use AssertsApiResponse;
 
-    // =========================================================================
-    // Setup
-    // =========================================================================
-
     protected function setUp(): void
     {
         parent::setUp();
@@ -108,10 +104,6 @@ abstract class BaseTestCase extends TestCase
         // Apply default headers to every request in the test.
         $this->withHeaders($this->defaultHeaders());
     }
-
-    // =========================================================================
-    // Extension points
-    // =========================================================================
 
     /**
      * HTTP headers sent with every request in this test class.

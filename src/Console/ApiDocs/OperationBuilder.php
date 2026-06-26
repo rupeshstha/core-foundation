@@ -43,10 +43,6 @@ class OperationBuilder
         return $operation;
     }
 
-    // =========================================================================
-    // Request body
-    // =========================================================================
-
     /**
      * @param  BodyParam[]  $params
      */
@@ -108,10 +104,6 @@ class OperationBuilder
         return $schema;
     }
 
-    // =========================================================================
-    // Responses
-    // =========================================================================
-
     private function buildResponses(ReadResult $result): array
     {
         $responses = [];
@@ -152,7 +144,7 @@ class OperationBuilder
         }
 
         return [
-            'description' => $result->responseMeta?->description ?? 'Success.',
+            'description' => $result->responseMeta->description ?? 'Success.',
             'content' => [
                 'application/json' => [
                     'schema' => $schema,
@@ -210,10 +202,6 @@ class OperationBuilder
             ],
         ];
     }
-
-    // =========================================================================
-    // Path parameters
-    // =========================================================================
 
     /**
      * Extract path parameters from a URI template.

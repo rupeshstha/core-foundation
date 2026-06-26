@@ -40,9 +40,11 @@ Before submitting a pull request:
 
 If the project maintainer has any additional requirements, you will find them listed here.
 
-- **[PSR-12 Coding Standard](https://github.com/php-fig/fig-standards/blob/master/accepted/PSR-12-extended-coding-style-guide.md)** - The easiest way to apply the conventions is to install [PHP Code Sniffer](https://pear.php.net/package/PHP_CodeSniffer).
+- **[PSR-12 Coding Standard](https://github.com/php-fig/fig-standards/blob/master/accepted/PSR-12-extended-coding-style-guide.md)** - Enforced via [Laravel Pint](https://laravel.com/docs/pint). Run `composer test:lint` to check, or `vendor/bin/pint` to auto-fix.
 
-- **Add tests!** - Your patch won't be accepted if it doesn't have tests.
+- **Add tests!** - Your patch won't be accepted if it doesn't have tests. Run `composer test` before submitting.
+
+- **Static analysis must pass** - Run `composer test:types` (PHPStan). New code should not introduce baseline entries — fix the underlying issue instead of suppressing it.
 
 - **Document any change in behaviour** - Make sure the `README.md` and any other relevant documentation are kept up-to-date.
 

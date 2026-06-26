@@ -69,11 +69,6 @@ abstract class BaseFeature
      */
     abstract public function resolve(mixed $scope): mixed;
 
-    // =========================================================================
-    // Metadata — override in concrete features for developer tooling,
-    // dashboards, and API introspection.
-    // =========================================================================
-
     /**
      * Canonical API name for this feature flag (kebab-case, no 'Feature' suffix).
      *
@@ -146,10 +141,6 @@ abstract class BaseFeature
     {
         return [];
     }
-
-    // =========================================================================
-    // Pennant proxy methods — thin wrappers so consumers never import Feature
-    // =========================================================================
 
     /**
      * Check if this feature is active for the default (global) scope.

@@ -6,7 +6,6 @@ use Laravel\Pennant\Feature;
 use CoreFoundation\Support\Lang;
 use CoreFoundation\Features\BaseFeature;
 use CoreFoundation\Tests\PackageTestCase;
-use CoreFoundation\Providers\CoreFoundationServiceProvider;
 
 // ---------------------------------------------------------------------------
 // Stub features used across all test cases in this file
@@ -74,9 +73,6 @@ class FeatureFlagControllerTest extends PackageTestCase
         if (! class_exists(Feature::class)) {
             $this->markTestSkipped('laravel/pennant is not installed.');
         }
-
-        // Ensure routes are registered (ServiceProvider handles this conditionally)
-        $this->app->make(CoreFoundationServiceProvider::class)->boot();
     }
 
     protected function tearDown(): void

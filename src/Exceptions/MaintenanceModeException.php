@@ -2,6 +2,8 @@
 
 namespace CoreFoundation\Exceptions;
 
+use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -38,7 +40,7 @@ class MaintenanceModeException extends BaseApiException
         return $this->reason;
     }
 
-    public function render($request): mixed
+    public function render(Request $request): JsonResponse
     {
         return response()->json([
             'message' => $this->getMessage(),

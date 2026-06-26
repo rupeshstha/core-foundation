@@ -15,6 +15,11 @@ class ProductVariantController
 {
     use HasLang;
 
+    protected function baseClassSuffix(): string
+    {
+        return 'Controller';
+    }
+
     public function getPrefix(): string
     {
         return $this->langPrefix();
@@ -24,6 +29,11 @@ class ProductVariantController
 class ProductController
 {
     use HasLang;
+
+    protected function baseClassSuffix(): string
+    {
+        return 'Controller';
+    }
 
     public function getMessage(string $key, array $replace = []): string
     {

@@ -6,8 +6,8 @@ use LogicException;
 use CoreFoundation\Entities\BaseModel;
 use Illuminate\Support\ServiceProvider;
 use CoreFoundation\Services\BaseService;
-use CoreFoundation\Repositories\BaseRepository;
 use CoreFoundation\Transformers\BaseResource;
+use CoreFoundation\Repositories\BaseRepository;
 use CoreFoundation\Providers\Extensions\ModelExtension;
 use CoreFoundation\Repositories\Filter\FilterApplicator;
 use CoreFoundation\Providers\Extensions\ServiceExtension;
@@ -90,10 +90,6 @@ use CoreFoundation\Repositories\Filter\Contracts\FilterOperator;
  */
 abstract class BaseExtensionServiceProvider extends ServiceProvider
 {
-    // =========================================================================
-    // Lifecycle — override and call parent when you need additional work
-    // =========================================================================
-
     /**
      * Called by Laravel during the registration phase.
      * Override registerBindings() for container bindings — no parent call needed.
@@ -116,10 +112,6 @@ abstract class BaseExtensionServiceProvider extends ServiceProvider
         $this->extendOperators();
         $this->extendRepositories();
     }
-
-    // =========================================================================
-    // Extension hooks — override any subset, all are no-op by default
-    // =========================================================================
 
     /**
      * Register container bindings for this module.
@@ -189,10 +181,6 @@ abstract class BaseExtensionServiceProvider extends ServiceProvider
      *   }
      */
     protected function extendRepositories(): void {}
-
-    // =========================================================================
-    // Fluent factories — type-validated, return chainable builders
-    // =========================================================================
 
     /**
      * Begin extending a BaseModel subclass.

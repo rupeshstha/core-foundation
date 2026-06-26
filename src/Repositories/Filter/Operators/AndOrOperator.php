@@ -97,10 +97,6 @@ final class AndOrOperator implements FilterOperator
         });
     }
 
-    // =========================================================================
-    // Internals
-    // =========================================================================
-
     /**
      * Apply a single filter condition within a group.
      * Resolves the operator from FilterApplicator's registry and delegates.

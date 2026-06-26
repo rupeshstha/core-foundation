@@ -117,10 +117,6 @@ class MakeModuleCommand extends Command
         return self::SUCCESS;
     }
 
-    // =========================================================================
-    // File generation
-    // =========================================================================
-
     private function generateFiles(
         string $name,
         array $selected,
@@ -179,10 +175,6 @@ class MakeModuleCommand extends Command
 
         return str_replace(array_keys($vars), array_values($vars), file_get_contents($stubPath));
     }
-
-    // =========================================================================
-    // Helpers
-    // =========================================================================
 
     private function resolveName(): string
     {

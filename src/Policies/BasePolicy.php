@@ -3,6 +3,7 @@
 namespace CoreFoundation\Policies;
 
 use Illuminate\Auth\Access\Response;
+use Illuminate\Database\Eloquent\Model;
 
 /**
  * BasePolicy
@@ -24,7 +25,7 @@ use Illuminate\Auth\Access\Response;
  *           return $user->hasPermission('orders.list');
  *       }
  *
- *       public function view(mixed $user, mixed $model): Response|bool
+ *       public function view(mixed $user, Model $model): Response|bool
  *       {
  *           return $user->id === $model->user_id
  *               ? Response::allow()
@@ -58,6 +59,14 @@ use Illuminate\Auth\Access\Response;
  * Then inside your methods, cast the param if your IDE needs it:
  *
  *   /** @var User $user {@*}  /** @var Order $model {@*}
+ *
+ * WHY $model IS TYPED Model, NOT YOUR CONCRETE CLASS:
+ *
+ * PHP parameter types are contravariant — an override may only WIDEN a parent's
+ * parameter type, never narrow it. Declaring `view(mixed $user, Order $model)` in
+ * a subclass is a fatal "Declaration must be compatible" error, because `Order` is
+ * narrower than this class's `Model`. Keep the parameter typed `Model` and use the
+ * `@var` cast above (or the `@template` below) for IDE-only narrowing instead.
  *
  * @template TUser of \Illuminate\Contracts\Auth\Authenticatable
  * @template TModel of \Illuminate\Database\Eloquent\Model
@@ -98,7 +107,7 @@ abstract class BasePolicy
      * @param  TUser  $user
      * @param  TModel  $model
      */
-    public function view(mixed $user, mixed $model): Response|bool
+    public function view(mixed $user, Model $model): Response|bool
     {
         return Response::deny();
     }
@@ -109,7 +118,7 @@ abstract class BasePolicy
      * @param  TUser  $user
      * @param  TModel  $model
      */
-    public function update(mixed $user, mixed $model): Response|bool
+    public function update(mixed $user, Model $model): Response|bool
     {
         return Response::deny();
     }
@@ -120,7 +129,7 @@ abstract class BasePolicy
      * @param  TUser  $user
      * @param  TModel  $model
      */
-    public function delete(mixed $user, mixed $model): Response|bool
+    public function delete(mixed $user, Model $model): Response|bool
     {
         return Response::deny();
     }
@@ -135,7 +144,7 @@ abstract class BasePolicy
      * @param  TUser  $user
      * @param  TModel  $model
      */
-    public function restore(mixed $user, mixed $model): Response|bool
+    public function restore(mixed $user, Model $model): Response|bool
     {
         return Response::deny();
     }
@@ -146,7 +155,7 @@ abstract class BasePolicy
      * @param  TUser  $user
      * @param  TModel  $model
      */
-    public function forceDelete(mixed $user, mixed $model): Response|bool
+    public function forceDelete(mixed $user, Model $model): Response|bool
     {
         return Response::deny();
     }

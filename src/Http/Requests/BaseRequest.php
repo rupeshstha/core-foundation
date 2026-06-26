@@ -104,10 +104,6 @@ use Illuminate\Http\Exceptions\HttpResponseException;
  */
 abstract class BaseRequest extends FormRequest
 {
-    // =========================================================================
-    // Authorization — default true, override per request if needed
-    // =========================================================================
-
     public function authorize(): bool
     {
         return true;
@@ -132,10 +128,6 @@ abstract class BaseRequest extends FormRequest
         );
     }
 
-    // =========================================================================
-    // Rule resolution — do not override in child classes
-    // =========================================================================
-
     /**
      * Merges baseRules() with the correct lifecycle rules based on HTTP method.
      *
@@ -157,10 +149,6 @@ abstract class BaseRequest extends FormRequest
             default => $this->baseRules(),
         };
     }
-
-    // =========================================================================
-    // Rule stubs — override the ones relevant to your request class
-    // =========================================================================
 
     /**
      * Rules shared between Store and Update.
@@ -195,10 +183,6 @@ abstract class BaseRequest extends FormRequest
         return [];
     }
 
-    // =========================================================================
-    // HTTP method helpers
-    // =========================================================================
-
     /**
      * True when the request is a POST (store / create).
      */
@@ -214,10 +198,6 @@ abstract class BaseRequest extends FormRequest
     {
         return $this->isMethod('PUT') || $this->isMethod('PATCH');
     }
-
-    // =========================================================================
-    // Route parameter helpers
-    // =========================================================================
 
     /**
      * Merge specific route parameters into the request input so they become
@@ -276,10 +256,6 @@ abstract class BaseRequest extends FormRequest
     {
         return $this->route($parameter);
     }
-
-    // =========================================================================
-    // API metadata — for future doc generation
-    // =========================================================================
 
     /**
      * Describe the request body fields for future API doc generation.

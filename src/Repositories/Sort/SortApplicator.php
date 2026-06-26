@@ -49,10 +49,6 @@ final class SortApplicator
         return $builder;
     }
 
-    // =========================================================================
-    // Internals
-    // =========================================================================
-
     /**
      * Resolve a sort entry to [column, direction].
      *

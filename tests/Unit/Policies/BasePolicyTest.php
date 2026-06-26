@@ -5,7 +5,9 @@ namespace CoreFoundation\Tests\Unit\Policies;
 use stdClass;
 use Illuminate\Auth\Access\Response;
 use CoreFoundation\Policies\BasePolicy;
+use Illuminate\Database\Eloquent\Model;
 use CoreFoundation\Tests\PackageTestCase;
+use CoreFoundation\Tests\Stubs\Models\TestPost;
 
 class ConcretePolicy extends BasePolicy {}
 
@@ -37,7 +39,7 @@ class BasePolicyTest extends PackageTestCase
 
     public function test_view_denies_by_default(): void
     {
-        $result = $this->policy->view(new stdClass, new stdClass);
+        $result = $this->policy->view(new stdClass, new TestPost);
 
         $this->assertInstanceOf(Response::class, $result);
         $this->assertFalse($result->allowed());
@@ -45,7 +47,7 @@ class BasePolicyTest extends PackageTestCase
 
     public function test_update_denies_by_default(): void
     {
-        $result = $this->policy->update(new stdClass, new stdClass);
+        $result = $this->policy->update(new stdClass, new TestPost);
 
         $this->assertInstanceOf(Response::class, $result);
         $this->assertFalse($result->allowed());
@@ -53,7 +55,7 @@ class BasePolicyTest extends PackageTestCase
 
     public function test_delete_denies_by_default(): void
     {
-        $result = $this->policy->delete(new stdClass, new stdClass);
+        $result = $this->policy->delete(new stdClass, new TestPost);
 
         $this->assertInstanceOf(Response::class, $result);
         $this->assertFalse($result->allowed());
@@ -61,7 +63,7 @@ class BasePolicyTest extends PackageTestCase
 
     public function test_restore_denies_by_default(): void
     {
-        $result = $this->policy->restore(new stdClass, new stdClass);
+        $result = $this->policy->restore(new stdClass, new TestPost);
 
         $this->assertInstanceOf(Response::class, $result);
         $this->assertFalse($result->allowed());
@@ -69,7 +71,7 @@ class BasePolicyTest extends PackageTestCase
 
     public function test_force_delete_denies_by_default(): void
     {
-        $result = $this->policy->forceDelete(new stdClass, new stdClass);
+        $result = $this->policy->forceDelete(new stdClass, new TestPost);
 
         $this->assertInstanceOf(Response::class, $result);
         $this->assertFalse($result->allowed());
@@ -88,5 +90,22 @@ class BasePolicyTest extends PackageTestCase
         $this->assertTrue($policy->viewAny(new stdClass));
         // Other abilities still deny
         $this->assertFalse($policy->create(new stdClass)->allowed());
+    }
+
+    public function test_a_model_bound_ability_can_be_overridden_with_the_declared_model_type(): void
+    {
+        // Regression guard: the override below must keep $model typed as the
+        // base Model class, exactly as documented in policies.md. Narrowing it
+        // to a concrete subclass (e.g. TestPost $model) is a fatal PHP error —
+        // parameter types are contravariant, an override may only widen them.
+        $policy = new class extends BasePolicy
+        {
+            public function view(mixed $user, Model $model): Response|bool
+            {
+                return $model instanceof TestPost;
+            }
+        };
+
+        $this->assertTrue($policy->view(new stdClass, new TestPost));
     }
 }
