@@ -65,6 +65,20 @@ final class CacheKeyBuilder
     }
 
     /**
+     * Build the base tag for a model — every cache entry for this model+scope
+     * carries this tag, regardless of tier. Busting it (flushAll()) invalidates
+     * everything for this model in one call.
+     *
+     * @param  CacheScope|null  $scope  Must match the scope used at write time
+     */
+    public function buildBaseTag(Model $model, ?CacheScope $scope = null): string
+    {
+        return $scope
+            ? sprintf('%s:%s', $scope->prefix(), $model->getTable())
+            : $model->getTable();
+    }
+
+    /**
      * Build the record-level tag identifier for a specific record ID.
      *
      * Not used as a cache key — used as a cache TAG.
@@ -97,6 +111,26 @@ final class CacheKeyBuilder
     public function buildListingTag(Model $model, ?CacheScope $scope = null): string
     {
         $base = sprintf('%s:listing', $model->getTable());
+
+        return $scope
+            ? sprintf('%s:%s', $scope->prefix(), $base)
+            : $base;
+    }
+
+    /**
+     * Build the "related" tag for a model — busted on every write to that
+     * model (create, update, delete), regardless of tier.
+     *
+     * Used by RelationTagResolver to tag a query's cache entry with every
+     * model it eager-loaded, so a write to a related table invalidates the
+     * entry too. Deliberately a separate tag from listing/record/base —
+     * busting it must never affect another record's fetchById isolation.
+     *
+     * @param  CacheScope|null  $scope  Must match the scope used at write time
+     */
+    public function buildRelatedTag(Model $model, ?CacheScope $scope = null): string
+    {
+        $base = sprintf('%s:related', $model->getTable());
 
         return $scope
             ? sprintf('%s:%s', $scope->prefix(), $base)

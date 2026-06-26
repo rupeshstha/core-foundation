@@ -105,9 +105,9 @@ abstract class BaseApiException extends Exception
     public function render(Request $request): JsonResponse
     {
         return response()->json([
-                'message' => $this->getMessage(),
-                'errors' => $this->errors,
-            ],
+            'message' => $this->getMessage(),
+            'errors' => $this->errors,
+        ],
             $this->status,
         );
     }

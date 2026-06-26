@@ -33,10 +33,6 @@ class AppMonitorServiceProvider extends ServiceProvider
         $this->registerOctaneReset();
     }
 
-    // =========================================================================
-    // Octane — reset state between requests
-    // =========================================================================
-
     /**
      * Register a listener that resets the ServerTimingService before each
      * Octane request. This is a belt-and-suspenders safety measure alongside
@@ -70,10 +66,6 @@ class AppMonitorServiceProvider extends ServiceProvider
             );
         }
     }
-
-    // =========================================================================
-    // Publishables
-    // =========================================================================
 
     private function registerPublishables(): void
     {

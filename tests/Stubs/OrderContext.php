@@ -28,10 +28,6 @@ class OrderContext extends ApplicationContext
         return 'order';
     }
 
-    // -------------------------------------------------------------------------
-    // Public context — visible in logs
-    // -------------------------------------------------------------------------
-
     public function setOrderId(int $id): static
     {
         return $this->set('order_id', $id);
@@ -62,10 +58,6 @@ class OrderContext extends ApplicationContext
         return $this->get('items_processed', 0);
     }
 
-    // -------------------------------------------------------------------------
-    // Hidden context — sensitive, never written to logs
-    // -------------------------------------------------------------------------
-
     public function setPaymentToken(string $token): static
     {
         return $this->setHidden('payment_token', $token);
@@ -75,10 +67,6 @@ class OrderContext extends ApplicationContext
     {
         return $this->getHidden('payment_token');
     }
-
-    // -------------------------------------------------------------------------
-    // Stack — ordered audit trail
-    // -------------------------------------------------------------------------
 
     public function pushBreadcrumb(string $step): static
     {

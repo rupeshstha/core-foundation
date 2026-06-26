@@ -63,13 +63,17 @@ final class RepositoryCache
      *
      * Call on: create, delete (via observer).
      * Does NOT flush record-tier caches — those stay warm.
+     *
+     * Also busts this model's "related" tag — any other model's cache entry
+     * that eager-loaded this one is invalidated too.
      */
     public function flushModel(Model $model, ?CacheScope $scope = null): void
     {
         $tag = $this->keyBuilder->buildListingTag($model, $scope);
+        $relatedTag = $this->keyBuilder->buildRelatedTag($model, $scope);
 
-        $this->bustCache([$tag]);
-        $this->bustCollector->record([$tag]);
+        $this->bustCache([$tag, $relatedTag]);
+        $this->bustCollector->record([$tag, $relatedTag]);
 
         Log::info('[Cache] Listing flushed', [
             'model' => $model::class,
@@ -91,15 +95,18 @@ final class RepositoryCache
      *    tenant:5:products:record:456   (other records, same tenant)
      *    tenant:1:products:record:123   (same record, different tenant)
      *    tenant:1:products:listing      (other tenant's listings)
+     *
+     * Also busts this model's "related" tag — any other model's cache entry
+     * that eager-loaded this one is invalidated too.
      */
     public function flushRecord(Model $model, int|string $id, ?CacheScope $scope = null): void
     {
         $recordTag = $this->keyBuilder->buildRecordTag($model, $id, $scope);
         $listingTag = $this->keyBuilder->buildListingTag($model, $scope);
+        $relatedTag = $this->keyBuilder->buildRelatedTag($model, $scope);
 
-        $this->bustCache([$recordTag]);
-        $this->bustCache([$listingTag]);
-        $this->bustCollector->record([$recordTag, $listingTag]);
+        $this->bustCache([$recordTag, $listingTag, $relatedTag]);
+        $this->bustCollector->record([$recordTag, $listingTag, $relatedTag]);
 
         Log::info('[Cache] Record flushed', [
             'model' => $model::class,
@@ -115,15 +122,17 @@ final class RepositoryCache
      *
      * Use for: bulk imports, mass updates, operations that bypass observers.
      * More destructive than flushRecord — prefer that for single writes.
+     *
+     * Also busts this model's "related" tag — any other model's cache entry
+     * that eager-loaded this one is invalidated too.
      */
     public function flushAll(Model $model, ?CacheScope $scope = null): void
     {
-        $baseTag = $scope
-            ? sprintf('%s:%s', $scope->prefix(), $model->getTable())
-            : $model->getTable();
+        $baseTag = $this->keyBuilder->buildBaseTag($model, $scope);
+        $relatedTag = $this->keyBuilder->buildRelatedTag($model, $scope);
 
-        $this->bustCache([$baseTag]);
-        $this->bustCollector->record([$baseTag]);
+        $this->bustCache([$baseTag, $relatedTag]);
+        $this->bustCollector->record([$baseTag, $relatedTag]);
 
         Log::info('[Cache] Full flush', [
             'model' => $model::class,
@@ -138,7 +147,7 @@ final class RepositoryCache
      * Tags stored on the entry determine which flush operations invalidate it:
      *   baseTag     — flushAll() busts everything for this model+scope
      *   primaryTag  — flushModel()/flushRecord() busts by tier
-     *   relationTags — a write to a loaded related table also busts this entry
+     *   relationTags — a write to an eager-loaded related model also busts this entry
      *
      * @return non-empty-array<string>
      */
@@ -149,9 +158,7 @@ final class RepositoryCache
         int|string|null $recordId,
         ?CacheScope $scope,
     ): array {
-        $baseTag = $scope
-            ? sprintf('%s:%s', $scope->prefix(), $model->getTable())
-            : $model->getTable();
+        $baseTag = $this->keyBuilder->buildBaseTag($model, $scope);
 
         $primaryTag = match ($queryType) {
             QueryType::Listing => $this->keyBuilder->buildListingTag($model, $scope),
@@ -160,7 +167,7 @@ final class RepositoryCache
                 : $this->keyBuilder->buildListingTag($model, $scope),
         };
 
-        $relationTags = $this->tagResolver->resolve($relations);
+        $relationTags = $this->tagResolver->resolve($model, $relations, $scope);
 
         return array_unique([$baseTag, $primaryTag, ...$relationTags]);
     }

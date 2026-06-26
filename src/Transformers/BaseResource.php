@@ -77,10 +77,6 @@ use Illuminate\Http\Resources\Json\JsonResource;
  */
 abstract class BaseResource extends JsonResource
 {
-    // =========================================================================
-    // Static registries — modular extensibility
-    // =========================================================================
-
     /** @var array<class-string, array<string, Closure(mixed, Request): mixed>> */
     protected static array $additionalFields = [];
 
@@ -118,10 +114,6 @@ abstract class BaseResource extends JsonResource
         static::$removedFields[static::class][] = $key;
     }
 
-    // =========================================================================
-    // Opt-in helpers — call inside fields(), not automatic
-    // =========================================================================
-
     /**
      * Merge ISO 8601 timestamps into the given field map.
      *
@@ -145,10 +137,6 @@ abstract class BaseResource extends JsonResource
         ]);
     }
 
-    // =========================================================================
-    // Contract — child must declare base field map
-    // =========================================================================
-
     /**
      * Return the base field map for this resource.
      *
@@ -165,10 +153,6 @@ abstract class BaseResource extends JsonResource
      *   }
      */
     abstract protected function fields(Request $request): array;
-
-    // =========================================================================
-    // Final — enforces pipeline: base → additions/overrides → removals
-    // =========================================================================
 
     /**
      * Build the final field map.

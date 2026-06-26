@@ -7,10 +7,6 @@ use CoreFoundation\Support\Lang;
 use CoreFoundation\Features\BaseFeature;
 use CoreFoundation\Tests\PackageTestCase;
 
-// ---------------------------------------------------------------------------
-// Stub features used across all test cases in this file
-// ---------------------------------------------------------------------------
-
 class PublicFeature extends BaseFeature
 {
     public function resolve(mixed $scope): mixed
@@ -60,10 +56,6 @@ class RichValueFeature extends BaseFeature
     }
 }
 
-// ---------------------------------------------------------------------------
-// Tests
-// ---------------------------------------------------------------------------
-
 class FeatureFlagControllerTest extends PackageTestCase
 {
     protected function setUp(): void
@@ -83,10 +75,6 @@ class FeatureFlagControllerTest extends PackageTestCase
 
         parent::tearDown();
     }
-
-    // -----------------------------------------------------------------------
-    // GET /features
-    // -----------------------------------------------------------------------
 
     public function test_index_returns_all_public_features(): void
     {
@@ -149,10 +137,6 @@ class FeatureFlagControllerTest extends PackageTestCase
         $this->assertTrue($features['public']);
         $this->assertFalse($features['disabled-flag']);
     }
-
-    // -----------------------------------------------------------------------
-    // GET /features/{name}
-    // -----------------------------------------------------------------------
 
     public function test_show_returns_404_for_undefined_feature(): void
     {

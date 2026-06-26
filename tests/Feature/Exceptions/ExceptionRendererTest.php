@@ -20,10 +20,6 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
 
-// ---------------------------------------------------------------------------
-// Stubs
-// ---------------------------------------------------------------------------
-
 class SilentDomainException extends BaseApiException implements ShouldntReport
 {
     protected int $status = 404;
@@ -90,10 +86,6 @@ class ExceptionRendererTest extends PackageTestCase
         );
     }
 
-    // =========================================================================
-    // Response envelope shape — every error response must include errors key
-    // =========================================================================
-
     public function test_all_error_responses_include_errors_key(): void
     {
         $routes = [
@@ -111,10 +103,6 @@ class ExceptionRendererTest extends PackageTestCase
         }
     }
 
-    // =========================================================================
-    // ValidationException
-    // =========================================================================
-
     public function test_validation_exception_returns_422_with_field_errors(): void
     {
         $response = $this->getJson('/_test/validation');
@@ -130,10 +118,6 @@ class ExceptionRendererTest extends PackageTestCase
 
         $this->assertNotEmpty($response->json('message'));
     }
-
-    // =========================================================================
-    // NotFoundHttpException / ModelNotFoundException
-    // =========================================================================
 
     public function test_model_not_found_returns_404_with_record_message(): void
     {
@@ -153,10 +137,6 @@ class ExceptionRendererTest extends PackageTestCase
         $response->assertJsonPath('errors', []);
     }
 
-    // =========================================================================
-    // MethodNotAllowedHttpException
-    // =========================================================================
-
     public function test_method_not_allowed_returns_405(): void
     {
         $response = $this->getJson('/_test/method-not-allowed');
@@ -165,10 +145,6 @@ class ExceptionRendererTest extends PackageTestCase
         $response->assertJsonPath('message', Lang::get('core-foundation::http.method-not-allowed'));
         $response->assertJsonPath('errors', []);
     }
-
-    // =========================================================================
-    // AuthenticationException
-    // =========================================================================
 
     public function test_authentication_exception_returns_401(): void
     {
@@ -179,10 +155,6 @@ class ExceptionRendererTest extends PackageTestCase
         $response->assertJsonPath('errors', []);
     }
 
-    // =========================================================================
-    // AuthorizationException
-    // =========================================================================
-
     public function test_authorization_exception_returns_403(): void
     {
         $response = $this->getJson('/_test/unauthorized');
@@ -192,10 +164,6 @@ class ExceptionRendererTest extends PackageTestCase
         $response->assertJsonPath('errors', []);
     }
 
-    // =========================================================================
-    // HttpException catch-all
-    // =========================================================================
-
     public function test_http_exception_uses_its_own_status_code_and_message(): void
     {
         $response = $this->getJson('/_test/http-exception');
@@ -204,10 +172,6 @@ class ExceptionRendererTest extends PackageTestCase
         $response->assertJsonPath('message', 'I am a teapot.');
         $response->assertJsonPath('errors', []);
     }
-
-    // =========================================================================
-    // Fatal Throwable fallback
-    // =========================================================================
 
     public function test_unexpected_throwable_returns_500_with_full_envelope(): void
     {
@@ -236,10 +200,6 @@ class ExceptionRendererTest extends PackageTestCase
 
         $this->assertNotEquals($first, $second);
     }
-
-    // =========================================================================
-    // buildExceptionContext — structured context for log entries
-    // =========================================================================
 
     public function test_build_exception_context_contains_required_fields(): void
     {
@@ -295,10 +255,6 @@ class ExceptionRendererTest extends PackageTestCase
         $this->assertArrayNotHasKey('caused_by', $context);
     }
 
-    // =========================================================================
-    // Sensitive field redaction — unit-level via buildExceptionContext / request body
-    // =========================================================================
-
     public function test_sensitive_fields_are_listed_in_redacted_constants(): void
     {
         // Verify via a request containing sensitive fields — send to a test route
@@ -313,10 +269,6 @@ class ExceptionRendererTest extends PackageTestCase
         $response->assertStatus(500);
         $this->assertNotEmpty($response->json('exception_id'));
     }
-
-    // =========================================================================
-    // BaseApiException (domain exceptions)
-    // =========================================================================
 
     public function test_silent_domain_exception_renders_with_its_own_status_and_message(): void
     {
@@ -342,10 +294,6 @@ class ExceptionRendererTest extends PackageTestCase
         $response->assertJsonPath('message', 'Service unavailable.');
     }
 
-    // =========================================================================
-    // reporter → renderer UUID handoff
-    // =========================================================================
-
     public function test_exception_id_in_response_matches_uuid_stored_by_reporter(): void
     {
         $exception = new RuntimeException('Handoff test');
@@ -367,10 +315,6 @@ class ExceptionRendererTest extends PackageTestCase
 
         $this->assertTrue(Str::isUuid($uuid));
     }
-
-    // =========================================================================
-    // Non-JSON requests fall through — no interference from our renderers
-    // =========================================================================
 
     public function test_non_json_requests_are_not_handled_by_our_renderers(): void
     {

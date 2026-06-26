@@ -104,10 +104,6 @@ class PaymentGatewayException extends BaseApiException
 //
 // Log: error with full context — gateway_response, transaction_id, stack trace.
 
-// =============================================================================
-// CLEAN CONTROLLER — no try/catch needed for known exceptions
-// =============================================================================
-
 namespace App\Http\Controllers;
 
 use Throwable;

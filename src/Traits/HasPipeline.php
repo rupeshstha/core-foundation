@@ -93,10 +93,6 @@ trait HasPipeline
      */
     protected static array $pipes = [];
 
-    // =========================================================================
-    // Registration (call from ServiceProvider)
-    // =========================================================================
-
     /**
      * Register a pipe class against a named hook point on this service.
      *
@@ -124,10 +120,6 @@ trait HasPipeline
     {
         unset(static::$pipes[static::class]);
     }
-
-    // =========================================================================
-    // Execution
-    // =========================================================================
 
     /**
      * Run the payload through all registered pipes for the given hook,
