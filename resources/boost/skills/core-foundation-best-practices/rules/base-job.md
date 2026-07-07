@@ -1,112 +1,56 @@
-# BaseJob Rules
+# BaseJob Best Practices
 
-## Basic Structure
+## Enable Notifications by Overriding `shouldNotify()`
+
+Notifications are opt-in. The default is `false` — override to `true` in jobs that need failure notifications.
 
 ```php
-use CoreFoundation\Jobs\BaseJob;
-
-class ProcessPaymentJob extends BaseJob
+class ProcessOrderJob extends BaseJob
 {
-    public function __construct(
-        private readonly int $orderId,
-    ) {}
+    protected function shouldNotify(): bool
+    {
+        return true;
+    }
 
     public function handle(): void
     {
-        $this->notifyStarted(); // optional
-
-        // ... job logic ...
-
-        $this->notifyCompleted(); // optional
+        $this->notifyStarted();       // call manually — opt-in
+        // ... process order ...
+        $this->notifyCompleted();     // call manually — opt-in
     }
 }
 ```
 
-## `failed()` Is Handled Automatically — Never Override It
+## Never Override `failed()` — Override `errorContext()` Instead
 
-`failed()` is the built-in handler. It:
-1. Rolls back any open DB transaction
-2. Logs the error with context
-3. Sends a notification if `shouldNotify()` returns `true`
-
-Override `errorContext()` to enrich the log, not `failed()`:
+`failed()` is marked `final`. It handles transaction rollback, logging, and notification dispatch automatically. Add domain context by overriding `errorContext()`.
 
 Incorrect:
 ```php
-public function failed(Throwable $exception): void
+public function failed(?Throwable $exception): void
 {
-    Log::error('Job failed: ' . $exception->getMessage()); // bypasses built-in handling
+    Log::error('Job failed', ['order' => $this->orderId]);
+    // base class never runs — rollback and notification skipped
 }
 ```
 
 Correct:
 ```php
-protected function errorContext(Throwable $exception): array
+protected function errorContext(): array
 {
-    return array_merge(parent::errorContext($exception), [
-        'order_id' => $this->orderId,
-    ]);
+    return ['order_id' => $this->orderId, 'merchant_id' => $this->merchantId];
 }
 ```
 
-## Notifications — Three Lifecycle Hooks
+## `SkipIfBatchCancelled` Is Prepended Automatically
 
-Enable notifications by overriding `shouldNotify()`:
-
-```php
-protected function shouldNotify(bool $notify = false): bool
-{
-    return true;
-}
-```
-
-Then override whichever notification factory methods you need:
-
-```php
-protected function failedNotification(Throwable $exception): ?Notification
-{
-    return new JobFailedNotification($this, $exception); // auto-triggered by failed()
-}
-
-protected function startedNotification(): ?Notification
-{
-    return new JobStartedNotification($this); // trigger with $this->notifyStarted()
-}
-
-protected function completedNotification(): ?Notification
-{
-    return new JobCompletedNotification($this); // trigger with $this->notifyCompleted()
-}
-```
-
-Configure notifiable channel and route in `config/core-foundation.php`:
-
-```php
-'notifications' => [
-    'jobs' => [
-        'failed'    => JobFailedNotification::class,
-        'started'   => null,
-        'completed' => null,
-        'notifiables' => [
-            'channel' => 'slack',
-            'route'   => env('SLACK_JOB_WEBHOOK'),
-        ],
-    ],
-],
-```
-
-## Do Not Add `SkipIfBatchCancelled` to `bindMiddlewares()`
-
-It is prepended automatically. Adding it manually creates a duplicate.
+Do not add it to `bindMiddlewares()` — it will run twice.
 
 Incorrect:
 ```php
 protected function bindMiddlewares(): array
 {
-    return [
-        new SkipIfBatchCancelled, // already added
-        new RateLimited('payment-gateway'),
-    ];
+    return [new SkipIfBatchCancelled];  // already added by BaseJob
 }
 ```
 
@@ -114,37 +58,6 @@ Correct:
 ```php
 protected function bindMiddlewares(): array
 {
-    return [
-        new RateLimited('payment-gateway'),
-    ];
+    return [new RateLimited('api')];  // only add middleware you're adding
 }
-```
-
-## Batch Support
-
-`Batchable` is included. Jobs in a cancelled batch are skipped automatically via `SkipIfBatchCancelled`:
-
-```php
-Bus::batch([
-    new ProcessPaymentJob($order1->id),
-    new ProcessPaymentJob($order2->id),
-])->then(fn () => Log::info('All payments processed'))
-  ->catch(fn (Batch $batch, Throwable $e) => Log::error('Batch failed'))
-  ->dispatch();
-```
-
-## `defer()` vs `BaseJob::dispatch()`
-
-Use `defer()` (on `BaseService`) for lightweight, non-critical, no-retry work. Use `BaseJob::dispatch()` for:
-- Work that must survive process crashes
-- Work that needs retry logic
-- Work that needs batching or chaining
-- Sending emails, webhooks, or third-party API calls
-
-## Dispatching
-
-```php
-ProcessPaymentJob::dispatch($order->id);
-ProcessPaymentJob::dispatch($order->id)->delay(now()->addMinutes(5));
-ProcessPaymentJob::dispatch($order->id)->onQueue('payments');
 ```

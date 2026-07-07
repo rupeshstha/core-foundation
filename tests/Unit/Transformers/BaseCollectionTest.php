@@ -36,7 +36,7 @@ class BaseCollectionTest extends PackageTestCase
     public function test_it_throws_exception_if_collects_missing(): void
     {
         $this->expectException(LogicException::class);
-        $this->expectExceptionMessage('must declare: public string $collects');
+        $this->expectExceptionMessage('must declare: public $collects');
 
         new class(collect([])) extends BaseCollection {};
     }

@@ -259,8 +259,8 @@ final class ExceptionRenderer
             'user_id' => $request->user()?->getAuthIdentifier(),
             'body' => self::redactSensitiveFields(
                 $request->isJson()
-                    ? ($request->json()->all() ?? [])
-                    : $request->except(['_token']),
+                    ? (array_filter($request->json()->all(), fn ($requestData) => !in_array($requestData, self::REDACTED_FIELDS)) ?? [])
+                    : $request->except(self::REDACTED_FIELDS),
             ),
         ];
     }
@@ -375,7 +375,7 @@ final class ExceptionRenderer
     public static function consumeExceptionId(Throwable $e): string
     {
         $ids = self::exceptionIds();
-        $exceptionId = $ids[$e] ?? (string) Str::uuid();
+        $exceptionId = $ids[$e] ?? Str::uuid()->toString();
         unset($ids[$e]);
 
         return $exceptionId;

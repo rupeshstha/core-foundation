@@ -1,111 +1,70 @@
-# BaseObserver Rules
+# BaseObserver Best Practices
 
 ## Override Only What You Need
 
-All lifecycle methods are no-op by default. Methods you do not override cost nothing at runtime — they do not need to be declared at all.
+All lifecycle methods default to a no-op. Methods not declared cost nothing at runtime.
 
+Incorrect (redeclaring empty methods):
 ```php
-use CoreFoundation\Observers\BaseObserver;
-
 class OrderObserver extends BaseObserver
 {
-    public function created(mixed $model): void
+    public function creating(Model $model): void {}   // unnecessary
+    public function created(Model $model): void
     {
-        // runs after the order is first persisted
+        // your logic
     }
-
-    public function deleting(mixed $model): bool
-    {
-        return $model->canBeDeleted(); // false cancels the deletion
-    }
-
-    // updating, updated, saving, saved, deleted, etc. not declared = no-op
+    public function updating(Model $model): void {}   // unnecessary
 }
 ```
 
-## Cancelling an Operation — Return `false` from Before-Events
-
-Return `false` from any before-event to cancel the operation. Returning `void` (no return) never cancels.
-
-| Before-event | Cancellable | After-event (not cancellable) |
-|---|---|---|
-| `creating` | Yes | `created` |
-| `updating` | Yes | `updated` |
-| `saving` | Yes | `saved` |
-| `deleting` | Yes | `deleted` |
-| `restoring` | Yes | `restored` |
-| `forceDeleting` | Yes | `forceDeleted` |
-
+Correct:
 ```php
-public function deleting(mixed $model): bool
-{
-    if ($model->items()->exists()) {
-        return false; // cancel — order has items
-    }
-}
-
-public function creating(mixed $model): void
-{
-    // void return — never cancels, even if you add logic here
-}
-```
-
-## Registration — Always in ServiceProvider `boot()`
-
-```php
-public function boot(): void
-{
-    parent::boot();
-    Order::observe(OrderObserver::class);
-    Order::observe(RepositoryCacheObserver::class); // automatic cache busting
-}
-```
-
-Multiple observers on the same model run in registration order.
-
-## IDE Type Safety — PHPDoc Generics
-
-Use `@extends` in a PHPDoc block (not `@@extends` — that is only for Blade templates):
-
-```php
-/**
- * @extends BaseObserver<\App\Models\Order>
- */
 class OrderObserver extends BaseObserver
 {
-    public function created(mixed $model): void
+    public function created(Model $model): void
     {
-        /** @var \App\Models\Order $model */
-        // IDE now infers $model is Order
+        // your logic
     }
 }
 ```
 
-Note: in Blade template code examples, write `@@extends` to avoid Blade compiling it as a layout directive.
+## Parameter Type Must Be `Model` — Never a Concrete Class
 
-## Soft-Delete Events — Override Only if Model Uses SoftDeletes
+PHP parameter types are contravariant. Narrowing the parent's `Model $model` to `Order $model` is a fatal "Declaration must be compatible" error.
 
-Only override `restoring`, `restored`, `forceDeleting`, `forceDeleted` when the model has the `SoftDeletes` trait. They are no-ops on hard-delete models.
-
-## Keep Observers Thin
-
-Observers are lifecycle hooks, not business logic containers. Avoid putting significant business logic in observers.
-
-Incorrect (business logic in observer):
+Incorrect (fatal at class load time):
 ```php
-public function created(mixed $model): void
+public function created(Order $model): void   // narrower than Model — PHP fatal
 {
-    // Heavy business logic, API calls, etc.
-    $this->paymentService->charge($model->user_id, $model->total);
-    Mail::to($model->user)->send(new OrderConfirmation($model));
+    // never reached
 }
 ```
 
-Correct (dispatch event or job):
+Correct:
 ```php
-public function created(mixed $model): void
+public function created(Model $model): void
 {
-    OrderCreatedJob::dispatch($model->id);
-    // or: event(new OrderCreated($model));
+    /** @var Order $model */
+    $model->doSomething();  // use @var for IDE narrowing, not a type hint
 }
+```
+
+## Return `false` to Cancel — Not Exceptions
+
+Returning `false` from a before-event method (`creating`, `updating`, `deleting`) cancels the operation cleanly.
+
+```php
+public function deleting(Model $model): bool|void
+{
+    if ($model->has_active_subscription) {
+        return false;  // cancels the delete — no exception needed
+    }
+}
+```
+
+## Register in a ServiceProvider — Never in a Controller
+
+```php
+// In OrderServiceProvider::boot():
+Order::observe(OrderObserver::class);
 ```

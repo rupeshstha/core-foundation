@@ -20,7 +20,8 @@ Route::middleware(config('core-foundation.auth.features_middleware', ['auth']))
         Route::get('/{feature}', [FeatureFlagController::class, 'show'])
             ->name('core.features.show')
             ->where('feature', '.+'); // allow forward slashes and backslashes (URL-encoded)
-    });
+    }
+);
 
 /**
  * WebSocket Broadcasting Authorization

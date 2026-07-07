@@ -8,6 +8,25 @@ use Symfony\Component\HttpFoundation\Response;
 use CoreFoundation\Exceptions\BaseApiException;
 use Illuminate\Pagination\LengthAwarePaginator;
 use CoreFoundation\Http\Controllers\BaseController;
+use CoreFoundation\Transformers\BaseResource;
+use CoreFoundation\Transformers\BaseCollection;
+use Illuminate\Http\Request;
+
+class StubUserResource extends BaseResource
+{
+    public function fields(Request $request): array
+    {
+        return [
+            'id'   => $this->resource['id'],
+            'name' => $this->resource['name'],
+        ];
+    }
+}
+
+class StubUserCollection extends BaseCollection
+{
+    public $collects = StubUserResource::class;
+}
 
 class FullTestController extends BaseController
 {
@@ -36,6 +55,18 @@ class FullTestController extends BaseController
         );
 
         return $this->paginatedResponse($paginator, 'Listed.');
+    }
+
+    public function paginatedActionWithCollection(): JsonResponse
+    {
+        $paginator = new LengthAwarePaginator(
+            items: [['id' => 1, 'name' => 'Alice'], ['id' => 2, 'name' => 'Bob']],
+            total: 10,
+            perPage: 5,
+            currentPage: 1,
+        );
+
+        return $this->paginatedResponse(new StubUserCollection($paginator), 'Listed.');
     }
 
     public function domainExceptionAction(): JsonResponse
@@ -143,5 +174,25 @@ class BaseControllerExtendedTest extends PackageTestCase
         $this->assertArrayHasKey('payload', $data);
         $this->assertArrayNotHasKey('errors', $data);
         $this->assertArrayNotHasKey('exception_id', $data);
+    }
+
+    public function test_paginated_response_with_resource_collection_transforms_items(): void
+    {
+        $response = $this->controller->paginatedActionWithCollection();
+
+        $this->assertEquals(Response::HTTP_OK, $response->getStatusCode());
+        $data = $response->getData(true);
+
+        $this->assertEquals('Listed.', $data['message']);
+        $this->assertArrayHasKey('meta', $data);
+        $this->assertArrayHasKey('pagination', $data['meta']);
+        $this->assertEquals(10, $data['meta']['pagination']['total']);
+
+        // Items must be resource-transformed — only fields() keys, not raw array keys
+        $this->assertCount(2, $data['payload']);
+        $this->assertArrayHasKey('id', $data['payload'][0]);
+        $this->assertArrayHasKey('name', $data['payload'][0]);
+        $this->assertEquals(1, $data['payload'][0]['id']);
+        $this->assertEquals('Alice', $data['payload'][0]['name']);
     }
 }

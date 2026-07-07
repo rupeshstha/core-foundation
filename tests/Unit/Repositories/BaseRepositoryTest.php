@@ -5,24 +5,10 @@ namespace CoreFoundation\Tests\Unit\Repositories;
 use ReflectionClass;
 use BadMethodCallException;
 use CoreFoundation\Tests\PackageTestCase;
-use CoreFoundation\Repositories\BaseRepository;
 use CoreFoundation\Tests\Stubs\Models\TestPost;
 use CoreFoundation\Exceptions\StaleDataException;
 use CoreFoundation\Tests\Stubs\Models\TestComment;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
-
-class TestPostRepository extends BaseRepository
-{
-    protected function setModel(): string
-    {
-        return TestPost::class;
-    }
-
-    protected function scopeable(): array
-    {
-        return ['active', 'ofStatus'];
-    }
-}
 
 class BaseRepositoryTest extends PackageTestCase
 {

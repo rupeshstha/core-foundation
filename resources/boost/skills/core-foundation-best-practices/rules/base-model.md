@@ -1,128 +1,48 @@
-# BaseModel Rules
+# BaseModel Best Practices
 
-## Extending BaseModel — Recommended, Not Required
+## Extend Cross-Module Without Editing the Model
 
-`BaseRepository` accepts any `Illuminate\Database\Eloquent\Model` subclass. Extending `BaseModel` is strongly recommended because it unlocks the full modular extensibility system (fillable, casts, relations, scopes, searchable) and automatic searchable column discovery in repositories.
+All four extension points are registered from a ServiceProvider — the model source is never touched.
 
-For models that cannot extend `BaseModel` (e.g. third-party package models), implement the capability interfaces to opt in to specific features:
-
-| Interface | Namespace | What it unlocks |
-|---|---|---|
-| `HasSearchableColumns` | `CoreFoundation\Entities\Contracts` | `getSearchable()` in repository filter whitelist |
-| `HasRelationRegistry` | `CoreFoundation\Entities\Contracts` | `getBindRelations()` in relation-aware cache tags |
-
-Without either interface, the repository still works — `searchable()` returns `[]` (no filter columns), and relation cache tags fall back to Reflection-only discovery.
-
-```php
-use CoreFoundation\Entities\BaseModel;
-
-class Order extends BaseModel
-{
-    protected $fillable = ['user_id', 'total', 'currency', 'status'];
-
-    protected $casts = [
-        'total'      => 'decimal:2',
-        'created_at' => 'datetime',
-    ];
-}
-```
-
-## Modular Extension — Never Edit Another Module's Model
-
-Module B never adds columns, casts, or relations to Module A's model source. All additions are registered from Module B's ServiceProvider.
-
-Incorrect (Module B edits Module A's source):
-```php
-// Inside Order model:
-protected $fillable = ['user_id', 'total', 'subscription_id']; // subscription_id is wrong here
-```
-
-Correct (Module B registers from its own ServiceProvider):
 ```php
 // In SubscriptionServiceProvider::boot():
 Order::addFillable(['subscription_id', 'plan_code']);
-Order::addCast(['subscription_id' => 'integer', 'renews_at' => 'datetime']);
+Order::addCast(['renews_at' => 'datetime']);
 Order::addRelation('subscription', fn (Order $o) => $o->hasOne(Subscription::class));
-Order::addScope(new ActiveSubscriptionScope);
+Order::addScope(new ActiveSubscriptionScope, 'active_subscription');
 Order::addSearchable(['subscription_id']);
 ```
 
-## Always Use `static::class`, Never `self::class`
+None of these lines touch `Order.php`.
 
-All static registries are keyed by `static::class`. Using `self::class` would incorrectly key registrations to the trait or base class instead of the concrete model.
+## `static::class` — Never `self::class`
+
+`self::class` always resolves to the class it was written in, even when called on a subclass. This means all subclasses share the same registry entry — they overwrite each other.
 
 Incorrect:
 ```php
 public static function addFillable(array $fields): void
 {
-    self::$additionalFillable[self::class][] = $fields; // always resolves to the trait/base
+    static::$additionalFillable[self::class] = $fields;  // all subclasses share one key
 }
 ```
 
-Correct (already done inside the trait — this is why you must never override these methods):
+Correct:
 ```php
-static::$additionalFillable[static::class][] = $fields; // resolves to Order::class
+static::$additionalFillable[static::class] = $fields;
 ```
 
-## The Four Modular Extension APIs
+## Never Register a Model as a Singleton
 
-| API | What it adds |
-|---|---|
-| `Order::addFillable(['col'])` | Additional mass-assignable columns |
-| `Order::addCast(['col' => 'type'])` | Additional Eloquent casts |
-| `Order::addRelation('name', fn ($o) => ...)` | Dynamic Eloquent relations |
-| `Order::addScope(new ScopeClass)` | Additional global scopes |
-| `Order::addSearchable(['col'])` | Columns searchable via `BaseRepository` |
+Models hold per-row mutable state (attributes, relations, dirty flags). A singleton leaks data from one request to the next.
 
-## Introspection
-
-Use these read-only methods to inspect registered extensions (e.g., in tests):
-
+Incorrect:
 ```php
-Order::getAdditionalFillable();   // fields added by modules
-Order::getAdditionalCasts();      // casts added by modules
-Order::getBindRelations();        // relations added by modules
-Order::getAdditionalScopes();     // global scopes added by modules
+$this->app->singleton(Order::class);
 ```
 
-## Primary Key — No Opinion, Declare Explicitly
+Correct: don't register models in the container at all. Retrieve them via repositories.
 
-`BaseModel` does not set a primary key type. Declare it on the concrete model:
+## `BaseModel` Is Recommended, Not Required
 
-```php
-// Auto-increment integer (Laravel default — nothing to declare)
-class Order extends BaseModel {}
-
-// UUID string
-class Order extends BaseModel
-{
-    use HasUuids;
-
-    protected $keyType    = 'string';
-    public    $incrementing = false;
-}
-```
-
-## Soft Deletes — Opt In on the Concrete Model
-
-`BaseModel` does not include `SoftDeletes`. Add it only to models that need it:
-
-```php
-class Order extends BaseModel
-{
-    use SoftDeletes;
-}
-```
-
-Only override `restore`, `forceDelete`, `restoring`, `restored`, `forceDeleting`, `forceDeleted` in observers and policies when the model uses `SoftDeletes`.
-
-## Registration — Bind with `bind()`, Never `singleton()`
-
-Repositories bound to a `BaseModel` must use `bind()` in the ServiceProvider so each resolution gets a fresh instance:
-
-```php
-// In ServiceProvider::register():
-$this->app->bind(OrderRepository::class);
-```
-
-Never use `singleton()` — a singleton repository carries state (active query, applied filters) across requests in long-running processes (Octane, queue workers).
+`BaseRepository` accepts any Eloquent `Model`. Use `BaseModel` for the full extensibility system. If the model is from a third-party package, implement `HasSearchableColumns` and/or `HasRelationRegistry` to opt in to the specific capabilities you need.

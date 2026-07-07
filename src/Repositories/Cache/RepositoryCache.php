@@ -3,7 +3,6 @@
 namespace CoreFoundation\Repositories\Cache;
 
 use Closure;
-use Illuminate\Support\Facades\Log;
 use CoreFoundation\Traits\HasCacheable;
 use Illuminate\Database\Eloquent\Model;
 
@@ -74,12 +73,6 @@ final class RepositoryCache
 
         $this->bustCache([$tag, $relatedTag]);
         $this->bustCollector->record([$tag, $relatedTag]);
-
-        Log::info('[Cache] Listing flushed', [
-            'model' => $model::class,
-            'scope' => $scope?->prefix() ?? 'global',
-            'tag' => $tag,
-        ]);
     }
 
     /**
@@ -107,14 +100,6 @@ final class RepositoryCache
 
         $this->bustCache([$recordTag, $listingTag, $relatedTag]);
         $this->bustCollector->record([$recordTag, $listingTag, $relatedTag]);
-
-        Log::info('[Cache] Record flushed', [
-            'model' => $model::class,
-            'id' => $id,
-            'scope' => $scope?->prefix() ?? 'global',
-            'record_tag' => $recordTag,
-            'listing_tag' => $listingTag,
-        ]);
     }
 
     /**
@@ -130,15 +115,8 @@ final class RepositoryCache
     {
         $baseTag = $this->keyBuilder->buildBaseTag($model, $scope);
         $relatedTag = $this->keyBuilder->buildRelatedTag($model, $scope);
-
         $this->bustCache([$baseTag, $relatedTag]);
         $this->bustCollector->record([$baseTag, $relatedTag]);
-
-        Log::info('[Cache] Full flush', [
-            'model' => $model::class,
-            'scope' => $scope?->prefix() ?? 'global',
-            'tag' => $baseTag,
-        ]);
     }
 
     /**

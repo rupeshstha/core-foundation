@@ -4,38 +4,32 @@ namespace {{ namespace }}\Http\Controllers;
 
 use Illuminate\Http\JsonResponse;
 use CoreFoundation\Http\Controllers\BaseController;
-use {{ namespace }}\Repositories\{{ class }}Repository;
 use {{ namespace }}\Services\{{ class }}Service;
 use {{ namespace }}\Http\Requests\Store{{ class }}Request;
 use {{ namespace }}\Http\Requests\Update{{ class }}Request;
 use {{ namespace }}\Resources\{{ class }}Resource;
-use {{ namespace }}\Resources\{{ class }}Collection;
 
 class {{ class }}Controller extends BaseController
 {
     public function __construct(
-        private readonly {{ class }}Service ${{ class }}service,
-        private readonly {{ class }}Collection ${{ class }}Collection,
-        private readonly {{ class }}Resource ${{ class }}Resource,
+        private readonly {{ class }}Service $service,
     ) {}
 
-    public function index(Request): JsonResponse
+    public function index(): JsonResponse
     {
         try {
-            ${{ class }} = $this->{{ class }}Service->fetchAll();
-        } catch (Exception $exception) {
+            ${{ modelVariable }} = $this->service->fetchAll();
+        } catch (\Throwable $exception) {
             return $this->handleException($exception);
         }
 
-        return $this->successResponse(
-            
-        );
+        return $this->paginatedResponse(${{ modelVariable }});
     }
 
     public function show(int $id): JsonResponse
     {
-        return $this->success(
-            new {{ class }}Resource($this->repository->fetchById($id)),
+        return $this->successResponse(
+            payload: new {{ class }}Resource($this->service->fetchById($id)),
         );
     }
 
@@ -43,20 +37,20 @@ class {{ class }}Controller extends BaseController
     {
         $result = $this->service->create($request->validated());
 
-        return $this->created(new {{ class }}Resource($result));
+        return $this->createdResponse(payload: new {{ class }}Resource($result));
     }
 
     public function update(Update{{ class }}Request $request, int $id): JsonResponse
     {
-        $result = $this->service->update($request->validated(), $id);
+        $result = $this->service->update($id, $request->validated());
 
-        return $this->success(new {{ class }}Resource($result));
+        return $this->successResponse(payload: new {{ class }}Resource($result));
     }
 
     public function destroy(int $id): JsonResponse
     {
         $this->service->delete($id);
 
-        return $this->noContent();
+        return $this->noContentResponse();
     }
 }

@@ -2,6 +2,8 @@
 
 namespace CoreFoundation\Providers;
 
+use InvalidArgumentException;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Foundation\Exceptions\Handler;
 use CoreFoundation\Console\Commands\WarmCache;
@@ -22,6 +24,7 @@ class CoreFoundationServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->registerExceptionHandling();
+        $this->assertCacheDriverSupportsTags();
 
         $this->loadTranslationsFrom(__DIR__.'/../../resources/lang', 'core-foundation');
 
@@ -85,6 +88,33 @@ class CoreFoundationServiceProvider extends ServiceProvider
 
         $this->app->singleton(CacheWarmingRegistry::class);
         $this->app->singleton(MaintenanceManager::class);
+    }
+
+    /**
+     * Repository and service caching both go through Cache::tags() — only
+     * array, redis, and memcached implement it. file and database define no
+     * tags() method at all and throw BadMethodCallException deep inside
+     * Laravel's cache internals the first time any cache helper runs. Fail
+     * here instead, with a message that says exactly what to change.
+     */
+    private function assertCacheDriverSupportsTags(): void
+    {
+        if (! (bool) config('core-foundation.cache.global', true)) {
+            return;
+        }
+
+        $store = Cache::getStore();
+
+        throw_unless(
+            condition: method_exists($store, 'tags'),
+            exception: new InvalidArgumentException(
+                'CoreFoundation repository and service caching require a tag-capable cache driver. '
+                .'The configured driver ['.config('cache.default').'] does not support Cache::tags() '
+                .'and will throw on the first repository read or write. Set CACHE_STORE to redis, '
+                .'memcached, or array — or set core-foundation.cache.global to false to disable '
+                .'repository caching entirely.'
+            ),
+        );
     }
 
     /**

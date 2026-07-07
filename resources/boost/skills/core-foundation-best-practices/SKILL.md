@@ -18,109 +18,104 @@ Before applying any rule, check what the application already does. If a pattern 
 
 ### 1. BaseController → `rules/base-controller.md`
 
-- Extend `BaseController` for all API controllers
 - Use `successResponse()`, `createdResponse()`, `paginatedResponse()`, `noContentResponse()` — never `response()->json()`
-- Wrap service/repository calls in `try/catch (Throwable $e)` → `handleException($e)`
-- Never `catch (SpecificException)` in a controller — put `render()` on the exception class
-- Use `$this->lang('key')` for all user-facing messages
-- Authorization via `$this->authorize()` — policy handles it, not the controller
+- Wrap every service call: `try { ... } catch (Throwable $e) { return $this->handleException($e); }`
+- Never catch a specific exception in a controller — put `render()` on the exception class
+- Use `$this->lang('key')` for user-facing messages — never hardcode strings
+- Use `$this->authorize()` — never check permissions manually in the controller body
 
 ### 2. BaseService → `rules/base-service.md`
 
-- Services return `BaseDataObject`, never `JsonResponse`, never a raw model, never a plain array
-- `HasPipeline` for execution hooks that can modify data; class-based `SomeEvent::dispatch()` for fire-and-forget side effects
-- Register pipes from a ServiceProvider, never inside the service class
-- `defer()` for post-response non-critical work; `dispatch('event')` for immediate pub/sub; `->onQueue()` for critical async
+- Always return `BaseDataObject` — never `JsonResponse`, never a raw Eloquent model, never a plain array
+- Use `HasPipeline` (`throughPipes()`) for execution hooks that can modify data
+- Use class-based events (`SomeEvent::dispatch()`) for fire-and-forget pub/sub — never string-keyed events
+- Register pipes from a ServiceProvider, never inside the service class itself
 - `static::class` in all static registries — never `self::class`
 
 ### 3. BaseRepository → `rules/base-repository.md`
 
-- Implement only the contract interfaces you need (`ReadRepositoryContract`, `WriteRepositoryContract`, `QueryRepositoryContract`, or all three via `RepositoryContract`)
-- `searchable()` is the SQL-injection guard — columns not listed are silently ignored by the filter system
+- Always `bind()` — never `singleton()` or `scoped()`; repositories hold per-request state
+- `searchable()` is the SQL-injection guard — columns not listed are silently skipped
 - Custom queries always start from `$this->query()` — never `Model::query()` directly
-- Always `bind()` repositories — never `singleton()` or `scoped()`
 - `fetchAll` and `fetchById` are cached by default; override `cachedMethods()` to change
-- Use `lockForUpdate()` / `sharedLock()` for pessimistic locking (automatically bypasses cache)
-- Use `updateAtomic($id, $attributes, $conditions)` for Compare-and-Swap concurrency control
+- Override `cacheScope()` for tenant-scoped entities — cache isolation is not automatic
 
 ### 4. BaseDataObject → `rules/base-data-object.md`
 
-- Pattern A: `BaseDataObject::fromArray($array)` for one-off results
-- Pattern B: typed `readonly` properties + `#[ApiResponse]` / `#[Property]` for stable shared shapes
-- Always call `parent::__construct([...])` in typed DTOs to populate the Fluent bag
 - Namespace is `CoreFoundation\Manipulators\BaseDataObject` — not `CoreFoundation\DataObjects`
-- `BaseDataObject` is the output side only — input validation belongs to `BaseRequest`
+- Output side only — input validation belongs to `BaseRequest`
+- Pattern A: `BaseDataObject::fromArray($array)` for one-off results
+- Pattern B: `readonly` typed properties + `parent::__construct([...])` for stable shared shapes
+- Add `#[ApiResponse]` and `#[Property]` on typed DTOs — `php artisan api:docs` reads them
 
 ### 5. BaseResource & BaseCollection → `rules/base-resource.md`
 
 - Override `fields()`, never `toArray()` — the pipeline is `final`
-- `addField()` / `removeField()` from a ServiceProvider; never edit another module's resource source
-- `removeField()` always wins — applied last regardless of `addField()` order
-- Always declare `public string $collects` on `BaseCollection` — no naming-convention magic
-- `$wrap = null` on both — the envelope belongs to `BaseController`
+- `addField()` / `removeField()` from a ServiceProvider — never edit another module's resource source
+- `removeField()` always wins — applied last regardless of `addField()` registration order
+- `BaseCollection`: declare `public $collects = YourResource::class` — no type annotation (PHP fatal otherwise), no naming-convention magic
 
 ### 6. BaseRequest → `rules/base-request.md`
 
-- `rules()` is `final` — override `baseRules()`, `storeRules()`, `updateRules()` only
-- `storeRules()` / `updateRules()` merge over `baseRules()` — later key wins, use to relax `required` to `sometimes`
-- Always use `$request->validated()` — never `$request->all()`
-- `mergeRouteParameters()` in `prepareForValidation()` to make route params available in validated data
-- `routeModel()` in `updateRules()` for `Rule::unique()->ignore()`
+- `rules()` is `final` — override `baseRules()`, `storeRules()`, or `updateRules()` only
+- `storeRules()` / `updateRules()` merge over `baseRules()` — later key wins; use to relax `required` → `sometimes`
+- Always `$request->validated()` in controllers — never `$request->all()`
+- Use `mergeRouteParameters()` in `prepareForValidation()` to include route params in validated data
 
 ### 7. BasePolicy → `rules/base-policy.md`
 
-- All abilities return `Response::deny()` by default — not overriding = denied
-- Override only the abilities you intend to grant — an omission is a security gate, not an open gate
+- All abilities return `Response::deny()` by default — an omission is a security gate, not an open gate
+- Override only the abilities you intend to grant
 - Register via `Gate::policy()` in a ServiceProvider's `boot()` — never in a controller
-- Use `$this->authorize()` in controllers — the ExceptionRenderer converts `AuthorizationException` to 403 JSON automatically
+- Parameter type must stay as `Model $model` — narrowing to a concrete class is a fatal PHP variance error
 
 ### 8. BaseObserver → `rules/base-observer.md`
 
 - All lifecycle methods are no-op by default — override only what you need
-- Return `false` from a before-event method (`creating`, `updating`, `deleting`, etc.) to cancel the operation
+- Return `false` from a before-event (`creating`, `updating`, `deleting`) to cancel the operation
 - Register via `Model::observe()` in a ServiceProvider's `boot()`
-- `@@extends` in PHPDoc generics in Blade templates to avoid Blade directive collision
+- Parameter type must stay as `Model $model` — narrowing to a concrete class is a fatal PHP variance error
 
 ### 9. BaseJob → `rules/base-job.md`
 
-- Override `shouldNotify()` → `true` to enable notification dispatch on failure
-- `notifyStarted()` / `notifyCompleted()` are opt-in — call manually inside `handle()`
-- `failed()` is handled automatically: rolls back transactions, logs, notifies — never override it; override `errorContext()` instead
-- `SkipIfBatchCancelled` is prepended automatically — do not add it to `bindMiddlewares()`
+- Override `shouldNotify()` → `true` to enable failure notifications
+- Call `notifyStarted()` / `notifyCompleted()` manually inside `handle()` — they are opt-in
+- Never override `failed()` — it handles rollback, logging, and notification automatically
+- Override `errorContext()` to add domain-specific fields to the failure log
 
 ### 10. BaseApiException → `rules/base-exception.md`
 
-- Three layers: ExceptionRenderer (Layer 1) → BaseApiException (Layer 2) → handleException() (Layer 3)
-- Implement `ShouldntReport` for known, client-fixable exceptions — keeps logs clean
-- `exception_id` (UUID) only in Layer 3 fatal responses — never on domain exceptions
+- Three layers: ExceptionRenderer (global) → BaseApiException (domain) → handleException() (last resort)
+- Implement `ShouldntReport` for expected client-fixable errors — keeps logs clean
+- UUID (`exception_id`) appears in responses only from Layer 3 — never on domain exceptions
 - Override `context()` to add domain-specific searchable fields to log entries
 
 ### 11. BaseExtensionServiceProvider → `rules/base-extension-service-provider.md`
 
-- Five structured hooks: `registerBindings()`, `extendModels()`, `extendResources()`, `extendServices()`, `extendOperators()`
+- Module B never edits Module A's source files — all cross-module extension through ServiceProvider hooks
+- Use the structured hooks: `extendModels()`, `extendResources()`, `extendServices()`, `extendRepositories()`, `extendOperators()`
 - Always call `parent::boot()` first when overriding `boot()`
-- Module B never edits Module A's source — all cross-module extension via ServiceProvider hooks
-- `static::class` in static registries — never `self::class`
+- `static::class` in all static registries — never `self::class`
 
 ### 12. BaseTestCase → `rules/base-test-case.md`
 
-- Use envelope assertion helpers (`assertSuccessResponse`, `assertValidationError`, `assertPaginatedResponse`, etc.) — never raw `assertStatus()` + `assertJson()`
-- Envelope key is `payload`, not `data`
+- Use envelope assertion helpers — never raw `assertStatus()` + `assertJson()`
+- Payload key is `payload`, not `data`
 - Always `array_merge(parent::defaultHeaders(), [...])` when overriding `defaultHeaders()`
-- `RefreshDatabase` for integration tests that spawn workers/observers; `DatabaseTransactions` for most HTTP feature tests
+- `RefreshDatabase` for tests spawning observers/jobs; `DatabaseTransactions` for most HTTP feature tests
 
 ### 13. BaseModel → `rules/base-model.md`
 
-- Module B adds fillable/casts/relations/scopes from its own ServiceProvider — never edit the model source
-- `static::class` in all static registries — never `self::class` (subclass collision)
-- Never register a model as `singleton()` or `scoped()` — always transient
-- `BaseRepository` accepts any `Illuminate\Database\Eloquent\Model` subclass; extending `BaseModel` is recommended for full capabilities — implement `HasSearchableColumns` / `HasRelationRegistry` to opt in without extending `BaseModel`
+- Module B adds fillable/casts/relations/scopes/searchable from its own ServiceProvider — never edit the model source
+- `static::class` in all static registries — never `self::class`
+- Never register a model as `singleton()` or `scoped()` — models are stateful, always transient
+- Extending `BaseModel` is recommended but not required — implement `HasSearchableColumns`/`HasRelationRegistry` to opt in without it
 
 ## How to Apply
 
-Always use a sub-agent to read the relevant rule file(s) before writing or reviewing code.
+Always read the relevant rule file(s) before writing or reviewing code.
 
 1. Identify which base class(es) are involved
-2. Read the corresponding rule file(s) from `rules/`
+2. Read the corresponding rule file from `rules/`
 3. Check sibling files for existing patterns — follow those first per Consistency First
 4. Apply the rules from the most specific file

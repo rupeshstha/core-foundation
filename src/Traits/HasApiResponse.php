@@ -7,6 +7,7 @@ use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Pagination\AbstractPaginator;
 use Symfony\Component\HttpFoundation\Response;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Http\Resources\Json\ResourceCollection;
 
 /**
  * HasApiResponse
@@ -90,19 +91,30 @@ trait HasApiResponse
     /**
      * 200 OK — paginated collection with meta.pagination block.
      *
-     * Accepts any Laravel paginator (LengthAwarePaginator or CursorPaginator).
+     * Accepts either a raw paginator (items come out as plain arrays) or a
+     * ResourceCollection wrapping a paginator (items are resource-transformed).
      * Appends all current query parameters to pagination links automatically.
+     *
+     * Usage:
+     *   return $this->paginatedResponse(new UserCollection($users));  // with resource
+     *   return $this->paginatedResponse($users);                      // raw items
      */
     final protected function paginatedResponse(
-        AbstractPaginator $paginator,
+        AbstractPaginator|ResourceCollection $paginator,
         ?string $message = null,
     ): JsonResponse {
-        $paginator->appends(request()->query());
+        $rawPaginator = $paginator instanceof ResourceCollection
+            ? $paginator->resource
+            : $paginator;
 
-        $items = $paginator->items();
+        $rawPaginator->appends(request()->query());
+
+        $payload = $paginator instanceof ResourceCollection
+            ? $paginator
+            : $paginator->items();
 
         return response()->json(
-            $this->successEnvelope($message, $items, $this->paginationMeta($paginator))
+            $this->successEnvelope($message, $payload, $this->paginationMeta($rawPaginator))
         );
     }
 

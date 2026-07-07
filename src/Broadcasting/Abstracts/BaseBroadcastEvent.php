@@ -15,7 +15,9 @@ use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
  */
 abstract class BaseBroadcastEvent implements ShouldBroadcast
 {
-    use Dispatchable, InteractsWithSockets, SerializesModels;
+    use Dispatchable;
+    use InteractsWithSockets;
+    use SerializesModels;
 
     /**
      * The name of the queue on which the event should be placed.

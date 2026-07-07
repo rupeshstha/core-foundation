@@ -117,10 +117,10 @@ use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
  */
 abstract class BaseController extends Controller
 {
-    use AuthorizesRequests;
-    use HasApiResponse;
-    use HasExceptionHandler;
     use HasLang;
+    use HasApiResponse;
+    use AuthorizesRequests;
+    use HasExceptionHandler;
 
     protected function baseClassSuffix(): string
     {

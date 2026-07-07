@@ -1,166 +1,88 @@
-# BaseService Rules
+# BaseService Best Practices
 
-## Return Types — Always `BaseDataObject`
+## Always Return `BaseDataObject` — Never `JsonResponse`
 
-A service method must return a `BaseDataObject` subclass. Never return `JsonResponse`, a raw Eloquent model, or a plain array.
+Services contain business logic. They must not know about HTTP. Returning `JsonResponse` from a service couples the business layer to the transport layer.
 
 Incorrect:
 ```php
-public function place(array $validated): array
+public function create(array $data): JsonResponse
 {
-    return Order::create($validated)->toArray();
+    $order = Order::create($data);
+    return response()->json(['id' => $order->id]);
 }
 ```
 
 Correct:
 ```php
-public function place(array $validated): PlaceOrderData
+public function create(array $data): OrderData
 {
-    return $this->throughPipes('place', $validated, function (array $data): PlaceOrderData {
-        $order = Order::create($data);
-        return PlaceOrderData::fromArray($order->toArray());
-    });
+    $order = Order::create($data);
+    return OrderData::fromArray($order->toArray());
 }
 ```
 
-## Events — Class-Based, Never String-Keyed
+## Use `HasPipeline` for Execution Hooks — Never Events
 
-Use Laravel's class-based events. Never dispatch string-keyed events.
+Pipes can modify the payload before and after the core. Events cannot. Use pipes when the result must change; use events for fire-and-forget side effects.
 
-Incorrect:
+Incorrect (using events for flow control):
 ```php
-Event::dispatch('order.placed', $data);
+public function create(array $data): OrderData
+{
+    event(new BeforeOrderCreated($data));  // can't modify $data
+    $order = Order::create($data);
+    return OrderData::fromArray($order->toArray());
+}
 ```
 
 Correct:
 ```php
-OrderPlaced::dispatch($result);
-```
-
-If listeners don't affect the response, defer the dispatch post-response:
-```php
-$this->defer(fn () => OrderPlaced::dispatch($result), 'event.order.placed');
-```
-
-## `HasPipeline` — Execution Hooks Only
-
-`HasPipeline` = before/after hooks that can modify the payload. Use for validation, enrichment, transformation.
-
-NEVER use events to hook execution flow — that is `HasPipeline`'s job.
-
-Correct (using HasPipeline for data modification):
-```php
-return $this->throughPipes('place', $data, fn ($d) => /* core logic */);
-// ValidateInventoryPipe runs before and can modify $data
-```
-
-## Pipes — Register From ServiceProvider Only
-
-Never register pipes inside the service class itself.
-
-Incorrect:
-```php
-class OrderService extends BaseService
+public function create(array $data): OrderData
 {
-    public function __construct()
-    {
-        static::addPipe('place', ValidateInventoryPipe::class); // wrong
-    }
-}
-```
+    return $this->throughPipes('create', $data, function (array $validated): OrderData {
+        $order = Order::create($validated);
+        $result = OrderData::fromArray($order->toArray());
 
-Correct (in ServiceProvider):
-```php
-protected function extendServices(): void
-{
-    $this->service(OrderService::class)
-        ->pipe('place', ValidateInventoryPipe::class)
-        ->pipe('place', ApplyDiscountPipe::class);
-}
-```
-
-## Pipe Structure
-
-Each pipe receives the payload and a `$next` closure. Return `$next($data)` to continue the chain.
-
-```php
-final class ValidateInventoryPipe
-{
-    public function handle(array $data, Closure $next): mixed
-    {
-        if (! $this->inStock($data['product_id'])) {
-            throw new OutOfStockException;
-        }
-
-        $result = $next($data); // run remaining pipes + core logic
-
-        $result['inventory_reserved'] = true; // can modify after too
-
-        return $result;
-    }
-}
-```
-
-## `defer()` vs `dispatch()` vs Queue
-
-| Method | Timing | Retries | Use for |
-|---|---|---|---|
-| `$this->defer($fn)` | After HTTP response, same process | None | Cache busting, audit logs, analytics |
-| `Event::dispatch()` / `SomeEvent::dispatch()` | Immediate, same request | N/A | Listeners that affect the response |
-| `Job::dispatch()->onQueue()` | Async worker | Yes | Email, critical processing |
-
-```php
-public function place(array $validated): PlaceOrderData
-{
-    return $this->throughPipes('place', $validated, function (array $data): PlaceOrderData {
-        $order  = Order::create($data);
-        $result = PlaceOrderData::fromArray($order->toArray());
-
-        $this->deferCacheBust(['orders']);                                    // non-critical
-        OrderPlaced::dispatch($result);                                       // immediate pub/sub
-        $this->defer(fn () => AuditLog::record($order->id), 'order.audit'); // non-critical
+        OrderCreated::dispatch($result);  // fire-and-forget pub/sub
 
         return $result;
     });
 }
+
+// Register pipes from a ServiceProvider, never here:
+// OrderService::addPipe('create', ValidateInventoryPipe::class);
 ```
 
-## `static::class` in Static Registries
+## Use Class-Based Events — Never String-Keyed
 
-All static registries key by `static::class` — never `self::class`. Using `self::class` causes subclass collision when a child service overrides the parent's registry.
+String-keyed events have no type safety and cannot be discovered by static analysis.
 
 Incorrect:
 ```php
-self::$pipes[self::class]['place'][] = $pipe;
+Event::dispatch('order.created', $order);
 ```
 
 Correct:
 ```php
-static::$pipes[static::class]['place'][] = $pipe;
+OrderCreated::dispatch($result);
 ```
 
-## Container Entry Point
+## `static::class` in All Registries
 
-Prefer constructor injection. Use `::make()` only when outside the container context:
-
-```php
-// Preferred (constructor injection via Laravel container):
-public function __construct(private readonly OrderService $service) {}
-
-// From outside the container:
-OrderService::make()->place($data);
-```
-
-## Do Not Use Context Facade Directly
-
-Use `ApplicationContext` subclasses to access request-scoped state — never the `Context` facade directly.
+`self::class` breaks inheritance — subclasses of the service would share the same pipe registry as the parent.
 
 Incorrect:
 ```php
-$tenantId = Context::get('tenant_id');
+protected static array $pipes = [];
+
+public static function addPipe(string $hook, string $pipe): void
+{
+    static::$pipes[self::class][$hook][] = $pipe;  // wrong
+}
 ```
 
 Correct:
 ```php
-$tenantId = ApplicationContext::tenantId();
+static::$pipes[static::class][$hook][] = $pipe;
 ```

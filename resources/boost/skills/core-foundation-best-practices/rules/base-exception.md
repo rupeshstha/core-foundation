@@ -1,151 +1,62 @@
-# BaseApiException Rules
+# BaseApiException Best Practices
 
-## Two Types of Domain Exceptions
+## Three Layers — Never Collapse
+
+```
+Layer 1: ExceptionRenderer (ServiceProvider)  — all framework exceptions, globally, every route
+Layer 2: BaseApiException::render()            — domain exceptions, self-rendering
+Layer 3: handleException() on BaseController   — last resort, UUID + 500
+```
+
+Each layer has a specific job. Collapsing them (catching framework exceptions manually, or mapping domain exceptions in controllers) defeats the architecture.
+
+## Layer 2 — Silent Domain Exception
+
+Use `ShouldntReport` for expected client-fixable errors. These produce no log entry and no UUID.
 
 ```php
-use CoreFoundation\Exceptions\BaseApiException;
 use Illuminate\Contracts\Debug\ShouldntReport;
-use Symfony\Component\HttpFoundation\Response;
+use CoreFoundation\Exceptions\BaseApiException;
 
-// Silent — client-fixable, never logged
-class InsufficientInventoryException extends BaseApiException
-    implements ShouldntReport
+class OrderNotFoundException extends BaseApiException implements ShouldntReport
 {
-    protected int    $status  = Response::HTTP_UNPROCESSABLE_ENTITY;
-    protected string $message = 'Insufficient inventory.';
-}
-
-// Reportable — unexpected, always logged
-class PaymentGatewayTimeoutException extends BaseApiException
-{
-    protected int    $status  = Response::HTTP_SERVICE_UNAVAILABLE;
-    protected string $message = 'Payment gateway timed out.';
+    public function __construct(int $id)
+    {
+        parent::__construct("Order {$id} not found.", 404);
+    }
 }
 ```
 
-Implement `ShouldntReport` when the exception is expected and client-fixable. Omit it when the exception signals a system failure that needs investigation.
+## Layer 2 — Reportable Domain Exception
 
-## Set Status and Message as Properties, Not in Constructor
+Without `ShouldntReport`, the exception is logged but still renders its own JSON response:
 
-Override the protected properties — do not pass values to the constructor at the throw site unless you need a one-off message override.
+```php
+class PaymentGatewayException extends BaseApiException
+{
+    public function context(): array
+    {
+        return ['gateway' => $this->gateway, 'transaction_id' => $this->transactionId];
+    }
+}
+```
+
+## UUID Only in Layer 3
+
+`exception_id` appears in the response only from `handleException()` (Layer 3). Never generate a UUID for a known domain exception.
 
 Incorrect:
 ```php
-throw new OrderException('Order failed.', [], 422);
-```
-
-Correct (declare on the class):
-```php
-class OrderException extends BaseApiException
+class OrderNotFoundException extends BaseApiException
 {
-    protected int    $status  = Response::HTTP_UNPROCESSABLE_ENTITY;
-    protected string $message = 'Order validation failed.';
-}
-
-// Throw without arguments:
-throw new OrderException;
-
-// Or with a one-off override:
-throw new OrderException('Custom message for this specific case.');
-```
-
-## Field-Level Errors
-
-Use the `errors` constructor argument to attach structured field errors — mirrors `ValidationException`:
-
-```php
-throw new OrderValidationException(
-    errors: ['quantity' => ['Must be at least 1.']],
-);
-
-// Response:
-// {
-//   "message": "Order validation failed.",
-//   "errors": { "quantity": ["Must be at least 1."] }
-// }
-```
-
-## Enrich Log Context — Override `context()`, Not `report()`
-
-`context()` is merged into the log entry automatically. Use it to add domain fields.
-
-Incorrect:
-```php
-public function report(): void
-{
-    Log::error('Order failed', ['order_id' => $this->orderId]);
+    public function render(): JsonResponse
+    {
+        return response()->json([
+            'message' => $this->getMessage(),
+            'exception_id' => Str::uuid(),  // wrong — not a fatal
+        ], 404);
+    }
 }
 ```
 
-Correct:
-```php
-public function context(): array
-{
-    return array_merge(parent::context(), [
-        'order_id' => $this->orderId,
-    ]);
-}
-```
-
-Override `report()` only when you need a non-default reporting channel (Slack, Sentry, PagerDuty).
-
-## `render()` Is Already Handled — Never Override It
-
-`BaseApiException::render()` produces the standard envelope automatically:
-
-```json
-{ "message": "...", "errors": {} }
-```
-
-Overriding `render()` breaks the envelope contract. Do not override it.
-
-## `exception_id` — Only on Fatal Fallback (Layer 3)
-
-`exception_id` (a UUID) appears only in 500 responses produced by the `ExceptionRenderer` fatal fallback — i.e., for `Throwable` exceptions that are not `BaseApiException` subclasses and not matched by any specific renderer.
-
-`BaseApiException` subclasses render themselves and never receive an `exception_id`. Do not add one manually.
-
-## Framework Exceptions Are Handled Automatically
-
-The `ExceptionRenderer` (registered in `CoreFoundationServiceProvider`) already handles these — do not catch or re-render them in controllers:
-
-| Exception | Status |
-|---|---|
-| `ValidationException` | 422 |
-| `ModelNotFoundException` | 404 |
-| `NotFoundHttpException` | 404 |
-| `MethodNotAllowedHttpException` | 405 |
-| `AuthenticationException` | 401 |
-| `AuthorizationException` | 403 |
-| `QueryException` | 400 |
-| `HttpException` | exception's status |
-| `Throwable` (fatal) | 500 + `exception_id` |
-
-## Do Not Catch Exceptions in Controllers Unnecessarily
-
-`BaseController::handleException()` exists for the cases where you must catch — delegate to it, never log directly.
-
-Incorrect:
-```php
-try {
-    $this->service->place($data);
-} catch (Throwable $e) {
-    Log::error('Failed', ['error' => $e->getMessage()]);
-    return response()->json(['message' => 'Error'], 500);
-}
-```
-
-Correct — let the exception bubble:
-```php
-$result = $this->service->place($data);
-return $this->createdResponse('Order placed.', new OrderResource($result));
-```
-
-Or delegate to `handleException()` only when you need to add context to a caught exception:
-```php
-try {
-    $this->externalApi->charge($order);
-} catch (Throwable $e) {
-    $this->handleException($e); // logs with context, re-throws or renders
-}
-```
+Correct: inherit the default `render()` from `BaseApiException` — it omits `exception_id` automatically.

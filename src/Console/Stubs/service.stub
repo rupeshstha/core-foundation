@@ -2,9 +2,40 @@
 
 namespace {{ namespace }}\Services;
 
+use Illuminate\Database\Eloquent\Model;
 use CoreFoundation\Services\BaseService;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use {{ namespace }}\Repositories\{{ class }}Repository;
 
 class {{ class }}Service extends BaseService
 {
-    //
+    public function __construct(
+        private readonly {{ class }}Repository $repository,
+    ) {}
+
+    public function fetchAll(array $criteria = []): Collection|LengthAwarePaginator
+    {
+        return $this->repository->fetchAll($criteria);
+    }
+
+    public function fetchById(int|string $id): Model
+    {
+        return $this->repository->fetchById($id);
+    }
+
+    public function create(array $attributes): Model
+    {
+        return $this->repository->create($attributes);
+    }
+
+    public function update(int|string $id, array $attributes): Model
+    {
+        return $this->repository->update($id, $attributes);
+    }
+
+    public function delete(int|string $id): bool
+    {
+        return $this->repository->delete($id);
+    }
 }

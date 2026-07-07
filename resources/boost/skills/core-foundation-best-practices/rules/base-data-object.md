@@ -1,8 +1,8 @@
-# BaseDataObject Rules
+# BaseDataObject (DTO) Best Practices
 
-## Namespace — Always `CoreFoundation\Manipulators`
+## Correct Namespace
 
-The correct namespace is `CoreFoundation\Manipulators\BaseDataObject`, not `CoreFoundation\DataObjects`.
+The class lives in `CoreFoundation\Manipulators`, not `CoreFoundation\DataObjects`.
 
 Incorrect:
 ```php
@@ -14,103 +14,57 @@ Correct:
 use CoreFoundation\Manipulators\BaseDataObject;
 ```
 
-## Role — Output Side Only
+## Pattern A — One-Off Results
 
-`BaseDataObject` carries service output. `BaseRequest` carries inbound request data. Never use `BaseDataObject` as an input carrier.
-
-```
-BaseRequest    → validates inbound data (input side)
-BaseDataObject → carries service output to controller (output side)
-```
-
-## Pattern A — Generic (Quick, No Subclass)
-
-Use for one-off or simple results where the shape doesn't need to be shared:
+Use `fromArray()` directly when the shape is only needed in one place:
 
 ```php
-// In a service method:
-return BaseDataObject::fromArray($order->toArray());
-
-// From an Arrayable (Eloquent model, Collection, etc.):
-return BaseDataObject::fromArrayable($order);
+public function create(array $data): BaseDataObject
+{
+    $order = Order::create($data);
+    return BaseDataObject::fromArray($order->toArray());
+}
 ```
 
-## Pattern B — Typed Readonly DTO (Recommended for Stable Shapes)
+## Pattern B — Stable Shared Shapes
 
-Use for all shared, stable response shapes. Provides type safety, IDE autocompletion, and API doc generation.
+Use typed `readonly` properties when the DTO is shared across services, resources, or events:
 
 ```php
-use CoreFoundation\Manipulators\BaseDataObject;
-use CoreFoundation\DataObjects\Attributes\ApiResponse;
-use CoreFoundation\DataObjects\Attributes\Property;
-
-#[ApiResponse(description: 'The placed order.', status: 201, tags: ['Orders'])]
-final class PlaceOrderData extends BaseDataObject
+final readonly class OrderData extends BaseDataObject
 {
     public function __construct(
-        #[Property(type: 'integer', description: 'Order ID.', example: 42)]
-        public readonly int $orderId,
+        #[Property(description: 'Order ID')]
+        public int $id,
 
-        #[Property(type: 'string', description: 'Order status.', example: 'pending')]
-        public readonly string $status,
-
-        #[Property(type: 'number', description: 'Order total.', example: 99.99)]
-        public readonly float $total,
+        #[Property(description: 'Current status')]
+        public string $status,
     ) {
-        parent::__construct([       // required — populates the Fluent bag
-            'order_id' => $orderId,
-            'status'   => $status,
-            'total'    => $total,
-        ]);
+        parent::__construct(['id' => $id, 'status' => $status]);
     }
 
     public static function fromArray(array $data): static
     {
-        return new static(
-            orderId: (int)    data_get($data, 'id'),
-            status:  (string) data_get($data, 'status'),
-            total:   (float)  data_get($data, 'total'),
-        );
+        return new static(id: $data['id'], status: $data['status']);
     }
 }
 ```
 
-## Always Call `parent::__construct()` in Typed DTOs
+## DTOs Are the Output Side — `BaseRequest` Is the Input Side
 
-Forgetting `parent::__construct([...])` means the Fluent bag is empty — `get()`, `toArray()`, `only()` etc. won't work correctly.
+Never use a DTO for request validation. Never use a `BaseRequest` as a return type.
 
 Incorrect:
 ```php
-public function __construct(
-    public readonly int $orderId,
-    public readonly string $status,
-) {
-    // parent::__construct() missing — Fluent bag is empty
+public function create(OrderData $dto): OrderData
+{
+    // if $dto came from a form submission, validation was skipped
 }
 ```
 
 Correct:
 ```php
-public function __construct(
-    public readonly int $orderId,
-    public readonly string $status,
-) {
-    parent::__construct(['order_id' => $orderId, 'status' => $status]);
-}
+// Input validation: BaseRequest
+// Business logic: service receives $request->validated() or a typed DTO from the controller
+// Output: BaseDataObject subclass returned by the service
 ```
-
-## `#[ApiResponse]` and `#[Property]` Attributes
-
-Add to all stable, shared DTOs for future API doc generation:
-
-- `#[ApiResponse]` on the class — HTTP status, description, tags
-- `#[Property]` on each `readonly` property — type, description, example, required, enum, format
-
-## Fluent API (Inherited — No Re-implementation Needed)
-
-| Category | Methods |
-|---|---|
-| Read | `get()`, `integer()`, `float()`, `boolean()`, `string()`, `collect()` |
-| Check | `has()`, `filled()`, `missing()`, `isEmpty()`, `when()`, `unless()` |
-| Write | `set()`, `fill()` |
-| Output | `toArray()`, `toJson()`, `all()`, `only()`, `except()` |

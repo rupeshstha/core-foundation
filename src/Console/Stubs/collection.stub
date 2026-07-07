@@ -6,5 +6,7 @@ use CoreFoundation\Transformers\BaseCollection;
 
 class {{ class }}Collection extends BaseCollection
 {
-    public string $collects = {{ class }}Resource::class;
+    // Note: no type annotation — ResourceCollection::$collects is untyped in Laravel
+    // and PHP forbids adding a type in a subclass.
+    public $collects = {{ class }}Resource::class;
 }

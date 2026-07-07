@@ -52,6 +52,7 @@ final readonly class MethodMetrics
         return class_basename($this->class).'::'.$this->method;
     }
 
+    /** @return array<string, string|int> */
     public function toArray(): array
     {
         return [

@@ -13,15 +13,20 @@ use Illuminate\Support\Facades\Cache;
  * ┌─────────────────────────────────────────────────────────────────────────────┐
  * │ DRIVER REQUIREMENT                                                          │
  * │                                                                             │
- * │ Every built-in Laravel cache driver supports tags (file, database, array,   │
- * │ redis, memcached) — all extend TaggableStore.                               │
+ * │ Only array, redis, and memcached support Cache::tags() — confirmed against  │
+ * │ Laravel's own store classes. file and database define no tags() method at   │
+ * │ all and throw BadMethodCallException the moment any of these helpers run.   │
  * │                                                                             │
  * │ Redis and Memcached track tags natively server-side — flush() is O(1)       │
  * │ regardless of how many keys share the tag.                                  │
  * │                                                                             │
- * │ File, database, and array drivers emulate tags via a version-bumped         │
- * │ TagSet — correct, but never use them for tag-based caching in production.   │
- * │ Set CACHE_DRIVER=redis in your .env for production workloads.               │
+ * │ array emulates tags via a version-bumped TagSet — correct for tests, never  │
+ * │ for production (not shared across processes/workers).                       │
+ * │ Set CACHE_STORE=redis in your .env for production workloads.                │
+ * │                                                                             │
+ * │ CoreFoundationServiceProvider checks config('cache.default') at boot and    │
+ * │ throws a clear, actionable exception if it isn't tag-capable — you will     │
+ * │ never see this fail confusingly deep inside Laravel's cache internals.      │
  * └─────────────────────────────────────────────────────────────────────────────┘
  *
  * ┌─────────────────────────────────────────────────────────────────────────────┐

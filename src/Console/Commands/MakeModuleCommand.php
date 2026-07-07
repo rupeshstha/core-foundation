@@ -64,10 +64,6 @@ class MakeModuleCommand extends Command
 
     private const CUSTOM_PRESET = ['service', 'data-object', 'test'];
 
-    // =========================================================================
-    // Handle
-    // =========================================================================
-
     public function handle(): int
     {
         $name = $this->resolveName();

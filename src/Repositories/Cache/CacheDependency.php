@@ -10,7 +10,9 @@ use CoreFoundation\Entities\BaseModel;
  * Builds repository-compatible dependency tag strings for service-layer caching.
  *
  * This is the bridge between the Repository layer (which owns the data) and
- * the Service layer (which computes expensive results).
+ * the Service layer (which computes expensive results). Delegates to
+ * CacheKeyBuilder for the actual tag format — never re-derive the string here,
+ * or this and the repository's own tags will silently drift apart.
  *
  * ┌─────────────────────────────────────────────────────────────────────────────┐
  * │ USAGE                                                                       │
@@ -33,13 +35,11 @@ use CoreFoundation\Entities\BaseModel;
 final class CacheDependency
 {
     /**
-     * Dependency on a listing tier (any change to the model in scope busts it).
+     * Dependency on the listing tier (any change to the model in scope busts it).
      */
-    public static function onModel(BaseModel $model, ?CacheScope $scope = null): string
+    public static function onListing(BaseModel $model, ?CacheScope $scope = null): string
     {
-        $prefix = $scope ? "{$scope->prefix()}:" : '';
-
-        return "{$prefix}{$model->getTable()}:listing";
+        return (new CacheKeyBuilder)->buildListingTag($model, $scope);
     }
 
     /**
@@ -47,9 +47,7 @@ final class CacheDependency
      */
     public static function onRecord(BaseModel $model, int|string $id, ?CacheScope $scope = null): string
     {
-        $prefix = $scope ? "{$scope->prefix()}:" : '';
-
-        return "{$prefix}{$model->getTable()}:record:{$id}";
+        return (new CacheKeyBuilder)->buildRecordTag($model, $id, $scope);
     }
 
     /**

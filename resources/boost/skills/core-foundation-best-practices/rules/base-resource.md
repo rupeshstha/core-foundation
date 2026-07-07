@@ -1,14 +1,14 @@
-# BaseResource & BaseCollection Rules
+# BaseResource & BaseCollection Best Practices
 
-## Override `fields()`, Never `toArray()`
+## Override `fields()` — Never `toArray()`
 
-`toArray()` is `final` — it enforces the field pipeline. Override `fields()` to define the base field map.
+`toArray()` is `final` — it drives the modular field pipeline. Overriding it disables `addField()` / `removeField()` for the entire codebase.
 
 Incorrect:
 ```php
 public function toArray(Request $request): array
 {
-    return ['id' => $this->id];
+    return ['id' => $this->id, 'status' => $this->status];
 }
 ```
 
@@ -16,105 +16,52 @@ Correct:
 ```php
 protected function fields(Request $request): array
 {
-    return [
-        'id'     => $this->resource->id,
-        'status' => $this->resource->status,
-        'total'  => $this->resource->total,
-        'user'   => new UserResource($this->whenLoaded('user')),
-    ];
+    return ['id' => $this->id, 'status' => $this->status];
 }
 ```
 
-## Timestamps — Opt In Inside `fields()`
+## Extend from a ServiceProvider — Never Edit Another Module's Resource
+
+`removeField()` always runs last — it wins regardless of registration order.
+
+```php
+// In PrivacyServiceProvider::boot():
+UserResource::removeField('email');   // strips PII for this region
+
+// In AnalyticsServiceProvider::boot():
+UserResource::addField('segment', fn ($user) => $user->segment_id);
+```
+
+## `BaseCollection` — Declare `$collects` Without a Type Annotation
+
+`ResourceCollection::$collects` is untyped in Laravel. Adding a type annotation in a subclass is a fatal PHP error.
+
+Incorrect:
+```php
+class OrderCollection extends BaseCollection
+{
+    public string $collects = OrderResource::class;  // fatal: cannot add type to untyped parent
+}
+```
+
+Correct:
+```php
+class OrderCollection extends BaseCollection
+{
+    // No type annotation — ResourceCollection::$collects is untyped in Laravel.
+    public $collects = OrderResource::class;
+}
+```
+
+## Use `withTimestamps()` on Model-Backed Resources
 
 ```php
 protected function fields(Request $request): array
 {
     return $this->withTimestamps([
-        'id'    => $this->resource->id,
-        'total' => $this->resource->total,
+        'id'     => $this->id,
+        'status' => $this->status,
     ]);
+    // Appends 'created_at' and 'updated_at' in ISO 8601 format
 }
-```
-
-`withTimestamps()` appends `created_at` and `updated_at` in ISO 8601 format.
-
-## Modular Extension — Always from ServiceProvider
-
-Module B never edits Module A's resource source. All field changes are registered from a ServiceProvider.
-
-Incorrect (editing another module's resource):
-```php
-// Inside OrderResource::fields():
-'subscription_plan' => $this->resource->subscription?->plan_code, // wrong
-```
-
-Correct (from SubscriptionServiceProvider):
-```php
-protected function extendResources(): void
-{
-    $this->resource(OrderResource::class)
-        ->field('subscription_plan', fn ($order, $req) => $order->subscription?->plan_code)
-        ->remove('internal_cost');
-}
-```
-
-## Field Pipeline Order
-
-1. `fields()` — base definition
-2. `addField()` additions / overrides — same key replaces base value
-3. `removeField()` exclusions — always wins, applied last
-
-An `addField()` with the same key as a `fields()` key replaces the base value. `removeField()` wins over both.
-
-## BaseCollection — Always Declare `$collects`
-
-No naming-convention magic. Always explicit. Missing `$collects` throws `LogicException` at construction time.
-
-Incorrect:
-```php
-final class OrderCollection extends BaseCollection
-{
-    // $collects not declared — throws LogicException
-}
-```
-
-Correct:
-```php
-final class OrderCollection extends BaseCollection
-{
-    public string $collects = OrderResource::class;
-}
-```
-
-## `$wrap = null` — The Envelope Belongs to the Controller
-
-Both `BaseResource` and `BaseCollection` have `$wrap = null`. Never change this. The envelope wrapping is `BaseController`'s responsibility.
-
-## Conditional Fields
-
-Laravel's `$this->when()`, `$this->whenLoaded()`, `$this->mergeWhen()` all work inside `fields()`:
-
-```php
-protected function fields(Request $request): array
-{
-    return [
-        'id'      => $this->resource->id,
-        'user'    => new UserResource($this->whenLoaded('user')),
-        'summary' => $this->when($request->has('summary'), fn () => $this->buildSummary()),
-    ];
-}
-```
-
-## Using in Controllers
-
-```php
-// Single resource
-return $this->successResponse('Order retrieved.', new OrderResource($result));
-
-// Paginated collection
-return $this->paginatedResponse('Orders fetched.', new OrderCollection($paginator));
-
-// Non-paginated collection
-return $this->successResponse('Orders fetched.', new OrderCollection($orders));
 ```

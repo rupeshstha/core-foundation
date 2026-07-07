@@ -1,12 +1,8 @@
-# BaseController Rules
+# BaseController Best Practices
 
-## Always Extend BaseController
+## Use Envelope Helpers — Never `response()->json()`
 
-Every API controller must extend `CoreFoundation\Http\Controllers\BaseController`. Never extend Laravel's `Controller` directly.
-
-## Response Helpers — Never `response()->json()`
-
-Use the envelope helpers exclusively. Never call `response()->json()` in a controller method.
+`response()->json()` bypasses the envelope and breaks agent/client parsing.
 
 Incorrect:
 ```php
@@ -15,22 +11,22 @@ return response()->json(['data' => $order], 200);
 
 Correct:
 ```php
-return $this->successResponse(message: 'Order retrieved.', payload: new OrderResource($order));   // 200
-return $this->createdResponse(message: 'Order created.', payload: new OrderResource($order));    // 201
-return $this->paginatedResponse(message: 'Orders fetched.', payload: new OrderCollection($page)); // 200
-return $this->noContentResponse();                                                                // 204
+return $this->successResponse(payload: new OrderResource($order));    // 200
+return $this->createdResponse(payload: new OrderResource($order));    // 201
+return $this->noContentResponse();                                    // 204
+return $this->paginatedResponse($paginator);                          // 200 + pagination meta
 ```
 
-## Exception Handling — Always Use `handleException()`
+## Wrap Every Service Call with `handleException()`
 
-Wrap every service and repository call in `try/catch (Throwable $e)` and delegate to `handleException()`. It generates a UUID, logs with context, and returns 500.
+`handleException()` is Layer 3 — the last-resort safety net. Every call to a service or repository needs it.
 
 Incorrect (no safety net):
 ```php
 public function store(StoreOrderRequest $request): JsonResponse
 {
-    $result = $this->service->place($request->validated());
-    return $this->createdResponse('Order created.', new OrderResource($result));
+    $result = $this->service->create($request->validated());
+    return $this->createdResponse(payload: new OrderResource($result));
 }
 ```
 
@@ -39,21 +35,21 @@ Correct:
 public function store(StoreOrderRequest $request): JsonResponse
 {
     try {
-        $result = $this->service->place($request->validated());
+        $result = $this->service->create($request->validated());
     } catch (Throwable $e) {
         return $this->handleException($e);
     }
 
     return $this->createdResponse(
-        message: $this->lang('create-success'),
+        message: $this->lang('created'),
         payload: new OrderResource($result),
     );
 }
 ```
 
-## Never Catch Specific Exceptions in Controllers
+## Never Catch Specific Exceptions in a Controller
 
-Domain exceptions implement `render()` — Laravel calls it automatically. There is no reason to catch them in a controller.
+Domain exceptions implement `render()` — Laravel calls it automatically. A controller catch-block is redundant and duplicates the rendering logic.
 
 Incorrect:
 ```php
@@ -71,48 +67,43 @@ Correct:
 try {
     $order = $this->service->find($id);
 } catch (Throwable $e) {
-    return $this->handleException($e); // only for unexpected exceptions
+    return $this->handleException($e);  // OrderNotFoundException renders itself automatically
 }
 ```
 
-`OrderNotFoundException` (a `BaseApiException` subclass) is rendered by Layer 1/2 automatically.
+## Translation via `$this->lang()`
+
+`$this->lang('key')` resolves to `trans('{prefix}.key')`. Prefix defaults to the controller name minus `Controller` in kebab-case (`OrderController` → `order`).
+
+```php
+// resources/lang/en/order.php
+return ['created' => 'Order created.', 'deleted' => 'Order deleted.'];
+
+// In controller:
+return $this->createdResponse(message: $this->lang('created'), payload: new OrderResource($result));
+```
+
+Override `langPrefix()` if the default doesn't fit.
 
 ## Standard Controller Structure
 
 ```php
-use CoreFoundation\Http\Controllers\BaseController;
-
 final class OrderController extends BaseController
 {
     public function __construct(
-        private readonly OrderService    $service,
-        private readonly OrderRepository $repository,
+        private readonly OrderService $service,
     ) {}
-
-    public function index(Request $request): JsonResponse
-    {
-        try {
-            $orders = $this->repository->fetchAll($request->query());
-        } catch (Throwable $e) {
-            return $this->handleException($e);
-        }
-
-        return $this->paginatedResponse(
-            message: $this->lang('fetch-success'),
-            payload: new OrderCollection($orders),
-        );
-    }
 
     public function store(StoreOrderRequest $request): JsonResponse
     {
         try {
-            $result = $this->service->place($request->validated());
+            $result = $this->service->create($request->validated());
         } catch (Throwable $e) {
             return $this->handleException($e);
         }
 
         return $this->createdResponse(
-            message: $this->lang('create-success'),
+            message: $this->lang('created'),
             payload: new OrderResource($result),
         );
     }
@@ -129,38 +120,5 @@ final class OrderController extends BaseController
 
         return $this->noContentResponse();
     }
-}
-```
-
-## Translation via `HasLang`
-
-`$this->lang('key')` resolves to `trans('{prefix}.key')`. The prefix defaults to the controller's snake-case name minus `Controller` (e.g., `OrderController` → `order`).
-
-```php
-// lang/en/order.php
-return [
-    'fetch-success'  => 'Orders fetched successfully.',
-    'create-success' => 'Order created successfully.',
-    'update-success' => 'Order updated successfully.',
-    'delete-success' => 'Order deleted successfully.',
-];
-```
-
-Override `langPrefix()` if the default doesn't fit.
-
-## Extending the Exception Map
-
-Override `knownExceptions()` only when `handleException()` needs to map a specific exception to a non-500 status in this controller:
-
-```php
-protected function knownExceptions(): array
-{
-    return array_merge(parent::knownExceptions(), [
-        InsufficientInventoryException::class => [
-            'status'  => 422,
-            'message' => 'Insufficient inventory for this order.',
-            'errors'  => [],
-        ],
-    ]);
 }
 ```

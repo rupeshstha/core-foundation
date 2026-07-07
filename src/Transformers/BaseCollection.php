@@ -22,9 +22,9 @@ use Illuminate\Http\Resources\Json\ResourceCollection;
  *
  *   return $this->successResponse('Users fetched.', new UserCollection($users));
  *
- * In a controller — paginated:
+ * In a controller — paginated (pass the raw paginator, NOT wrapped in a Collection):
  *
- *   return $this->paginatedResponse('Users fetched.', new UserCollection($paginator));
+ *   return $this->paginatedResponse($paginator, 'Users fetched.');
  *
  * Add computed collection-level fields (override toArray() only for this):
  *
@@ -58,7 +58,9 @@ abstract class BaseCollection extends ResourceCollection
     {
         if (! isset($this->collects)) {
             throw new LogicException(
-                static::class.' must declare: public string $collects = YourResource::class;'
+                static::class.' must declare: public $collects = YourResource::class;'
+                .' Note: the string type annotation is intentionally omitted — '
+                .'ResourceCollection::$collects is untyped and PHP forbids adding a type in a subclass.'
             );
         }
 
