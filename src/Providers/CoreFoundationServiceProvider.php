@@ -13,6 +13,7 @@ use CoreFoundation\Console\Commands\GenerateApiDocs;
 use CoreFoundation\Console\Commands\MakeModuleCommand;
 use CoreFoundation\Repositories\Cache\RepositoryCache;
 use CoreFoundation\Repositories\Cache\CacheBustCollector;
+use CoreFoundation\Repositories\Cache\CacheReadCollector;
 use CoreFoundation\Support\Maintenance\MaintenanceManager;
 use CoreFoundation\Repositories\Cache\CacheWarmingRegistry;
 
@@ -82,8 +83,12 @@ class CoreFoundationServiceProvider extends ServiceProvider
         // RepositoryCache (writer) and AttachCacheHeaders middleware (reader).
         $this->app->scoped(CacheBustCollector::class);
 
-        // Scoped to ensure RepositoryCache shares the same CacheBustCollector instance
-        // as the middleware within the same request lifecycle.
+        // CacheReadCollector mirrors CacheBustCollector — scoped for identical reason:
+        // same instance shared between RepositoryCache (recorder) and AttachReadTags (reader).
+        $this->app->scoped(CacheReadCollector::class);
+
+        // Scoped to ensure RepositoryCache shares the same collector instances
+        // as the middlewares within the same request lifecycle.
         $this->app->scoped(RepositoryCache::class);
 
         $this->app->singleton(CacheWarmingRegistry::class);

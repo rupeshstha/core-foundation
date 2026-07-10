@@ -55,6 +55,26 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Cache Headers
+    |--------------------------------------------------------------------------
+    |
+    | Controls the header name and separator used by AttachReadTags middleware
+    | when emitting read-side cache tags to the frontend.
+    |
+    | surrogate_key_header    — Default 'Surrogate-Key' (Fastly/Varnish/Nginx).
+    |                           CloudFront uses 'Cache-Tag' (comma-separated).
+    | surrogate_key_separator — Separator between tags. Space for Fastly/Varnish,
+    |                           comma for CloudFront.
+    |
+    */
+
+    'cdn' => [
+        'surrogate_key_header'    => env('CDN_SURROGATE_KEY_HEADER', 'Surrogate-Key'),
+        'surrogate_key_separator' => env('CDN_SURROGATE_KEY_SEPARATOR', ' '),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Notifications
     |--------------------------------------------------------------------------
     |

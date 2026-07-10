@@ -18,6 +18,7 @@ final class RepositoryCache
         private readonly CacheKeyBuilder $keyBuilder,
         private readonly RelationTagResolver $tagResolver,
         private readonly CacheBustCollector $bustCollector,
+        private readonly CacheReadCollector $readCollector,
     ) {
         $this->globallyEnabled = (bool) config('core-foundation.cache.global', true);
         $this->ttl = (int) config('core-foundation.cache.cache_ttl', 3600);
@@ -54,6 +55,8 @@ final class RepositoryCache
         $key = $this->keyBuilder->build($model, $method, $criteria, $relations, $columns, $extra, $scope);
         $tags = $this->buildTags($model, $relations, $queryType, $recordId, $scope);
 
+        $this->readCollector->record($tags);
+
         return $this->cacheTtl($tags, $key, $this->ttl, $callback);
     }
 
@@ -68,7 +71,7 @@ final class RepositoryCache
      */
     public function flushModel(Model $model, ?CacheScope $scope = null): void
     {
-        $tag = $this->keyBuilder->buildListingTag($model, $scope);
+        $tag        = $this->keyBuilder->buildListingTag($model, $scope);
         $relatedTag = $this->keyBuilder->buildRelatedTag($model, $scope);
 
         $this->bustCache([$tag, $relatedTag]);
@@ -94,7 +97,7 @@ final class RepositoryCache
      */
     public function flushRecord(Model $model, int|string $id, ?CacheScope $scope = null): void
     {
-        $recordTag = $this->keyBuilder->buildRecordTag($model, $id, $scope);
+        $recordTag  = $this->keyBuilder->buildRecordTag($model, $id, $scope);
         $listingTag = $this->keyBuilder->buildListingTag($model, $scope);
         $relatedTag = $this->keyBuilder->buildRelatedTag($model, $scope);
 
@@ -113,8 +116,9 @@ final class RepositoryCache
      */
     public function flushAll(Model $model, ?CacheScope $scope = null): void
     {
-        $baseTag = $this->keyBuilder->buildBaseTag($model, $scope);
+        $baseTag    = $this->keyBuilder->buildBaseTag($model, $scope);
         $relatedTag = $this->keyBuilder->buildRelatedTag($model, $scope);
+
         $this->bustCache([$baseTag, $relatedTag]);
         $this->bustCollector->record([$baseTag, $relatedTag]);
     }
@@ -123,8 +127,8 @@ final class RepositoryCache
      * Build the tag set for a cached query.
      *
      * Tags stored on the entry determine which flush operations invalidate it:
-     *   baseTag     — flushAll() busts everything for this model+scope
-     *   primaryTag  — flushModel()/flushRecord() busts by tier
+     *   baseTag      — flushAll() busts everything for this model+scope
+     *   primaryTag   — flushModel()/flushRecord() busts by tier
      *   relationTags — a write to an eager-loaded related model also busts this entry
      *
      * @return non-empty-array<string>
@@ -140,7 +144,7 @@ final class RepositoryCache
 
         $primaryTag = match ($queryType) {
             QueryType::Listing => $this->keyBuilder->buildListingTag($model, $scope),
-            QueryType::Record => $recordId !== null
+            QueryType::Record  => $recordId !== null
                 ? $this->keyBuilder->buildRecordTag($model, $recordId, $scope)
                 : $this->keyBuilder->buildListingTag($model, $scope),
         };
