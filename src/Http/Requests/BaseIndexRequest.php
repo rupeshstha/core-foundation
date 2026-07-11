@@ -42,7 +42,7 @@ namespace CoreFoundation\Http\Requests;
  * │   ?per_page=50                                                              │
  * └─────────────────────────────────────────────────────────────────────────────┘
  */
-abstract class BaseIndexRequest extends BaseRequest
+class BaseIndexRequest extends BaseRequest
 {
     protected function baseRules(): array
     {
