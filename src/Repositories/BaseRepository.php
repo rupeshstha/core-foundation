@@ -539,6 +539,98 @@ abstract class BaseRepository implements RepositoryContract
         return $result;
     }
 
+    public function getByCriteria(
+        array $criteria = [],
+        array $relations = [],
+        array $columns = ['*'],
+    ): Collection {
+        $shouldCache = $this->isCached(__FUNCTION__) && ! $this->bypassCache;
+        $bypass = $this->bypassCache;
+        $this->bypassCache = false;
+        $pendingScopes = $this->pendingScopes;
+        $this->pendingScopes = [];
+        $relations = array_values(array_unique(array_merge($relations, $this->pendingRelations)));
+        $this->pendingRelations = [];
+
+        $result = $this->cache->remember(
+            model: $this->model,
+            method: __FUNCTION__,
+            criteria: $criteria,
+            relations: $relations,
+            columns: $columns,
+            extra: ['scopes' => $pendingScopes],
+            shouldCache: $shouldCache,
+            queryType: QueryType::Listing,
+            scope: $this->cacheScope(),
+            callback: function () use ($criteria, $relations, $columns, $pendingScopes) {
+                /** @var Builder<Model> $query */
+                $query = $this->model->newQuery();
+                $query->select($columns);
+
+                $this->applyLock($query);
+
+                if ($relations) {
+                    $query->with($relations);
+                }
+
+                $this->filterApplicator->apply($query, $criteria['filters'] ?? [], $this->searchable());
+                $this->sortApplicator->apply($query, $criteria['sort'] ?? [], $this->sortable());
+                $this->scopeApplicator->apply($query, $criteria['scopes'] ?? [], $this->resolveScopeable());
+                $this->applyScope($query, $pendingScopes);
+
+                return $query->get();
+            },
+        );
+
+        return $result;
+    }
+
+    public function firstByCriteria(
+        array $criteria = [],
+        array $relations = [],
+        array $columns = ['*'],
+    ): ?Model {
+        $shouldCache = $this->isCached(__FUNCTION__) && ! $this->bypassCache;
+        $bypass = $this->bypassCache;
+        $this->bypassCache = false;
+        $pendingScopes = $this->pendingScopes;
+        $this->pendingScopes = [];
+        $relations = array_values(array_unique(array_merge($relations, $this->pendingRelations)));
+        $this->pendingRelations = [];
+
+        $result = $this->cache->remember(
+            model: $this->model,
+            method: __FUNCTION__,
+            criteria: $criteria,
+            relations: $relations,
+            columns: $columns,
+            extra: ['scopes' => $pendingScopes],
+            shouldCache: $shouldCache,
+            queryType: QueryType::Record,
+            scope: $this->cacheScope(),
+            callback: function () use ($criteria, $relations, $columns, $pendingScopes) {
+                /** @var Builder<Model> $query */
+                $query = $this->model->newQuery();
+                $query->select($columns);
+
+                $this->applyLock($query);
+
+                if ($relations) {
+                    $query->with($relations);
+                }
+
+                $this->filterApplicator->apply($query, $criteria['filters'] ?? [], $this->searchable());
+                $this->sortApplicator->apply($query, $criteria['sort'] ?? [], $this->sortable());
+                $this->scopeApplicator->apply($query, $criteria['scopes'] ?? [], $this->resolveScopeable());
+                $this->applyScope($query, $pendingScopes);
+
+                return $query->first();
+            },
+        );
+
+        return $result;
+    }
+
     public function count(array $criteria = []): int
     {
         $shouldCache = $this->isCached(__FUNCTION__)
