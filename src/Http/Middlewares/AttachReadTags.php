@@ -22,7 +22,7 @@ final class AttachReadTags
         }
 
         $headerName = (string) config('core-foundation.cdn.surrogate_key_header', 'Surrogate-Key');
-        $separator  = (string) config('core-foundation.cdn.surrogate_key_separator', ' ');
+        $separator = (string) config('core-foundation.cdn.surrogate_key_separator', ' ');
 
         $response->headers->set(
             $headerName,

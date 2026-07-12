@@ -2,22 +2,22 @@
 
 namespace CoreFoundation\Tests\Unit\Http\Controllers;
 
+use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use CoreFoundation\Tests\PackageTestCase;
+use CoreFoundation\Transformers\BaseResource;
 use Symfony\Component\HttpFoundation\Response;
 use CoreFoundation\Exceptions\BaseApiException;
+use CoreFoundation\Transformers\BaseCollection;
 use Illuminate\Pagination\LengthAwarePaginator;
 use CoreFoundation\Http\Controllers\BaseController;
-use CoreFoundation\Transformers\BaseResource;
-use CoreFoundation\Transformers\BaseCollection;
-use Illuminate\Http\Request;
 
 class StubUserResource extends BaseResource
 {
     public function fields(Request $request): array
     {
         return [
-            'id'   => $this->resource['id'],
+            'id' => $this->resource['id'],
             'name' => $this->resource['name'],
         ];
     }

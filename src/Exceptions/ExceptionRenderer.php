@@ -259,7 +259,7 @@ final class ExceptionRenderer
             'user_id' => $request->user()?->getAuthIdentifier(),
             'body' => self::redactSensitiveFields(
                 $request->isJson()
-                    ? (array_filter($request->json()->all(), fn ($requestData) => !in_array($requestData, self::REDACTED_FIELDS)) ?? [])
+                    ? array_filter($request->json()->all(), fn ($requestData) => ! in_array($requestData, self::REDACTED_FIELDS, true))
                     : $request->except(self::REDACTED_FIELDS),
             ),
         ];

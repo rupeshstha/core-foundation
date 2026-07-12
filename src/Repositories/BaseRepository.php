@@ -539,6 +539,12 @@ abstract class BaseRepository implements RepositoryContract
         return $result;
     }
 
+    /**
+     * @param  array<string, mixed>  $criteria
+     * @param  array<int, string>  $relations
+     * @param  array<int, string>  $columns
+     * @return Collection<int, Model>
+     */
     public function getByCriteria(
         array $criteria = [],
         array $relations = [],
@@ -585,6 +591,11 @@ abstract class BaseRepository implements RepositoryContract
         return $result;
     }
 
+    /**
+     * @param  array<string, mixed>  $criteria
+     * @param  array<int, string>  $relations
+     * @param  array<int, string>  $columns
+     */
     public function firstByCriteria(
         array $criteria = [],
         array $relations = [],

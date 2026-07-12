@@ -71,7 +71,7 @@ final class RepositoryCache
      */
     public function flushModel(Model $model, ?CacheScope $scope = null): void
     {
-        $tag        = $this->keyBuilder->buildListingTag($model, $scope);
+        $tag = $this->keyBuilder->buildListingTag($model, $scope);
         $relatedTag = $this->keyBuilder->buildRelatedTag($model, $scope);
 
         $this->bustCache([$tag, $relatedTag]);
@@ -97,7 +97,7 @@ final class RepositoryCache
      */
     public function flushRecord(Model $model, int|string $id, ?CacheScope $scope = null): void
     {
-        $recordTag  = $this->keyBuilder->buildRecordTag($model, $id, $scope);
+        $recordTag = $this->keyBuilder->buildRecordTag($model, $id, $scope);
         $listingTag = $this->keyBuilder->buildListingTag($model, $scope);
         $relatedTag = $this->keyBuilder->buildRelatedTag($model, $scope);
 
@@ -116,7 +116,7 @@ final class RepositoryCache
      */
     public function flushAll(Model $model, ?CacheScope $scope = null): void
     {
-        $baseTag    = $this->keyBuilder->buildBaseTag($model, $scope);
+        $baseTag = $this->keyBuilder->buildBaseTag($model, $scope);
         $relatedTag = $this->keyBuilder->buildRelatedTag($model, $scope);
 
         $this->bustCache([$baseTag, $relatedTag]);
@@ -144,7 +144,7 @@ final class RepositoryCache
 
         $primaryTag = match ($queryType) {
             QueryType::Listing => $this->keyBuilder->buildListingTag($model, $scope),
-            QueryType::Record  => $recordId !== null
+            QueryType::Record => $recordId !== null
                 ? $this->keyBuilder->buildRecordTag($model, $recordId, $scope)
                 : $this->keyBuilder->buildListingTag($model, $scope),
         };

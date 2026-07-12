@@ -69,7 +69,7 @@ return [
     */
 
     'cdn' => [
-        'surrogate_key_header'    => env('CDN_SURROGATE_KEY_HEADER', 'Surrogate-Key'),
+        'surrogate_key_header' => env('CDN_SURROGATE_KEY_HEADER', 'Surrogate-Key'),
         'surrogate_key_separator' => env('CDN_SURROGATE_KEY_SEPARATOR', ' '),
     ],
 

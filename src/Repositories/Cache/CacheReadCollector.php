@@ -12,6 +12,7 @@ namespace CoreFoundation\Repositories\Cache;
  */
 final class CacheReadCollector
 {
+    /** @var array<int, string> */
     private array $readTags = [];
 
     /** @var int Cap to prevent HTTP header bloat (~8KB limits in most proxies) */
