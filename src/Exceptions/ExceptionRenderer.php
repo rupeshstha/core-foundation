@@ -6,6 +6,7 @@ use WeakMap;
 use Throwable;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Route;
 use CoreFoundation\Support\Lang;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Database\QueryException;
@@ -245,15 +246,18 @@ final class ExceptionRenderer
      */
     private static function buildRequestContext(Request $request): array
     {
+        $route = $request->route();
+        $route = $route instanceof Route ? $route : null;
+
         $params = array_map(
             static fn ($param) => is_object($param) && method_exists($param, 'getKey') ? $param->getKey() : $param,
-            $request->route()?->parameters() ?? [],
+            $route?->parameters() ?? [],
         );
 
         return [
             'method' => $request->method(),
             'url' => $request->fullUrl(),
-            'route' => $request->route()?->getName(),
+            'route' => $route?->getName(),
             'params' => $params,
             'ip' => $request->ip(),
             'user_id' => $request->user()?->getAuthIdentifier(),
