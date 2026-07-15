@@ -22,7 +22,7 @@ class AuthenticateWithCookie
      */
     public function handle(Request $request, Closure $next): Response
     {
-        $cookieName = config('core-foundation.auth.cookie_name', 'dubdubco_token');
+        $cookieName = config('core-foundation.auth.cookie_name', 'core_foundation_token');
 
         if (! $request->headers->has('Authorization') && $request->hasCookie($cookieName)) {
             $token = $request->cookie($cookieName);

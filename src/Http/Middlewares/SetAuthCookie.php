@@ -29,7 +29,7 @@ class SetAuthCookie
             if ($token) {
                 // Attach the cookie
                 $response->withCookie(cookie(
-                    name: config('core-foundation.auth.cookie_name', 'dubdubco_token'),
+                    name: config('core-foundation.auth.cookie_name', 'core_foundation_token'),
                     value: $token,
                     minutes: config('core-foundation.auth.cookie_ttl', 60 * 24), // 1 day default
                     path: '/',
