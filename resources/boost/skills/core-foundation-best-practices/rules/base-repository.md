@@ -108,17 +108,33 @@ protected function cacheScope(): ?CacheScope
 }
 ```
 
-## `updateQuietly()` — Silent Updates, Used Sparingly
+## `update(..., quiet: true)` — Silent Updates, Same Mechanism as Eloquent
 
-Every normal write path (`create()`, `update()`, `updateAtomic()`, `delete()`) automatically flushes the cache it touches. `updateQuietly()` is the one deliberate exception: it updates a record **without** flushing cache and **without** firing Eloquent model events (`updating`/`updated`, observers, broadcasts).
+Every normal write path (`create()`, `update()`, `updateAtomic()`, `delete()`) automatically flushes the cache it touches. `update()`'s `$quiet` parameter is the one deliberate exception — it does **not** flush cache and does **not** fire Eloquent model events (`updating`/`updated`, observers, broadcasts).
 
-It is not part of `WriteRepositoryContract` — it must be opted into per repository by adding it to that repository's own contract:
+This isn't a bespoke repository mechanism — it's a thin pass-through to `Model::updateQuietly()`, the same method Eloquent itself ships (`saveQuietly()`/`updateQuietly()`/`deleteQuietly()`, all built on `Model::withoutEvents()`). `BaseRepository::update()` just also skips the cache flush to match, since nothing fires to tell the cache layer anything changed:
 
 ```php
-interface UserRepositoryContract extends RepositoryContract
+public function update(int|string $id, array $attributes, bool $quiet = false): Model
 {
-    public function updateQuietly(int|string $id, array $attributes): Model;
+    $model = $this->model->newQuery()->findOrFail($id);
+
+    if ($quiet) {
+        $model->updateQuietly($attributes);   // Model::withoutEvents() under the hood
+
+        return $model;
+    }
+
+    $model->update($attributes);
+    $this->cache->flushRecord($model, $id, $this->cacheScope());
+
+    return $model;
 }
+```
+
+```php
+// From a service:
+$this->userRepository->update($id, ['last_seen_at' => now()], quiet: true);
 ```
 
 Only reach for it when **both** are true:

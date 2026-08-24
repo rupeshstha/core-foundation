@@ -783,9 +783,43 @@ abstract class BaseRepository implements RepositoryContract
         return $model;
     }
 
-    public function update(int|string $id, array $attributes): Model
+    /**
+     * ┌─────────────────────────────────────────────────────────────────────────┐
+     * │ $quiet — SAME MECHANISM AS ELOQUENT'S OWN Model::updateQuietly()        │
+     * │                                                                         │
+     * │ $quiet: true fills and saves via the model's own updateQuietly(),       │
+     * │ which runs inside Model::withoutEvents() — no updating/updated events,  │
+     * │ no observers, no broadcasts fire. Cache is correspondingly NOT          │
+     * │ flushed here either, since nothing in this call informs the cache       │
+     * │ layer that anything changed.                                            │
+     * │                                                                         │
+     * │ ONLY pass true when the updated attributes are:                         │
+     * │   1. NOT present in any cached read (fetchAll/fetchById output, a       │
+     * │      BaseResource field, a service-level cache derived from this        │
+     * │      model), and                                                        │
+     * │   2. NOT something an observer, listener, or broadcast reacts to.       │
+     * │                                                                         │
+     * │ Typical case: high-frequency telemetry nobody reads through the cache   │
+     * │ layer — last_seen_at, login_count, a heartbeat timestamp. Getting this  │
+     * │ wrong is a correctness bug, not a performance trade-off: fetchById()/   │
+     * │ fetchAll() keep serving the pre-update value indefinitely. When in      │
+     * │ doubt, leave $quiet false.                                              │
+     * │                                                                         │
+     * │   $this->userRepository->update(                                        │
+     * │       $id, ['last_seen_at' => now()], quiet: true,                      │
+     * │   );                                                                    │
+     * └─────────────────────────────────────────────────────────────────────────┘
+     */
+    public function update(int|string $id, array $attributes, bool $quiet = false): Model
     {
         $model = $this->model->newQuery()->findOrFail($id);
+
+        if ($quiet) {
+            $model->updateQuietly($attributes);
+
+            return $model;
+        }
+
         $model->update($attributes);
 
         $this->cache->flushRecord($model, $id, $this->cacheScope());
@@ -849,58 +883,5 @@ abstract class BaseRepository implements RepositoryContract
         $this->cache->flushRecord($model, $id, $this->cacheScope());
 
         return $result;
-    }
-
-    /**
-     * Update a record WITHOUT flushing cache and WITHOUT firing Eloquent model
-     * events (updating/updated, observers, broadcast) — the "silent update".
-     *
-     * ┌─────────────────────────────────────────────────────────────────────────┐
-     * │ WHEN TO USE                                                             │
-     * │                                                                         │
-     * │ Only for columns that are:                                              │
-     * │   1. NOT present in any cached read (fetchAll/fetchById output,         │
-     * │      a BaseResource field, a service-level cache built from this        │
-     * │      model), and                                                        │
-     * │   2. NOT something an observer, listener, or broadcast reacts to.       │
-     * │                                                                         │
-     * │ Typical case: high-frequency telemetry columns nobody reads through     │
-     * │ the cache layer — last_seen_at, login_count, a heartbeat timestamp.     │
-     * │ Flushing cache on every write to a column like that would thrash the    │
-     * │ cache for data nobody serves from it.                                   │
-     * │                                                                         │
-     * │ WHEN NOT TO USE                                                         │
-     * │                                                                         │
-     * │ If the attribute appears anywhere in a cached response, use update()    │
-     * │ instead. Skipping the flush here means fetchById()/fetchAll() keep      │
-     * │ serving the pre-update value until the cache expires on its own (or     │
-     * │ forever, if this repository caches without a TTL) — a correctness bug,  │
-     * │ not a performance trade-off, once that happens.                         │
-     * │                                                                         │
-     * │ This also bypasses BaseObserver hooks and event-driven side effects     │
-     * │ the same way updateAtomic() does — see its docblock. If anything must   │
-     * │ react to this write, this method is the wrong tool.                     │
-     * │                                                                         │
-     * │ Not part of WriteRepositoryContract — deliberately opt-in per           │
-     * │ repository. Expose it on a concrete repository's own contract only      │
-     * │ when the trade-off above has been consciously accepted:                 │
-     * │                                                                         │
-     * │   interface UserRepositoryContract extends RepositoryContract           │
-     * │   {                                                                     │
-     * │       public function updateQuietly($id, $attrs): Model;                │
-     * │   }                                                                     │
-     * └─────────────────────────────────────────────────────────────────────────┘
-     *
-     * @param  array<string, mixed>  $attributes
-     */
-    final public function updateQuietly(int|string $id, array $attributes): Model
-    {
-        $model = $this->model->newQuery()->findOrFail($id);
-
-        $this->model->newQuery()
-            ->where($model->getKeyName(), $id)
-            ->update($attributes);
-
-        return $model->refresh();
     }
 }

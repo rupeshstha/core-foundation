@@ -41,7 +41,7 @@ Before applying any rule, check what the application already does. If a pattern 
 - `query()` is `protected` — reachable only from named methods inside the concrete repository, never from a service/controller; custom queries always start from `$this->query()`, never `Model::query()` directly
 - `fetchAll` and `fetchById` are cached by default; override `cachedMethods()` to change
 - Override `cacheScope()` for tenant-scoped entities — cache isolation is not automatic
-- `updateQuietly()` skips cache flush and model events — opt-in per repository via its own contract, only for columns nothing cached or observed depends on
+- `update(..., quiet: true)` skips cache flush and model events (same `Model::withoutEvents()` mechanism Eloquent's own `updateQuietly()` uses) — only for columns nothing cached or observed depends on
 
 ### 4. BaseDataObject → `rules/base-data-object.md`
 
