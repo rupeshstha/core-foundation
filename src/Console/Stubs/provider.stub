@@ -6,12 +6,18 @@ use Illuminate\Support\Facades\Gate;
 use CoreFoundation\Providers\BaseExtensionServiceProvider;
 use {{ namespace }}\Models\{{ class }};
 use {{ namespace }}\Policies\{{ class }}Policy;
+use {{ namespace }}\Repositories\{{ class }}Repository;
+use {{ namespace }}\Repositories\Contracts\{{ class }}RepositoryContract;
 
 class {{ class }}ServiceProvider extends BaseExtensionServiceProvider
 {
     protected function registerBindings(): void
     {
-        //
+        // Repositories are always bound to their contract, never resolved by
+        // concrete class — this is what lets services/tests swap the
+        // implementation without touching the caller. bind(), never
+        // singleton()/scoped() — repositories hold per-request state.
+        $this->app->bind({{ class }}RepositoryContract::class, {{ class }}Repository::class);
     }
 
     protected function extendModels(): void

@@ -1,6 +1,6 @@
 ---
 name: core-foundation-best-practices
-description: "Apply this skill whenever writing, reviewing, or refactoring code in a CoreFoundation Laravel project. Triggers for all base class usage: BaseController (response envelope, exception handling), BaseService (pipeline, events, defer), BaseRepository (filtering, caching, query contracts, locking), BaseDataObject (DTOs, typed properties), BaseResource/BaseCollection (field pipeline, modular extension), BaseRequest (rule hierarchy, route params), BasePolicy (deny-by-default), BaseObserver (lifecycle events), BaseJob (notifications, batching), BaseApiException (three-layer exception system), BaseExtensionServiceProvider (module hooks), BaseTestCase (envelope assertions), BaseModel (modular extensibility), and ApplicationContext (domain-scoped state). Also use for module isolation decisions, the response envelope shape, and any CoreFoundation architecture question."
+description: "Apply this skill whenever writing, reviewing, or refactoring code in a CoreFoundation Laravel project. Triggers for all base class usage: BaseController (response envelope, exception handling), BaseService (pipeline, events, defer), BaseRepository (filtering, caching, query contracts, locking, repository interfaces, silent updates), BaseDataObject (DTOs, typed properties), BaseResource/BaseCollection (field pipeline, modular extension), BaseRequest (rule hierarchy, route params), BasePolicy (deny-by-default), BaseObserver (lifecycle events), BaseJob (notifications, batching), BaseApiException (three-layer exception system), BaseExtensionServiceProvider (module hooks), BaseTestCase (envelope assertions), BaseModel (modular extensibility, FluentJsonCast), and ApplicationContext (domain-scoped state). Also triggers for cross-cutting coding standards: repository interface + bind pattern, no direct model queries outside repositories, translation keys for every user-facing message, Throwable vs Exception at safety-net catch layers, and variable naming (no one-letter variables like $e). Also use for module isolation decisions, the response envelope shape, and any CoreFoundation architecture question."
 license: MIT
 metadata:
   author: Rupesh Shrestha
@@ -19,9 +19,10 @@ Before applying any rule, check what the application already does. If a pattern 
 ### 1. BaseController → `rules/base-controller.md`
 
 - Use `successResponse()`, `createdResponse()`, `paginatedResponse()`, `noContentResponse()` — never `response()->json()`
-- Wrap every service call: `try { ... } catch (Throwable $e) { return $this->handleException($e); }`
+- Wrap every service call: `try { ... } catch (Throwable $exception) { return $this->handleException($exception); }` — `Throwable`, never `Exception`; the variable is never `$e`
 - Never catch a specific exception in a controller — put `render()` on the exception class
-- Use `$this->lang('key')` for user-facing messages — never hardcode strings
+- Never query a model directly in a controller — call a service method; if a custom query is unavoidable, it must go through a repository's cached method, not a bare `Model::query()`
+- Use `$this->lang('key')` for user-facing messages — never hardcode strings; `core:make` generates the matching `lang/en/{name}.php` automatically
 - Use `$this->authorize()` — never check permissions manually in the controller body
 
 ### 2. BaseService → `rules/base-service.md`
@@ -34,11 +35,13 @@ Before applying any rule, check what the application already does. If a pattern 
 
 ### 3. BaseRepository → `rules/base-repository.md`
 
+- Every repository is generated as a pair — `{Name}RepositoryContract` (interface) + `{Name}Repository` (concrete) — bound in `ServiceProvider::registerBindings()`; consumers type-hint the interface, never the concrete class
 - Always `bind()` — never `singleton()` or `scoped()`; repositories hold per-request state
 - `searchable()` is the SQL-injection guard — columns not listed are silently skipped
-- Custom queries always start from `$this->query()` — never `Model::query()` directly
+- `query()` is `protected` — reachable only from named methods inside the concrete repository, never from a service/controller; custom queries always start from `$this->query()`, never `Model::query()` directly
 - `fetchAll` and `fetchById` are cached by default; override `cachedMethods()` to change
 - Override `cacheScope()` for tenant-scoped entities — cache isolation is not automatic
+- `updateQuietly()` skips cache flush and model events — opt-in per repository via its own contract, only for columns nothing cached or observed depends on
 
 ### 4. BaseDataObject → `rules/base-data-object.md`
 
@@ -110,12 +113,21 @@ Before applying any rule, check what the application already does. If a pattern 
 - `static::class` in all static registries — never `self::class`
 - Never register a model as `singleton()` or `scoped()` — models are stateful, always transient
 - Extending `BaseModel` is recommended but not required — implement `HasSearchableColumns`/`HasRelationRegistry` to opt in without it
+- For JSON columns, cast with `CoreFoundation\Casts\FluentJsonCast` for recursive property access instead of the built-in `array`/`object` casts
+
+### 14. Coding Standards (cross-cutting) → `rules/coding-standards.md`
+
+- No one-letter variable names anywhere — `$e` is always `$exception` (or a type-specific name for a narrowed catch)
+- `Throwable`, never `Exception`, at safety-net layers (`handleException()`, `ExceptionRenderer`) — narrowing drops PHP `Error`s out of the response envelope
+- Every repository is generated/written as interface + concrete pair — never the concrete class alone
+- No direct model queries (`Model::query()`, `Model::where()`, ...) outside a repository's own methods
+- Every user-facing message is a translation key — never a hardcoded string
 
 ## How to Apply
 
 Always read the relevant rule file(s) before writing or reviewing code.
 
 1. Identify which base class(es) are involved
-2. Read the corresponding rule file from `rules/`
+2. Read the corresponding rule file from `rules/` — for anything touching a repository, a controller catch block, a variable name, or a user-facing message, also read `rules/coding-standards.md`
 3. Check sibling files for existing patterns — follow those first per Consistency First
 4. Apply the rules from the most specific file

@@ -20,7 +20,7 @@ use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
  * │                      paginatedResponse(), noContentResponse()               │
  * │                      All return JsonResponse with the agreed envelope.      │
  * │                                                                             │
- * │ HasExceptionHandler → handleException(Throwable $e)                         │
+ * │ HasExceptionHandler → handleException(Throwable $exception)                 │
  * │                       Maps known exceptions to status codes + messages.     │
  * │                       Generates UUID for fatal (unexpected) exceptions.     │
  * │                       Override knownExceptions() to add domain exceptions.  │
@@ -47,8 +47,8 @@ use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
  * │       {                                                                     │
  * │           try {                                                             │
  * │               $users = $this->userService->index($request->query());        │
- * │           } catch (Throwable $e) {                                          │
- * │               return $this->handleException($e);                            │
+ * │           } catch (Throwable $exception) {                                  │
+ * │               return $this->handleException($exception);                    │
  * │           }                                                                 │
  * │                                                                             │
  * │           return $this->successResponse(                                    │
@@ -61,8 +61,8 @@ use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
  * │       {                                                                     │
  * │           try {                                                             │
  * │               $user = $this->userService->create($request->validated());    │
- * │           } catch (Throwable $e) {                                          │
- * │               return $this->handleException($e);                            │
+ * │           } catch (Throwable $exception) {                                  │
+ * │               return $this->handleException($exception);                    │
  * │           }                                                                 │
  * │                                                                             │
  * │           return $this->createdResponse(                                    │
@@ -75,8 +75,8 @@ use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
  * │       {                                                                     │
  * │           try {                                                             │
  * │               $this->userService->delete($user);                            │
- * │           } catch (Throwable $e) {                                          │
- * │               return $this->handleException($e);                            │
+ * │           } catch (Throwable $exception) {                                  │
+ * │               return $this->handleException($exception);                    │
  * │           }                                                                 │
  * │                                                                             │
  * │           return $this->noContentResponse();                                │

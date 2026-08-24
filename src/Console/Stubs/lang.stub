@@ -1,0 +1,9 @@
+<?php
+
+return [
+    'fetch-all-success' => '{{ class }} records fetched successfully.',
+    'fetch-success' => '{{ class }} fetched successfully.',
+    'create-success' => '{{ class }} created successfully.',
+    'update-success' => '{{ class }} updated successfully.',
+    'delete-success' => '{{ class }} deleted successfully.',
+];

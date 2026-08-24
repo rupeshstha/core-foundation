@@ -23,33 +23,61 @@ class {{ class }}Controller extends BaseController
             return $this->handleException($exception);
         }
 
-        return $this->paginatedResponse(${{ modelVariable }});
+        return $this->paginatedResponse(
+            paginator: ${{ modelVariable }},
+            message: $this->lang('fetch-all-success'),
+        );
     }
 
     public function show(int $id): JsonResponse
     {
+        try {
+            ${{ modelVariable }} = $this->service->fetchById($id);
+        } catch (\Throwable $exception) {
+            return $this->handleException($exception);
+        }
+
         return $this->successResponse(
-            payload: new {{ class }}Resource($this->service->fetchById($id)),
+            message: $this->lang('fetch-success'),
+            payload: new {{ class }}Resource(${{ modelVariable }}),
         );
     }
 
     public function store(Store{{ class }}Request $request): JsonResponse
     {
-        $result = $this->service->create($request->validated());
+        try {
+            $result = $this->service->create($request->validated());
+        } catch (\Throwable $exception) {
+            return $this->handleException($exception);
+        }
 
-        return $this->createdResponse(payload: new {{ class }}Resource($result));
+        return $this->createdResponse(
+            message: $this->lang('create-success'),
+            payload: new {{ class }}Resource($result),
+        );
     }
 
     public function update(Update{{ class }}Request $request, int $id): JsonResponse
     {
-        $result = $this->service->update($id, $request->validated());
+        try {
+            $result = $this->service->update($id, $request->validated());
+        } catch (\Throwable $exception) {
+            return $this->handleException($exception);
+        }
 
-        return $this->successResponse(payload: new {{ class }}Resource($result));
+        return $this->successResponse(
+            message: $this->lang('update-success'),
+            payload: new {{ class }}Resource($result),
+        );
     }
 
     public function destroy(int $id): JsonResponse
     {
-        $this->service->delete($id);
+        try {
+            $this->service->delete($id);
+        } catch (\Throwable $exception) {
+            return $this->handleException($exception);
+        }
 
         return $this->noContentResponse();
     }

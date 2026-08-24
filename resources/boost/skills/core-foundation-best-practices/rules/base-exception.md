@@ -60,3 +60,35 @@ class OrderNotFoundException extends BaseApiException
 ```
 
 Correct: inherit the default `render()` from `BaseApiException` — it omits `exception_id` automatically.
+
+## Exception Messages Use Translations Too
+
+The same rule as controller responses applies to domain exceptions: never hardcode the English string in the exception class. Resolve it via `CoreFoundation\Support\Lang::get()` (exceptions live outside controllers, so `$this->lang()` from `HasLang` isn't available).
+
+Incorrect:
+```php
+class OrderNotFoundException extends BaseApiException
+{
+    public function __construct(int $id)
+    {
+        parent::__construct("Order {$id} not found.", 404);
+    }
+}
+```
+
+Correct:
+```php
+use CoreFoundation\Support\Lang;
+
+class OrderNotFoundException extends BaseApiException implements ShouldntReport
+{
+    public function __construct(int $id)
+    {
+        parent::__construct(Lang::get('order.not-found', ['id' => $id]), 404);
+    }
+}
+```
+
+## Catch Variables: `Throwable $exception`, Never `Throwable $e`
+
+Every `catch` block that needs the exception object names it descriptively — `$exception` by default, or a type-specific name when the catch is narrowed (`$queryException`, `$validationException`). A one-letter variable is never acceptable, in this layer or any other.

@@ -1,0 +1,18 @@
+<?php
+
+namespace {{ namespace }}\Repositories\Contracts;
+
+use CoreFoundation\Repositories\Contracts\RepositoryContract;
+
+/**
+ * {{ class }}RepositoryContract
+ *
+ * Type-hint against this interface everywhere a {{ class }} repository is
+ * consumed (services, other repositories) — never the concrete
+ * {{ class }}Repository class. Bound to the concrete class in
+ * {{ class }}ServiceProvider::registerBindings().
+ *
+ * Add domain-specific query methods here as they are added to
+ * {{ class }}Repository, so the contract always reflects what callers can do.
+ */
+interface {{ class }}RepositoryContract extends RepositoryContract {}

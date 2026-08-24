@@ -313,11 +313,47 @@ abstract class BaseRepository implements RepositoryContract
 
     /**
      * Return a fresh Builder for custom queries.
-     * Starting point for all domain-specific queries in concrete repositories.
+     *
+     * ┌─────────────────────────────────────────────────────────────────────────┐
+     * │ PROTECTED ON PURPOSE — DO NOT WIDEN TO public                           │
+     * │                                                                         │
+     * │ This is the entry point for custom queries defined as NAMED METHODS     │
+     * │ on a concrete repository — never a query built ad hoc from outside      │
+     * │ the repository class (a service, a controller, an event listener).      │
+     * │                                                                         │
+     * │ If it were public, nothing would stop code like this from living        │
+     * │ anywhere in the app, silently bypassing every cache invalidation the    │
+     * │ repository is responsible for:                                          │
+     * │                                                                         │
+     * │   $this->userSessionRepository->query()                                 │
+     * │       ->where('user_id', $user->id)                                     │
+     * │       ->delete();                                                       │
+     * │                                                                         │
+     * │ That delete() never calls flushRecord()/flushAll() — every cached       │
+     * │ fetchAll()/fetchById() result for this model keeps serving deleted      │
+     * │ rows until the cache naturally expires (or never, if uncached).         │
+     * │                                                                         │
+     * │ CORRECT — add a named method to the concrete repository, next to the    │
+     * │ other query methods, so cache invalidation stays colocated with the     │
+     * │ write:                                                                  │
+     * │                                                                         │
+     * │   class UserSessionRepository extends BaseRepository                    │
+     * │       implements UserSessionRepositoryContract                          │
+     * │   {                                                                     │
+     * │       public function deleteAllForUser(int $userId): void               │
+     * │       {                                                                 │
+     * │           $this->query()->where('user_id', $userId)->delete();          │
+     * │           $this->flushAllCache();                                       │
+     * │       }                                                                 │
+     * │   }                                                                     │
+     * │                                                                         │
+     * │ Then the service calls the named method, never query() directly:        │
+     * │   $this->userSessionRepository->deleteAllForUser($user->id);            │
+     * └─────────────────────────────────────────────────────────────────────────┘
      *
      * @return Builder<Model>
      */
-    public function query(): Builder
+    protected function query(): Builder
     {
         return $this->model::query();
     }
@@ -813,5 +849,58 @@ abstract class BaseRepository implements RepositoryContract
         $this->cache->flushRecord($model, $id, $this->cacheScope());
 
         return $result;
+    }
+
+    /**
+     * Update a record WITHOUT flushing cache and WITHOUT firing Eloquent model
+     * events (updating/updated, observers, broadcast) — the "silent update".
+     *
+     * ┌─────────────────────────────────────────────────────────────────────────┐
+     * │ WHEN TO USE                                                             │
+     * │                                                                         │
+     * │ Only for columns that are:                                              │
+     * │   1. NOT present in any cached read (fetchAll/fetchById output,         │
+     * │      a BaseResource field, a service-level cache built from this        │
+     * │      model), and                                                        │
+     * │   2. NOT something an observer, listener, or broadcast reacts to.       │
+     * │                                                                         │
+     * │ Typical case: high-frequency telemetry columns nobody reads through     │
+     * │ the cache layer — last_seen_at, login_count, a heartbeat timestamp.     │
+     * │ Flushing cache on every write to a column like that would thrash the    │
+     * │ cache for data nobody serves from it.                                   │
+     * │                                                                         │
+     * │ WHEN NOT TO USE                                                         │
+     * │                                                                         │
+     * │ If the attribute appears anywhere in a cached response, use update()    │
+     * │ instead. Skipping the flush here means fetchById()/fetchAll() keep      │
+     * │ serving the pre-update value until the cache expires on its own (or     │
+     * │ forever, if this repository caches without a TTL) — a correctness bug,  │
+     * │ not a performance trade-off, once that happens.                         │
+     * │                                                                         │
+     * │ This also bypasses BaseObserver hooks and event-driven side effects     │
+     * │ the same way updateAtomic() does — see its docblock. If anything must   │
+     * │ react to this write, this method is the wrong tool.                     │
+     * │                                                                         │
+     * │ Not part of WriteRepositoryContract — deliberately opt-in per           │
+     * │ repository. Expose it on a concrete repository's own contract only      │
+     * │ when the trade-off above has been consciously accepted:                 │
+     * │                                                                         │
+     * │   interface UserRepositoryContract extends RepositoryContract           │
+     * │   {                                                                     │
+     * │       public function updateQuietly($id, $attrs): Model;                │
+     * │   }                                                                     │
+     * └─────────────────────────────────────────────────────────────────────────┘
+     *
+     * @param  array<string, mixed>  $attributes
+     */
+    final public function updateQuietly(int|string $id, array $attributes): Model
+    {
+        $model = $this->model->newQuery()->findOrFail($id);
+
+        $this->model->newQuery()
+            ->where($model->getKeyName(), $id)
+            ->update($attributes);
+
+        return $model->refresh();
     }
 }
