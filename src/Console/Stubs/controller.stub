@@ -2,6 +2,7 @@
 
 namespace {{ namespace }}\Http\Controllers;
 
+use Throwable;
 use Illuminate\Http\JsonResponse;
 use CoreFoundation\Http\Controllers\BaseController;
 use {{ namespace }}\Services\{{ class }}Service;
@@ -19,7 +20,7 @@ class {{ class }}Controller extends BaseController
     {
         try {
             ${{ modelVariable }} = $this->service->fetchAll();
-        } catch (\Throwable $exception) {
+        } catch (Throwable $exception) {
             return $this->handleException($exception);
         }
 
@@ -33,7 +34,7 @@ class {{ class }}Controller extends BaseController
     {
         try {
             ${{ modelVariable }} = $this->service->fetchById($id);
-        } catch (\Throwable $exception) {
+        } catch (Throwable $exception) {
             return $this->handleException($exception);
         }
 
@@ -47,7 +48,7 @@ class {{ class }}Controller extends BaseController
     {
         try {
             $result = $this->service->create($request->validated());
-        } catch (\Throwable $exception) {
+        } catch (Throwable $exception) {
             return $this->handleException($exception);
         }
 
@@ -61,7 +62,7 @@ class {{ class }}Controller extends BaseController
     {
         try {
             $result = $this->service->update($id, $request->validated());
-        } catch (\Throwable $exception) {
+        } catch (Throwable $exception) {
             return $this->handleException($exception);
         }
 
@@ -75,7 +76,7 @@ class {{ class }}Controller extends BaseController
     {
         try {
             $this->service->delete($id);
-        } catch (\Throwable $exception) {
+        } catch (Throwable $exception) {
             return $this->handleException($exception);
         }
 
