@@ -8,7 +8,9 @@ use CoreFoundation\Tests\PackageTestCase;
 use Illuminate\Database\Schema\Blueprint;
 use App\Modules\Order\Services\OrderService;
 use App\Modules\Order\Repositories\OrderRepository;
+use App\Modules\Order\Providers\OrderServiceProvider;
 use App\Modules\Order\Http\Controllers\OrderController;
+use App\Modules\Order\Repositories\Contracts\OrderRepositoryContract;
 
 class MakeModuleCommandProbeTest extends PackageTestCase
 {
@@ -34,9 +36,11 @@ class MakeModuleCommandProbeTest extends PackageTestCase
         $expectedFiles = [
             'app/Modules/Order/Models/Order.php',
             'database/factories/OrderFactory.php',
+            'app/Modules/Order/Repositories/Contracts/OrderRepositoryContract.php',
             'app/Modules/Order/Repositories/OrderRepository.php',
             'app/Modules/Order/Services/OrderService.php',
             'app/Modules/Order/Http/Controllers/OrderController.php',
+            'lang/en/order.php',
             'app/Modules/Order/Http/Requests/StoreOrderRequest.php',
             'app/Modules/Order/Http/Requests/UpdateOrderRequest.php',
             'app/Modules/Order/Resources/OrderResource.php',
@@ -65,6 +69,7 @@ class MakeModuleCommandProbeTest extends PackageTestCase
         // Require every generated file in dependency order and confirm none of
         // them fatal at class-declaration time.
         require_once base_path('app/Modules/Order/Models/Order.php');
+        require_once base_path('app/Modules/Order/Repositories/Contracts/OrderRepositoryContract.php');
         require_once base_path('app/Modules/Order/Repositories/OrderRepository.php');
         require_once base_path('app/Modules/Order/Services/OrderService.php');
         require_once base_path('app/Modules/Order/Resources/OrderResource.php');
@@ -76,11 +81,18 @@ class MakeModuleCommandProbeTest extends PackageTestCase
         require_once base_path('app/Modules/Order/Providers/OrderServiceProvider.php');
         require_once base_path('app/Modules/Order/DataObjects/OrderData.php');
 
+        // OrderService/OrderController type-hint OrderRepositoryContract, not
+        // the concrete OrderRepository — the interface→concrete binding lives
+        // in OrderServiceProvider::registerBindings(), so the provider must
+        // actually be registered for the container to resolve it, exactly as
+        // it would be in a real app via bootstrap/app.php.
+        $this->app->register(OrderServiceProvider::class);
+
         // Every generated class must actually be resolvable through the
         // container — this is how Laravel really constructs controllers,
         // services, and repositories; a constructor-injection mismatch
         // (e.g. wrong property name/type) would surface here.
-        $repository = $this->app->make(OrderRepository::class);
+        $repository = $this->app->make(OrderRepositoryContract::class);
         $this->assertInstanceOf(OrderRepository::class, $repository);
 
         $service = $this->app->make(OrderService::class);

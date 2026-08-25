@@ -16,4 +16,17 @@ class TestPostRepository extends BaseRepository
     {
         return ['active', 'ofStatus'];
     }
+
+    /**
+     * Regression fixture for the documented "named method starting from
+     * $this->query()" pattern — proves query() is still reachable from
+     * inside a concrete repository after being locked down to protected.
+     */
+    public function titlesStartingWith(string $prefix): array
+    {
+        return $this->query()
+            ->where('title', 'like', "{$prefix}%")
+            ->pluck('title')
+            ->all();
+    }
 }

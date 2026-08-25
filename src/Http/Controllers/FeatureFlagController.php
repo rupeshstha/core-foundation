@@ -115,8 +115,8 @@ class FeatureFlagController extends BaseController
 
         try {
             $raw = Feature::for($scope)->all();
-        } catch (Throwable $e) {
-            return $this->handleException($e);
+        } catch (Throwable $exception) {
+            return $this->handleException($exception);
         }
 
         $features = [];
@@ -153,8 +153,8 @@ class FeatureFlagController extends BaseController
 
         try {
             $all = Feature::for($scope)->all();
-        } catch (Throwable $e) {
-            return $this->handleException($e);
+        } catch (Throwable $exception) {
+            return $this->handleException($exception);
         }
 
         if (! array_key_exists($feature, $all)) {

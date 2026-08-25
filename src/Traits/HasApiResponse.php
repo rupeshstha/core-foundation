@@ -36,18 +36,21 @@ use Illuminate\Http\Resources\Json\ResourceCollection;
  * ┌─────────────────────────────────────────────────────────────────────────────┐
  * │ USAGE                                                                       │
  * │                                                                             │
+ * │ $message is always a translation key resolved via $this->lang() — see       │
+ * │ HasLang — never a hardcoded string.                                         │
+ * │                                                                             │
  * │   return $this->successResponse(                                            │
- * │       message: 'Users fetched.',                                            │
+ * │       message: $this->lang('fetch-success'),                                │
  * │       payload: UserResource::collection($users),                            │
  * │   );                                                                        │
  * │                                                                             │
  * │   return $this->paginatedResponse(                                          │
  * │       paginator: $users,                                                    │
- * │       message: 'Users fetched.',                                            │
+ * │       message: $this->lang('fetch-success'),                                │
  * │   );                                                                        │
  * │                                                                             │
  * │   return $this->createdResponse(                                            │
- * │       message: 'User created.',                                             │
+ * │       message: $this->lang('create-success'),                               │
  * │       payload: new UserResource($user),                                     │
  * │   );                                                                        │
  * │                                                                             │

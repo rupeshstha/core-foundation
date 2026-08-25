@@ -126,23 +126,27 @@ class MakeModuleCommand extends Command
         $skipped = [];
 
         foreach ($selected as $component) {
-            [$stubFile, $targetPath] = $map[$component];
+            // Each entry is one-or-more [stubFile, targetPath] pairs — e.g.
+            // selecting 'repository' generates both the contract interface
+            // and the concrete class, so a repository can never be scaffolded
+            // without the interface the rest of the app is meant to depend on.
+            foreach ($map[$component] as [$stubFile, $targetPath]) {
+                $fullPath = base_path($targetPath);
+                $dir = dirname($fullPath);
 
-            $fullPath = base_path($targetPath);
-            $dir = dirname($fullPath);
+                if (! is_dir($dir)) {
+                    mkdir($dir, 0755, true);
+                }
 
-            if (! is_dir($dir)) {
-                mkdir($dir, 0755, true);
+                if (file_exists($fullPath)) {
+                    $skipped[] = $targetPath;
+
+                    continue;
+                }
+
+                file_put_contents($fullPath, $this->renderStub($stubFile, $vars));
+                $generated[] = $targetPath;
             }
-
-            if (file_exists($fullPath)) {
-                $skipped[] = $targetPath;
-
-                continue;
-            }
-
-            file_put_contents($fullPath, $this->renderStub($stubFile, $vars));
-            $generated[] = $targetPath;
         }
 
         if (! empty($generated)) {
@@ -210,26 +214,67 @@ class MakeModuleCommand extends Command
             '{{ modelPlural }}' => Str::plural(Str::snake($name)),
             '{{ table }}' => Str::plural(Str::snake($name)),
             '{{ routePrefix }}' => Str::plural(Str::kebab($name)),
+            '{{ langKey }}' => Str::kebab($name),
         ];
     }
 
+    /**
+     * Maps each selectable component to the [stub, targetPath] pair(s) it
+     * generates. Some components deliberately expand to more than one file —
+     * 'repository' always ships with its contract interface, and
+     * 'controller' always ships with its translation file, so those two
+     * conventions (interface-first repositories, translated messages) can
+     * never be skipped by picking the "wrong" checkbox.
+     *
+     * @return array<string, array<int, array{0: string, 1: string}>>
+     */
     private function componentMap(string $name, string $modulePath): array
     {
         return [
-            'model' => ['model.stub',         "{$modulePath}/Models/{$name}.php"],
-            'factory' => ['factory.stub',        "database/factories/{$name}Factory.php"],
-            'repository' => ['repository.stub',     "{$modulePath}/Repositories/{$name}Repository.php"],
-            'service' => ['service.stub',        "{$modulePath}/Services/{$name}Service.php"],
-            'controller' => ['controller.stub',     "{$modulePath}/Http/Controllers/{$name}Controller.php"],
-            'store-request' => ['request.store.stub',  "{$modulePath}/Http/Requests/Store{$name}Request.php"],
-            'update-request' => ['request.update.stub', "{$modulePath}/Http/Requests/Update{$name}Request.php"],
-            'resource' => ['resource.stub',       "{$modulePath}/Resources/{$name}Resource.php"],
-            'collection' => ['collection.stub',     "{$modulePath}/Resources/{$name}Collection.php"],
-            'data-object' => ['data-object.stub',    "{$modulePath}/DataObjects/{$name}Data.php"],
-            'policy' => ['policy.stub',         "{$modulePath}/Policies/{$name}Policy.php"],
-            'observer' => ['observer.stub',       "{$modulePath}/Observers/{$name}Observer.php"],
-            'provider' => ['provider.stub',       "{$modulePath}/Providers/{$name}ServiceProvider.php"],
-            'test' => ['test.stub',           "tests/Feature/{$name}Test.php"],
+            'model' => [
+                ['model.stub', "{$modulePath}/Models/{$name}.php"],
+            ],
+            'factory' => [
+                ['factory.stub', "database/factories/{$name}Factory.php"],
+            ],
+            'repository' => [
+                ['repository-contract.stub', "{$modulePath}/Repositories/Contracts/{$name}RepositoryContract.php"],
+                ['repository.stub', "{$modulePath}/Repositories/{$name}Repository.php"],
+            ],
+            'service' => [
+                ['service.stub', "{$modulePath}/Services/{$name}Service.php"],
+            ],
+            'controller' => [
+                ['controller.stub', "{$modulePath}/Http/Controllers/{$name}Controller.php"],
+                ['lang.stub', 'lang/en/'.Str::kebab($name).'.php'],
+            ],
+            'store-request' => [
+                ['request.store.stub', "{$modulePath}/Http/Requests/Store{$name}Request.php"],
+            ],
+            'update-request' => [
+                ['request.update.stub', "{$modulePath}/Http/Requests/Update{$name}Request.php"],
+            ],
+            'resource' => [
+                ['resource.stub', "{$modulePath}/Resources/{$name}Resource.php"],
+            ],
+            'collection' => [
+                ['collection.stub', "{$modulePath}/Resources/{$name}Collection.php"],
+            ],
+            'data-object' => [
+                ['data-object.stub', "{$modulePath}/DataObjects/{$name}Data.php"],
+            ],
+            'policy' => [
+                ['policy.stub', "{$modulePath}/Policies/{$name}Policy.php"],
+            ],
+            'observer' => [
+                ['observer.stub', "{$modulePath}/Observers/{$name}Observer.php"],
+            ],
+            'provider' => [
+                ['provider.stub', "{$modulePath}/Providers/{$name}ServiceProvider.php"],
+            ],
+            'test' => [
+                ['test.stub', "tests/Feature/{$name}Test.php"],
+            ],
         ];
     }
 
@@ -241,8 +286,15 @@ class MakeModuleCommand extends Command
             $steps[] = "Register {$name}ServiceProvider in bootstrap/app.php";
         }
 
+        if (in_array('provider', $selected, true) && in_array('repository', $selected, true)) {
+            $steps[] = "{$name}RepositoryContract is already bound to {$name}Repository in {$name}ServiceProvider::registerBindings() — nothing to do unless you swap the implementation.";
+        } elseif (in_array('repository', $selected, true)) {
+            $steps[] = "Bind {$name}RepositoryContract to {$name}Repository — generate a provider ('provider' component) or add the binding to an existing one.";
+        }
+
         if (in_array('controller', $selected, true)) {
             $steps[] = "Add routes for {$name}Controller in routes/api.php";
+            $steps[] = 'Customise messages in lang/en/'.Str::kebab($name).'.php';
         }
 
         if (in_array('model', $selected, true)) {

@@ -4,8 +4,9 @@ namespace {{ namespace }}\Repositories;
 
 use {{ namespace }}\Models\{{ class }};
 use CoreFoundation\Repositories\BaseRepository;
+use {{ namespace }}\Repositories\Contracts\{{ class }}RepositoryContract;
 
-class {{ class }}Repository extends BaseRepository
+class {{ class }}Repository extends BaseRepository implements {{ class }}RepositoryContract
 {
     protected function setModel(): string
     {
