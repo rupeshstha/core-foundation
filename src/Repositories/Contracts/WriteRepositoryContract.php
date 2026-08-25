@@ -14,7 +14,13 @@ interface WriteRepositoryContract
 {
     public function create(array $attributes): Model;
 
-    public function update(int|string $id, array $attributes): Model;
+    /**
+     * $quiet: true updates via the model's own updateQuietly() — same
+     * mechanism Eloquent itself uses (Model::withoutEvents()) — so no
+     * model events/observers fire, and cache is correspondingly left
+     * unflushed. See BaseRepository::update() for when this is safe.
+     */
+    public function update(int|string $id, array $attributes, bool $quiet = false): Model;
 
     /**
      * Perform an atomic update (Compare-and-Swap).

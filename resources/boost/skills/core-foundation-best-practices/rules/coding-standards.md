@@ -46,4 +46,4 @@ No hardcoded English string reaches a response, a log line meant for a human, or
 
 ## Silent Repository Writes Are Rare and Explicit
 
-`BaseRepository::updateQuietly()` exists for the narrow case of updating a column that no cache and no observer cares about. It is not part of the default `WriteRepositoryContract` — a repository's contract must explicitly declare it before a service can call it. Reaching for it as a shortcut to "make an update faster" without checking both conditions in `rules/base-repository.md` reintroduces stale-cache bugs. Default to `update()`.
+`BaseRepository::update()` takes a `quiet` flag for the narrow case of updating a column that no cache and no observer cares about — it delegates to Eloquent's own `Model::updateQuietly()` (the same `withoutEvents()` mechanism Laravel itself uses), and skips the cache flush to match. It defaults to `false`. Reaching for `quiet: true` as a shortcut to "make an update faster" without checking both conditions in `rules/base-repository.md` reintroduces stale-cache bugs. When in doubt, leave it `false`.
