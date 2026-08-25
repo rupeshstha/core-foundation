@@ -46,3 +46,19 @@ Correct: don't register models in the container at all. Retrieve them via reposi
 ## `BaseModel` Is Recommended, Not Required
 
 `BaseRepository` accepts any Eloquent `Model`. Use `BaseModel` for the full extensibility system. If the model is from a third-party package, implement `HasSearchableColumns` and/or `HasRelationRegistry` to opt in to the specific capabilities you need.
+
+## `FluentJsonCast` for JSON Columns — Property Access, Not Array Subscripts
+
+For any JSON/JSONB column read as a nested structure, cast it with `CoreFoundation\Casts\FluentJsonCast` instead of Eloquent's built-in `array`/`object` casts. It decodes to a recursive `Illuminate\Support\Fluent`, so nested JSON reads as `$order->settings->theme->color` instead of `$order->settings['theme']['color']`.
+
+```php
+protected function casts(): array
+{
+    return ['settings' => FluentJsonCast::class];
+}
+
+$order->settings->theme->color;          // property access, arbitrarily nested
+$order->settings->items[0]->sku;         // JSON lists stay plain arrays; list elements are still Fluent
+```
+
+Assign a plain array or a `Fluent` instance when writing — never an already-encoded JSON string (it double-encodes, same failure mode as the built-in casts).

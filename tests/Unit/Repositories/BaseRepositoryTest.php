@@ -311,6 +311,87 @@ class BaseRepositoryTest extends PackageTestCase
         $this->assertDatabaseMissing('test_posts', ['id' => $post->id]);
     }
 
+    public function test_query_remains_usable_from_a_named_method_on_the_concrete_repository(): void
+    {
+        TestPost::create(['title' => 'Alpha Post']);
+        TestPost::create(['title' => 'Alpha Report']);
+        TestPost::create(['title' => 'Beta Post']);
+
+        $titles = $this->repository->titlesStartingWith('Alpha');
+
+        $this->assertEqualsCanonicalizing(['Alpha Post', 'Alpha Report'], $titles);
+    }
+
+    public function test_query_is_not_part_of_the_public_api(): void
+    {
+        // query() is the entry point for custom queries defined as named
+        // methods ON a concrete repository — never callable from a service
+        // or controller. Asserting this stays protected is a regression
+        // guard: widening it back to public silently reopens the exact
+        // cache-bypass footgun the method's docblock warns about.
+        $method = (new ReflectionClass($this->repository))->getMethod('query');
+
+        $this->assertTrue($method->isProtected());
+    }
+
+    public function test_quiet_update_updates_the_record_without_flushing_cache(): void
+    {
+        $post = TestPost::create(['title' => 'Original Title']);
+
+        // Warm the fetchById cache entry.
+        $cached = $this->repository->fetchById($post->id);
+        $this->assertEquals('Original Title', $cached->title);
+
+        $this->repository->update($post->id, ['title' => 'Changed Silently'], quiet: true);
+
+        // The write reached the database...
+        $this->assertDatabaseHas('test_posts', ['id' => $post->id, 'title' => 'Changed Silently']);
+
+        // ...but the cached read was never invalidated, so it keeps serving
+        // the pre-update value. This is the documented trade-off, not a bug —
+        // quiet: true exists specifically to skip this invalidation.
+        $stillCached = $this->repository->fetchById($post->id);
+        $this->assertEquals('Original Title', $stillCached->title);
+    }
+
+    public function test_quiet_update_returns_the_updated_model(): void
+    {
+        $post = TestPost::create(['title' => 'Before']);
+
+        $updated = $this->repository->update($post->id, ['title' => 'After'], quiet: true);
+
+        $this->assertEquals('After', $updated->title);
+    }
+
+    public function test_quiet_update_does_not_fire_model_events(): void
+    {
+        $post = TestPost::create(['title' => 'Before']);
+
+        $fired = false;
+        TestPost::updating(function () use (&$fired): void {
+            $fired = true;
+        });
+
+        $this->repository->update($post->id, ['title' => 'After'], quiet: true);
+
+        $this->assertFalse($fired);
+
+        TestPost::flushEventListeners();
+    }
+
+    public function test_a_normal_update_still_flushes_cache_by_default(): void
+    {
+        $post = TestPost::create(['title' => 'Original Title']);
+
+        $cached = $this->repository->fetchById($post->id);
+        $this->assertEquals('Original Title', $cached->title);
+
+        $this->repository->update($post->id, ['title' => 'Changed Loudly']);
+
+        $fresh = $this->repository->fetchById($post->id);
+        $this->assertEquals('Changed Loudly', $fresh->title);
+    }
+
     public function test_it_can_count_records_matching_criteria(): void
     {
         TestPost::create(['title' => 'Post 1', 'status' => 'active']);

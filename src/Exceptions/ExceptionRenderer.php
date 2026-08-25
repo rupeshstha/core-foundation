@@ -275,19 +275,19 @@ final class ExceptionRenderer
      * Public so other package classes (BaseJob, etc.) can build consistent
      * exception context without reimplementing the same logic.
      */
-    public static function buildExceptionContext(Throwable $e): array
+    public static function buildExceptionContext(Throwable $exception): array
     {
         $base = base_path().DIRECTORY_SEPARATOR;
 
         $context = [
-            'class' => $e::class,
-            'message' => $e->getMessage(),
-            'file' => str_replace($base, '', $e->getFile()),
-            'line' => $e->getLine(),
-            'trace' => self::formatTrace($e),
+            'class' => $exception::class,
+            'message' => $exception->getMessage(),
+            'file' => str_replace($base, '', $exception->getFile()),
+            'line' => $exception->getLine(),
+            'trace' => self::formatTrace($exception),
         ];
 
-        if ($previous = $e->getPrevious()) {
+        if ($previous = $exception->getPrevious()) {
             $context['caused_by'] = [
                 'class' => $previous::class,
                 'message' => $previous->getMessage(),
@@ -304,7 +304,7 @@ final class ExceptionRenderer
      * Paths are relative to the project root — IDE-navigable in most log viewers.
      * Limited to TRACE_DEPTH frames to keep log payloads manageable.
      */
-    private static function formatTrace(Throwable $e): array
+    private static function formatTrace(Throwable $exception): array
     {
         $base = base_path().DIRECTORY_SEPARATOR;
 
@@ -324,7 +324,7 @@ final class ExceptionRenderer
                     ['at' => $at, 'call' => $call],
                     static fn ($v) => $v !== null,
                 );
-            }, $e->getTrace()),
+            }, $exception->getTrace()),
             0,
             self::TRACE_DEPTH,
         );
@@ -376,18 +376,18 @@ final class ExceptionRenderer
      * Returns a fresh UUID if the reporter did not run (e.g., the exception was
      * a BaseApiException or the reporter pipeline was bypassed).
      */
-    public static function consumeExceptionId(Throwable $e): string
+    public static function consumeExceptionId(Throwable $exception): string
     {
         $ids = self::exceptionIds();
-        $exceptionId = $ids[$e] ?? Str::uuid()->toString();
-        unset($ids[$e]);
+        $exceptionId = $ids[$exception] ?? Str::uuid()->toString();
+        unset($ids[$exception]);
 
         return $exceptionId;
     }
 
-    private static function resolveQueryMessage(QueryException $e): string
+    private static function resolveQueryMessage(QueryException $queryException): string
     {
-        return match ($e->errorInfo[1] ?? null) {
+        return match ($queryException->errorInfo[1] ?? null) {
             1062 => Lang::get('core-foundation::http.duplicate-entry'),
             1451 => Lang::get('core-foundation::http.foreign-key-violation'),
             default => Lang::get('core-foundation::http.database-error'),

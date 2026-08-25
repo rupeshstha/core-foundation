@@ -11,6 +11,14 @@ Before writing any class, use the interactive scaffold. It generates the correct
 
 Presets: **CRUD** (model through test, 13 files) or **Custom Feature** (service + DTO + test). List all available commands: `{{ $assist->artisanCommand('list core') }}`
 
+## Repositories — Interface + Concrete, Always
+
+Selecting `repository` in the scaffold generates **both** `{Name}RepositoryContract` and `{Name}Repository` — never write a repository without its contract. Services and controllers inject the contract, never the concrete class. `query()` is `protected` — it only exists to be called from named methods *inside* the concrete repository; a service or controller can never reach it directly, and never should. Full rules: `resources/boost/skills/core-foundation-best-practices/rules/base-repository.md`.
+
+## Every Message Is a Translation Key
+
+No hardcoded strings in a response, log line, or exception message. Controllers: `$this->lang('key')` (auto-generates `lang/en/{name}.php`). Anywhere else: `CoreFoundation\Support\Lang::get('domain::key')`.
+
 ## Response Helpers
 
 Use these on every `BaseController` — never `response()->json()`:

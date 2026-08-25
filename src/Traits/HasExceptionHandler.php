@@ -28,7 +28,7 @@ use CoreFoundation\Exceptions\ExceptionRenderer;
  * │                                                                             │
  * │ Layer 3 — This trait (handleException)                                      │
  * │           A safety net for third-party exceptions, unexpected throwables,   │
- * │           or any exception that slipped past Layers 1 and 2.               │
+ * │           or any exception that slipped past Layers 1 and 2.                │
  * │           Generates a UUID, logs with context, returns 500.                 │
  * │                                                                             │
  * │ GUIDELINE:                                                                  │
@@ -43,8 +43,8 @@ use CoreFoundation\Exceptions\ExceptionRenderer;
  * │   {                                                                         │
  * │       try {                                                                 │
  * │           $result = $this->orderService->place($request->validated());      │
- * │       } catch (Throwable $e) {                                              │
- * │           return $this->handleException($e);                                │
+ * │       } catch (Throwable $exception) {                                      │
+ * │           return $this->handleException($exception);                        │
  * │       }                                                                     │
  * │                                                                             │
  * │       return $this->createdResponse($this->lang('create-success'), $result);│
@@ -52,10 +52,10 @@ use CoreFoundation\Exceptions\ExceptionRenderer;
  * │                                                                             │
  * │ For known domain exceptions you want to handle inline:                      │
  * │                                                                             │
- * │   } catch (InsufficientInventoryException $e) {                             │
+ * │   } catch (InsufficientInventoryException $exception) {                     │
  * │       // custom controller-level handling                                   │
- * │   } catch (Throwable $e) {                                                  │
- * │       return $this->handleException($e);  // everything else                │
+ * │   } catch (Throwable $exception) {                                          │
+ * │       return $this->handleException($exception);  // everything else        │
  * │   }                                                                         │
  * └─────────────────────────────────────────────────────────────────────────────┘
  */
