@@ -4,7 +4,6 @@ namespace CoreFoundation\Tests\Unit\Repositories;
 
 use CoreFoundation\Repositories\BaseRepository;
 use CoreFoundation\Tests\Stubs\Models\TestPost;
-use CoreFoundation\Repositories\Cache\QueryType;
 
 class TestPostRepository extends BaseRepository
 {
@@ -32,14 +31,12 @@ class TestPostRepository extends BaseRepository
     }
 
     /**
-     * Fixture for cacheQuery() — Listing tier, no method arguments.
+     * Fixture for cacheQuery() — Listing tier, no extra key material needed.
      */
     public function countActive(): int
     {
-        return $this->cacheQuery(
-            method: __FUNCTION__,
-            callback: fn () => $this->query()->where('status', 'active')->count(),
-        );
+        return $this->cacheQuery(__FUNCTION__)
+            ->remember(fn () => $this->query()->where('status', 'active')->count());
     }
 
     /**
@@ -47,13 +44,10 @@ class TestPostRepository extends BaseRepository
      */
     public function cachedTitle(int $id): ?string
     {
-        return $this->cacheQuery(
-            method: __FUNCTION__,
-            callback: fn () => $this->query()->find($id)?->title,
-            extra: ['id' => $id],
-            queryType: QueryType::Record,
-            recordId: $id,
-        );
+        return $this->cacheQuery(__FUNCTION__)
+            ->withKey(['id' => $id])
+            ->asRecord($id)
+            ->remember(fn () => $this->query()->find($id)?->title);
     }
 
     /**

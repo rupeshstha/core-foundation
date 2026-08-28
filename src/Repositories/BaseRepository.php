@@ -2,7 +2,6 @@
 
 namespace CoreFoundation\Repositories;
 
-use Closure;
 use InvalidArgumentException;
 use Illuminate\Foundation\Application;
 use Illuminate\Database\Eloquent\Model;
@@ -15,6 +14,7 @@ use CoreFoundation\Repositories\Cache\CacheScope;
 use CoreFoundation\Repositories\Sort\SortApplicator;
 use CoreFoundation\Repositories\Cache\RepositoryCache;
 use CoreFoundation\Repositories\Scope\ScopeApplicator;
+use CoreFoundation\Repositories\Cache\PendingCacheQuery;
 use CoreFoundation\Repositories\Filter\FilterApplicator;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use CoreFoundation\Entities\Contracts\HasSearchableColumns;
@@ -416,74 +416,47 @@ abstract class BaseRepository implements RepositoryContract
     }
 
     /**
-     * Cache the result of a custom query method with the same semantics
-     * fetchAll()/fetchById() already get for free: honours withoutCache(),
-     * and never caches while a pessimistic lock is active for the next query.
+     * Cache a custom query method — same shape as query(): Builder above.
+     * Protected entry point, fully-public fluent result: a concrete
+     * repository configures what's unique to its query, then calls the
+     * terminal remember(), which behaves exactly like fetchAll()/fetchById()
+     * already do (honours withoutCache(), never caches under an active
+     * pessimistic lock).
      *
-     * Fills in everything the repository already knows about itself — the
-     * model and cacheScope() — so a custom method only supplies what's
-     * actually unique to it: a callback, and (when the method takes
-     * arguments) enough in $extra to keep the cache key distinct per call.
-     *
-     * Invalidation is automatic and requires no extra code as long as writes
-     * go through create()/update()/delete() (or flushCache()/flushAllCache()/
+     * Invalidation needs no extra code as long as writes go through
+     * create()/update()/delete() (or flushCache()/flushAllCache()/
      * flushRecordCache() from a custom write method) — every entry this
-     * produces carries the model's base tag, the same one those flush calls
-     * already bust.
+     * produces carries the model's base tag, the same one those already bust.
      *
-     *   // Listing-tier — busted by any create()/update()/delete() on this model.
      *   public function listPublic(): Collection
      *   {
-     *       return $this->cacheQuery(
-     *           method: __FUNCTION__,
-     *           callback: fn () => $this->query()->where('is_public', true)->get(),
-     *       );
+     *       return $this->cacheQuery(__FUNCTION__)
+     *           ->with('entitlements')
+     *           ->remember(fn () => $this->query()->where('is_public', true)->with('entitlements')->get());
      *   }
      *
-     *   // Record-tier keyed by an explicit argument, not this model's own PK —
-     *   // lets a future flushRecordCache($shopId) target just this shop.
      *   public function getBalance(int $shopId): int
      *   {
-     *       return $this->cacheQuery(
-     *           method: __FUNCTION__,
-     *           callback: fn () => (int) $this->query()->where('shop_id', $shopId)->sum('amount_cents'),
-     *           extra: ['shop_id' => $shopId],
-     *           queryType: QueryType::Record,
-     *           recordId: $shopId,
-     *       );
+     *       return $this->cacheQuery(__FUNCTION__)
+     *           ->withKey(['shop_id' => $shopId])
+     *           ->asRecord($shopId)
+     *           ->remember(fn () => (int) $this->query()->where('shop_id', $shopId)->sum('amount_cents'));
      *   }
      *
-     * @param  Closure(): mixed  $callback  Runs only on a cache miss
-     * @param  array<string, mixed>  $extra  Extra discriminators baked into the cache key — anything the method's own arguments contribute (e.g. ['shop_id' => $shopId])
-     * @param  array<string>  $relations  Eager-loaded relation names, if any — also feeds relation-based invalidation, not just key uniqueness
-     * @param  array<string>  $columns  Selected columns, if the method varies them
-     * @param  int|string|null  $recordId  Required when $queryType is Record; need not be this model's own primary key
+     * See PendingCacheQuery for the full fluent surface.
      */
-    final protected function cacheQuery(
-        string $method,
-        Closure $callback,
-        array $extra = [],
-        array $relations = [],
-        array $columns = ['*'],
-        QueryType $queryType = QueryType::Listing,
-        int|string|null $recordId = null,
-    ): mixed {
+    final protected function cacheQuery(string $method): PendingCacheQuery
+    {
         $isLocked = $this->lockMode !== false;
         $bypass = $this->bypassCache;
         $this->bypassCache = false;
 
-        return $this->cache->remember(
+        return new PendingCacheQuery(
+            cache: $this->cache,
             model: $this->model,
             method: $method,
-            criteria: [],
-            relations: $relations,
-            columns: $columns,
-            extra: $extra,
-            shouldCache: ! $bypass && ! $isLocked,
-            queryType: $queryType,
-            recordId: $recordId,
             scope: $this->cacheScope(),
-            callback: $callback,
+            shouldCache: ! $bypass && ! $isLocked,
         );
     }
 
