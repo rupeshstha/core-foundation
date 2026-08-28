@@ -392,6 +392,84 @@ class BaseRepositoryTest extends PackageTestCase
         $this->assertEquals('Changed Loudly', $fresh->title);
     }
 
+    public function test_cache_query_caches_a_custom_methods_result(): void
+    {
+        TestPost::create(['title' => 'A', 'status' => 'active']);
+        TestPost::create(['title' => 'B', 'status' => 'active']);
+
+        $this->assertSame(2, $this->repository->countActive());
+
+        // Mutate the underlying table directly, bypassing the repository
+        // entirely — a raw query, not create()/update()/delete().
+        TestPost::query()->update(['status' => 'archived']);
+
+        // Still 2 — cacheQuery() served the cached count, not a fresh query.
+        $this->assertSame(2, $this->repository->countActive());
+    }
+
+    public function test_cache_query_is_invalidated_for_free_by_create(): void
+    {
+        TestPost::create(['title' => 'A', 'status' => 'active']);
+        $this->assertSame(1, $this->repository->countActive());
+
+        // create() already calls flushAll() for the model's base tag — a
+        // custom cacheQuery() method shares that tag, so it's busted with
+        // zero extra invalidation code in the repository.
+        $this->repository->create(['title' => 'B', 'status' => 'active']);
+
+        $this->assertSame(2, $this->repository->countActive());
+    }
+
+    public function test_without_cache_bypasses_a_custom_cache_query_method(): void
+    {
+        TestPost::create(['title' => 'A', 'status' => 'active']);
+        $this->assertSame(1, $this->repository->countActive());
+
+        TestPost::query()->update(['status' => 'archived']);
+
+        // Same parity as fetchAll()/fetchById(): withoutCache() forces a
+        // fresh read instead of the stale cached count.
+        $this->assertSame(0, $this->repository->countActiveFresh());
+    }
+
+    public function test_flush_record_cache_busts_only_the_targeted_records_cache(): void
+    {
+        $postA = TestPost::create(['title' => 'A']);
+        $postB = TestPost::create(['title' => 'B']);
+
+        // Warm both cache entries.
+        $this->assertEquals('A', $this->repository->cachedTitle($postA->id));
+        $this->assertEquals('B', $this->repository->cachedTitle($postB->id));
+
+        // Writes via the query builder directly (bypassing the inherited
+        // update()'s own flush) and calls flushRecordCache($id) itself —
+        // isolating exactly what this test is proving.
+        $this->repository->renameAndFlushRecord($postA->id, 'A Renamed');
+
+        $this->assertEquals('A Renamed', $this->repository->cachedTitle($postA->id));
+
+        // Mutate B directly too, bypassing the repository. If
+        // flushRecordCache($postA->id) had busted the whole model's cache
+        // (like flushAllCache() would), this would now return the fresh
+        // 'B Renamed Directly' value instead of the stale cached one.
+        TestPost::whereKey($postB->id)->update(['title' => 'B Renamed Directly']);
+        $this->assertEquals('B', $this->repository->cachedTitle($postB->id));
+    }
+
+    public function test_cache_query_is_not_part_of_the_public_api(): void
+    {
+        $method = (new ReflectionClass($this->repository))->getMethod('cacheQuery');
+
+        $this->assertTrue($method->isProtected());
+    }
+
+    public function test_flush_record_cache_is_not_part_of_the_public_api(): void
+    {
+        $method = (new ReflectionClass($this->repository))->getMethod('flushRecordCache');
+
+        $this->assertTrue($method->isProtected());
+    }
+
     public function test_it_can_count_records_matching_criteria(): void
     {
         TestPost::create(['title' => 'Post 1', 'status' => 'active']);
