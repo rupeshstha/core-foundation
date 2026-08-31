@@ -35,8 +35,19 @@ class TestPostRepository extends BaseRepository
      */
     public function countActive(): int
     {
-        return $this->cacheQuery(__FUNCTION__)
+        return $this->cacheQuery()
             ->remember(fn () => $this->query()->where('status', 'active')->count());
+    }
+
+    /**
+     * Fixture proving the call-stack-derived method name keeps two
+     * zero-argument, otherwise-identical Listing-tier cacheQuery() calls on
+     * the same repository from colliding on the same cache key.
+     */
+    public function countAll(): int
+    {
+        return $this->cacheQuery()
+            ->remember(fn () => $this->query()->count());
     }
 
     /**
@@ -44,7 +55,7 @@ class TestPostRepository extends BaseRepository
      */
     public function cachedTitle(int $id): ?string
     {
-        return $this->cacheQuery(__FUNCTION__)
+        return $this->cacheQuery()
             ->withKey(['id' => $id])
             ->asRecord($id)
             ->remember(fn () => $this->query()->find($id)?->title);

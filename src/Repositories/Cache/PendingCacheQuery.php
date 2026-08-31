@@ -16,7 +16,7 @@ use Illuminate\Database\Eloquent\Model;
  *   // Listing-tier, no extra key material needed.
  *   public function listPublic(): Collection
  *   {
- *       return $this->cacheQuery(__FUNCTION__)
+ *       return $this->cacheQuery()
  *           ->with('entitlements')
  *           ->remember(fn () => $this->query()->where('is_public', true)->with('entitlements')->get());
  *   }
@@ -26,7 +26,7 @@ use Illuminate\Database\Eloquent\Model;
  *   // this shop instead of flushAllCache() busting every shop's cache.
  *   public function getBalance(int $shopId): int
  *   {
- *       return $this->cacheQuery(__FUNCTION__)
+ *       return $this->cacheQuery()
  *           ->withKey(['shop_id' => $shopId])
  *           ->asRecord($shopId)
  *           ->remember(fn () => (int) $this->query()->where('shop_id', $shopId)->sum('amount_cents'));

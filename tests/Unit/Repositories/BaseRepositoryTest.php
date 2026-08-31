@@ -407,6 +407,20 @@ class BaseRepositoryTest extends PackageTestCase
         $this->assertSame(2, $this->repository->countActive());
     }
 
+    public function test_cache_query_derives_a_unique_key_per_calling_method(): void
+    {
+        TestPost::create(['title' => 'A', 'status' => 'active']);
+        TestPost::create(['title' => 'B', 'status' => 'archived']);
+
+        // countActive() and countAll() are both zero-argument Listing-tier
+        // cacheQuery() calls with no extra key material — the only thing
+        // that can keep them from sharing a cache key is the call-stack-
+        // derived method name. If that resolution ever broke, this would
+        // return 1 (countActive()'s cached value) instead of 2.
+        $this->assertSame(1, $this->repository->countActive());
+        $this->assertSame(2, $this->repository->countAll());
+    }
+
     public function test_cache_query_is_invalidated_for_free_by_create(): void
     {
         TestPost::create(['title' => 'A', 'status' => 'active']);
