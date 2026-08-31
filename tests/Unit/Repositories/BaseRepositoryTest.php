@@ -422,6 +422,19 @@ class BaseRepositoryTest extends PackageTestCase
         $this->assertSame(2, $this->repository->countAll());
     }
 
+    public function test_pending_cache_query_supports_conditionables_when(): void
+    {
+        $postA = TestPost::create(['title' => 'A']);
+        TestPost::create(['title' => 'B']);
+
+        // Falsy condition — when()'s callback never runs, stays Listing tier.
+        $this->assertSame(2, $this->repository->countPossiblyById(null));
+
+        // Truthy condition — when() applies withKey()/asRecord() without
+        // breaking the fluent chain back into PendingCacheQuery.
+        $this->assertSame(1, $this->repository->countPossiblyById($postA->id));
+    }
+
     public function test_cache_query_is_invalidated_for_free_by_create(): void
     {
         TestPost::create(['title' => 'A', 'status' => 'active']);

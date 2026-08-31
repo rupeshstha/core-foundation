@@ -4,6 +4,7 @@ namespace CoreFoundation\Repositories\Cache;
 
 use Closure;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Traits\Conditionable;
 
 /**
  * PendingCacheQuery
@@ -11,7 +12,8 @@ use Illuminate\Database\Eloquent\Model;
  * Fluent builder for caching a custom repository method, returned by
  * BaseRepository::cacheQuery() — same shape as Illuminate\Http\Client\PendingRequest
  * or Illuminate\Mail\PendingMail: a few optional configuration calls, one
- * terminal action.
+ * terminal action. Composes Conditionable for the same reason PendingRequest
+ * does — when()/unless() to configure conditionally without breaking the chain.
  *
  *   // Listing-tier, no extra key material needed.
  *   public function listPublic(): Collection
@@ -32,11 +34,18 @@ use Illuminate\Database\Eloquent\Model;
  *           ->remember(fn () => (int) $this->query()->where('shop_id', $shopId)->sum('amount_cents'));
  *   }
  *
+ *   // when()/unless(), same as any other Laravel fluent builder.
+ *   return $this->cacheQuery(__FUNCTION__)
+ *       ->when($liveOnly, fn (PendingCacheQuery $query) => $query->asRecord($shopId))
+ *       ->remember(fn () => ...);
+ *
  * Never constructed directly — only reachable via the protected
  * BaseRepository::cacheQuery(), same encapsulation as query(): Builder.
  */
 final class PendingCacheQuery
 {
+    use Conditionable;
+
     /** @var array<string, mixed> */
     private array $extra = [];
 

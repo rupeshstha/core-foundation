@@ -4,6 +4,7 @@ namespace CoreFoundation\Tests\Unit\Repositories;
 
 use CoreFoundation\Repositories\BaseRepository;
 use CoreFoundation\Tests\Stubs\Models\TestPost;
+use CoreFoundation\Repositories\Cache\PendingCacheQuery;
 
 class TestPostRepository extends BaseRepository
 {
@@ -48,6 +49,19 @@ class TestPostRepository extends BaseRepository
     {
         return $this->cacheQuery(__FUNCTION__)
             ->remember(fn () => $this->query()->count());
+    }
+
+    /**
+     * Fixture for PendingCacheQuery's Conditionable::when() — switches to
+     * the Record tier only when $id is given, without breaking the chain.
+     */
+    public function countPossiblyById(?int $id): int
+    {
+        return $this->cacheQuery(__FUNCTION__)
+            ->when($id !== null, fn (PendingCacheQuery $query): PendingCacheQuery => $query->withKey(['id' => $id])->asRecord($id))
+            ->remember(fn () => $id !== null
+                ? $this->query()->where('id', $id)->count()
+                : $this->query()->count());
     }
 
     /**
