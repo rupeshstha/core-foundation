@@ -416,18 +416,21 @@ abstract class BaseRepository implements RepositoryContract
     }
 
     /**
-     * Cache a custom query method — same shape as query(): Builder above,
-     * right down to taking no arguments. A concrete repository configures
-     * what's unique to its query fluently, then calls the terminal
-     * remember(), which behaves exactly like fetchAll()/fetchById() already
-     * do (honours withoutCache(), never caches under an active pessimistic
-     * lock).
+     * Cache a custom query method — same shape as query(): Builder above.
+     * A concrete repository configures what's unique to its query fluently,
+     * then calls the terminal remember(), which behaves exactly like
+     * fetchAll()/fetchById() already do (honours withoutCache(), never
+     * caches under an active pessimistic lock).
      *
-     * The calling method's name is resolved from the call stack — the same
-     * mechanism Illuminate\Support's own once() helper uses to identify its
-     * caller without asking for an explicit key. No method can share a name
-     * with another method on the same class, so this is exactly as unique
-     * as passing __FUNCTION__ by hand, without making every call site type it.
+     * $method must be __FUNCTION__, passed explicitly by the caller —
+     * deliberately NOT derived from debug_backtrace(). That was tried and
+     * reverted: it's paid on every call including cache hits (the one path
+     * caching exists to keep fast), and it silently collides the moment a
+     * repository author adds one private helper to DRY up two similarly-
+     * shaped cached methods — a normal refactor, not a misuse — because the
+     * resolved name becomes the helper's, not either public method's.
+     * __FUNCTION__ costs nothing (a compile-time constant, not a function
+     * call) and cannot silently collide like that.
      *
      * Invalidation needs no extra code as long as writes go through
      * create()/update()/delete() (or flushCache()/flushAllCache()/
@@ -436,14 +439,14 @@ abstract class BaseRepository implements RepositoryContract
      *
      *   public function listPublic(): Collection
      *   {
-     *       return $this->cacheQuery()
+     *       return $this->cacheQuery(__FUNCTION__)
      *           ->with('entitlements')
      *           ->remember(fn () => $this->query()->where('is_public', true)->with('entitlements')->get());
      *   }
      *
      *   public function getBalance(int $shopId): int
      *   {
-     *       return $this->cacheQuery()
+     *       return $this->cacheQuery(__FUNCTION__)
      *           ->withKey(['shop_id' => $shopId])
      *           ->asRecord($shopId)
      *           ->remember(fn () => (int) $this->query()->where('shop_id', $shopId)->sum('amount_cents'));
@@ -451,16 +454,11 @@ abstract class BaseRepository implements RepositoryContract
      *
      * See PendingCacheQuery for the full fluent surface.
      */
-    final protected function cacheQuery(): PendingCacheQuery
+    final protected function cacheQuery(string $method): PendingCacheQuery
     {
         $isLocked = $this->lockMode !== false;
         $bypass = $this->bypassCache;
         $this->bypassCache = false;
-
-        // IGNORE_ARGS: no need to copy argument values just to read a name.
-        // Limit of 2: frame 0 is this method, frame 1 is the caller — no
-        // reason to walk further up the stack.
-        $method = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2)[1]['function'] ?? 'cacheQuery';
 
         return new PendingCacheQuery(
             cache: $this->cache,

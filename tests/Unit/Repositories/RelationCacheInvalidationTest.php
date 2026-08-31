@@ -20,7 +20,7 @@ class RelationCachePostRepository extends BaseRepository
      */
     public function countWithComments(): int
     {
-        return $this->cacheQuery()
+        return $this->cacheQuery(__FUNCTION__)
             ->with('comments')
             ->remember(fn () => $this->query()->with('comments')->get()->sum(fn (TestPost $post): int => $post->comments->count()));
     }

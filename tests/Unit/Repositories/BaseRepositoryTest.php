@@ -407,16 +407,17 @@ class BaseRepositoryTest extends PackageTestCase
         $this->assertSame(2, $this->repository->countActive());
     }
 
-    public function test_cache_query_derives_a_unique_key_per_calling_method(): void
+    public function test_cache_query_keys_two_similar_custom_methods_independently(): void
     {
         TestPost::create(['title' => 'A', 'status' => 'active']);
         TestPost::create(['title' => 'B', 'status' => 'archived']);
 
-        // countActive() and countAll() are both zero-argument Listing-tier
-        // cacheQuery() calls with no extra key material — the only thing
-        // that can keep them from sharing a cache key is the call-stack-
-        // derived method name. If that resolution ever broke, this would
-        // return 1 (countActive()'s cached value) instead of 2.
+        // countActive() and countAll() are both Listing-tier cacheQuery()
+        // calls with no extra key material — __FUNCTION__ ('countActive' vs
+        // 'countAll') is what keeps them from sharing a cache key. If a
+        // repository author ever passed a shared literal instead of their
+        // own __FUNCTION__, this would return 1 (countActive()'s cached
+        // value) instead of 2.
         $this->assertSame(1, $this->repository->countActive());
         $this->assertSame(2, $this->repository->countAll());
     }
