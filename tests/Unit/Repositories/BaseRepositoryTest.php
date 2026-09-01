@@ -5,10 +5,30 @@ namespace CoreFoundation\Tests\Unit\Repositories;
 use ReflectionClass;
 use BadMethodCallException;
 use CoreFoundation\Tests\PackageTestCase;
+use CoreFoundation\Repositories\BaseRepository;
 use CoreFoundation\Tests\Stubs\Models\TestPost;
 use CoreFoundation\Exceptions\StaleDataException;
 use CoreFoundation\Tests\Stubs\Models\TestComment;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+
+/**
+ * getByCriteria() isn't cached by default (cachedMethods() only includes
+ * fetchAll/fetchById out of the box) — this repository opts it in so
+ * test_get_by_criteria_skips_cache_while_a_pessimistic_lock_is_pending()
+ * below has something to actually observe.
+ */
+class LockAwareCriteriaPostRepository extends BaseRepository
+{
+    protected function setModel(): string
+    {
+        return TestPost::class;
+    }
+
+    protected function cachedMethods(): array
+    {
+        return ['getByCriteria'];
+    }
+}
 
 class BaseRepositoryTest extends PackageTestCase
 {
@@ -251,6 +271,27 @@ class BaseRepositoryTest extends PackageTestCase
         $this->assertFalse($property->getValue($this->repository));
     }
 
+    public function test_get_by_criteria_skips_cache_while_a_pessimistic_lock_is_pending(): void
+    {
+        // Regression test for a latent bug closed by routing getByCriteria()
+        // through cacheQuery(): it already called applyLock() on the query,
+        // but never checked lock mode before deciding to cache the result —
+        // a locked read's result could be cached and served to a later,
+        // unlocked call. cacheQuery() gates on lock mode automatically, the
+        // same way fetchAll()/fetchById() already did.
+        $repository = $this->app->make(LockAwareCriteriaPostRepository::class);
+        TestPost::create(['title' => 'A', 'status' => 'active']);
+
+        $locked = $repository->lockForUpdate()->getByCriteria(['filters' => ['__eq_status' => 'active']]);
+        $this->assertCount(1, $locked);
+
+        TestPost::query()->update(['status' => 'archived']);
+
+        // If the locked read above had been cached, this would still return 1.
+        $fresh = $repository->getByCriteria(['filters' => ['__eq_status' => 'active']]);
+        $this->assertCount(0, $fresh);
+    }
+
     public function test_it_can_create_model(): void
     {
         $post = $this->repository->create(['title' => 'New Post']);
@@ -392,6 +433,155 @@ class BaseRepositoryTest extends PackageTestCase
         $this->assertEquals('Changed Loudly', $fresh->title);
     }
 
+    public function test_cache_query_caches_a_custom_methods_result(): void
+    {
+        TestPost::create(['title' => 'A', 'status' => 'active']);
+        TestPost::create(['title' => 'B', 'status' => 'active']);
+
+        $this->assertSame(2, $this->repository->countActive());
+
+        // Mutate the underlying table directly, bypassing the repository
+        // entirely — a raw query, not create()/update()/delete().
+        TestPost::query()->update(['status' => 'archived']);
+
+        // Still 2 — cacheQuery() served the cached count, not a fresh query.
+        $this->assertSame(2, $this->repository->countActive());
+    }
+
+    public function test_cache_query_keys_two_similar_custom_methods_independently(): void
+    {
+        TestPost::create(['title' => 'A', 'status' => 'active']);
+        TestPost::create(['title' => 'B', 'status' => 'archived']);
+
+        // countActive() and countAll() are both Listing-tier cacheQuery()
+        // calls with no extra key material — __FUNCTION__ ('countActive' vs
+        // 'countAll') is what keeps them from sharing a cache key. If a
+        // repository author ever passed a shared literal instead of their
+        // own __FUNCTION__, this would return 1 (countActive()'s cached
+        // value) instead of 2.
+        $this->assertSame(1, $this->repository->countActive());
+        $this->assertSame(2, $this->repository->countAll());
+    }
+
+    public function test_pending_cache_query_supports_conditionables_when(): void
+    {
+        $postA = TestPost::create(['title' => 'A']);
+        TestPost::create(['title' => 'B']);
+
+        // Falsy condition — when()'s callback never runs, stays Listing tier.
+        $this->assertSame(2, $this->repository->countPossiblyById(null));
+
+        // Truthy condition — when() applies withKey()/asRecord() without
+        // breaking the fluent chain back into PendingCacheQuery.
+        $this->assertSame(1, $this->repository->countPossiblyById($postA->id));
+    }
+
+    public function test_pending_cache_query_supports_conditionables_unless(): void
+    {
+        $postA = TestPost::create(['title' => 'A']);
+        TestPost::create(['title' => 'B']);
+
+        // Truthy "skip" condition ($id === null) — unless()'s callback never
+        // runs, stays Listing tier.
+        $this->assertSame(2, $this->repository->countUnlessId(null));
+
+        // Falsy "skip" condition — unless() applies withKey()/asRecord(),
+        // same as when() does with the condition inverted.
+        $this->assertSame(1, $this->repository->countUnlessId($postA->id));
+    }
+
+    public function test_cache_query_criteria_feeds_the_cache_key(): void
+    {
+        TestPost::create(['title' => 'A', 'status' => 'active']);
+        TestPost::create(['title' => 'B', 'status' => 'archived']);
+
+        $this->assertSame(1, $this->repository->countByStatus('active'));
+        $this->assertSame(1, $this->repository->countByStatus('archived'));
+
+        TestPost::create(['title' => 'C', 'status' => 'active']);
+
+        // Still cached under the same criteria() argument as the first call.
+        $this->assertSame(1, $this->repository->countByStatus('active'));
+    }
+
+    public function test_cache_query_columns_feed_the_cache_key(): void
+    {
+        TestPost::create(['title' => 'A']);
+
+        $this->assertSame(1, $this->repository->cachedCountWithColumns(['id']));
+
+        TestPost::create(['title' => 'B']);
+
+        // Same columns() argument as before — still cached, still 1.
+        $this->assertSame(1, $this->repository->cachedCountWithColumns(['id']));
+
+        // Different columns() argument — different cache key, fresh query.
+        $this->assertSame(2, $this->repository->cachedCountWithColumns(['id', 'title']));
+    }
+
+    public function test_cache_query_is_invalidated_for_free_by_create(): void
+    {
+        TestPost::create(['title' => 'A', 'status' => 'active']);
+        $this->assertSame(1, $this->repository->countActive());
+
+        // create() already calls flushAll() for the model's base tag — a
+        // custom cacheQuery() method shares that tag, so it's busted with
+        // zero extra invalidation code in the repository.
+        $this->repository->create(['title' => 'B', 'status' => 'active']);
+
+        $this->assertSame(2, $this->repository->countActive());
+    }
+
+    public function test_without_cache_bypasses_a_custom_cache_query_method(): void
+    {
+        TestPost::create(['title' => 'A', 'status' => 'active']);
+        $this->assertSame(1, $this->repository->countActive());
+
+        TestPost::query()->update(['status' => 'archived']);
+
+        // Same parity as fetchAll()/fetchById(): withoutCache() forces a
+        // fresh read instead of the stale cached count.
+        $this->assertSame(0, $this->repository->countActiveFresh());
+    }
+
+    public function test_flush_record_cache_busts_only_the_targeted_records_cache(): void
+    {
+        $postA = TestPost::create(['title' => 'A']);
+        $postB = TestPost::create(['title' => 'B']);
+
+        // Warm both cache entries.
+        $this->assertEquals('A', $this->repository->cachedTitle($postA->id));
+        $this->assertEquals('B', $this->repository->cachedTitle($postB->id));
+
+        // Writes via the query builder directly (bypassing the inherited
+        // update()'s own flush) and calls flushRecordCache($id) itself —
+        // isolating exactly what this test is proving.
+        $this->repository->renameAndFlushRecord($postA->id, 'A Renamed');
+
+        $this->assertEquals('A Renamed', $this->repository->cachedTitle($postA->id));
+
+        // Mutate B directly too, bypassing the repository. If
+        // flushRecordCache($postA->id) had busted the whole model's cache
+        // (like flushAllCache() would), this would now return the fresh
+        // 'B Renamed Directly' value instead of the stale cached one.
+        TestPost::whereKey($postB->id)->update(['title' => 'B Renamed Directly']);
+        $this->assertEquals('B', $this->repository->cachedTitle($postB->id));
+    }
+
+    public function test_cache_query_is_not_part_of_the_public_api(): void
+    {
+        $method = (new ReflectionClass($this->repository))->getMethod('cacheQuery');
+
+        $this->assertTrue($method->isProtected());
+    }
+
+    public function test_flush_record_cache_is_not_part_of_the_public_api(): void
+    {
+        $method = (new ReflectionClass($this->repository))->getMethod('flushRecordCache');
+
+        $this->assertTrue($method->isProtected());
+    }
+
     public function test_it_can_count_records_matching_criteria(): void
     {
         TestPost::create(['title' => 'Post 1', 'status' => 'active']);
@@ -408,5 +598,67 @@ class BaseRepositoryTest extends PackageTestCase
 
         $this->assertTrue($this->repository->exists(['filters' => ['__eq_status' => 'active']]));
         $this->assertFalse($this->repository->exists(['filters' => ['__eq_status' => 'pending']]));
+    }
+
+    public function test_it_can_fetch_one_by_criteria(): void
+    {
+        TestPost::create(['title' => 'Post 1', 'status' => 'active']);
+        TestPost::create(['title' => 'Post 2', 'status' => 'pending']);
+
+        $result = $this->repository->fetchOneByCriteria(['filters' => ['__eq_status' => 'active']]);
+
+        $this->assertEquals('Post 1', $result->title);
+    }
+
+    public function test_fetch_one_by_criteria_throws_when_nothing_matches(): void
+    {
+        TestPost::create(['title' => 'Post 1', 'status' => 'pending']);
+
+        $this->expectException(ModelNotFoundException::class);
+        $this->repository->fetchOneByCriteria(['filters' => ['__eq_status' => 'active']]);
+    }
+
+    public function test_it_can_get_by_criteria(): void
+    {
+        TestPost::create(['title' => 'Post 1', 'status' => 'active']);
+        TestPost::create(['title' => 'Post 2', 'status' => 'pending']);
+
+        $results = $this->repository->getByCriteria(['filters' => ['__eq_status' => 'active']]);
+
+        $this->assertCount(1, $results);
+        $this->assertEquals('Post 1', $results->first()->title);
+    }
+
+    public function test_it_can_fetch_first_by_criteria(): void
+    {
+        TestPost::create(['title' => 'Post 1', 'status' => 'active']);
+
+        $result = $this->repository->firstByCriteria(['filters' => ['__eq_status' => 'active']]);
+
+        $this->assertNotNull($result);
+        $this->assertEquals('Post 1', $result->title);
+    }
+
+    public function test_first_by_criteria_returns_null_when_nothing_matches(): void
+    {
+        TestPost::create(['title' => 'Post 1', 'status' => 'pending']);
+
+        $result = $this->repository->firstByCriteria(['filters' => ['__eq_status' => 'active']]);
+
+        $this->assertNull($result);
+    }
+
+    public function test_paginated_fetch_all_results_are_never_cached(): void
+    {
+        TestPost::create(['title' => 'Post 1']);
+
+        $before = $this->repository->fetchAll(paginate: true, perPage: 10);
+        $this->assertCount(1, $before->items());
+
+        TestPost::create(['title' => 'Post 2']);
+
+        // If pagination were (incorrectly) cached, this would still show 1 item.
+        $after = $this->repository->fetchAll(paginate: true, perPage: 10);
+        $this->assertCount(2, $after->items());
     }
 }

@@ -1,6 +1,6 @@
 ---
 name: core-foundation-best-practices
-description: "Apply this skill whenever writing, reviewing, or refactoring code in a CoreFoundation Laravel project. Triggers for all base class usage: BaseController (response envelope, exception handling), BaseService (pipeline, events, defer), BaseRepository (filtering, caching, query contracts, locking, repository interfaces, silent updates), BaseDataObject (DTOs, typed properties), BaseResource/BaseCollection (field pipeline, modular extension), BaseRequest (rule hierarchy, route params), BasePolicy (deny-by-default), BaseObserver (lifecycle events), BaseJob (notifications, batching), BaseApiException (three-layer exception system), BaseExtensionServiceProvider (module hooks), BaseTestCase (envelope assertions), BaseModel (modular extensibility, FluentJsonCast), and ApplicationContext (domain-scoped state). Also triggers for cross-cutting coding standards: repository interface + bind pattern, no direct model queries outside repositories, translation keys for every user-facing message, Throwable vs Exception at safety-net catch layers, and variable naming (no one-letter variables like $e). Also use for module isolation decisions, the response envelope shape, and any CoreFoundation architecture question."
+description: "Apply this skill whenever writing, reviewing, or refactoring code in a CoreFoundation Laravel project. Triggers for all base class usage: BaseController (response envelope, exception handling), BaseService (pipeline, events, defer, HasServiceCache dependency-based result caching), BaseRepository (filtering, caching, cacheQuery()/PendingCacheQuery custom-method caching, invalidation granularity, query contracts, locking, repository interfaces, silent updates), BaseDataObject (DTOs, typed properties), BaseResource/BaseCollection (field pipeline, modular extension), BaseRequest (rule hierarchy, route params), BasePolicy (deny-by-default), BaseObserver (lifecycle events), BaseJob (notifications, batching), BaseApiException (three-layer exception system), BaseExtensionServiceProvider (module hooks), BaseTestCase (envelope assertions), BaseModel (modular extensibility, FluentJsonCast), and ApplicationContext (domain-scoped state). Also triggers for cross-cutting coding standards: repository interface + bind pattern, no direct model queries outside repositories, translation keys for every user-facing message, Throwable vs Exception at safety-net catch layers, and variable naming (no one-letter variables like $e). Also use for module isolation decisions, the response envelope shape, and any CoreFoundation architecture question."
 license: MIT
 metadata:
   author: Rupesh Shrestha
@@ -32,6 +32,7 @@ Before applying any rule, check what the application already does. If a pattern 
 - Use class-based events (`SomeEvent::dispatch()`) for fire-and-forget pub/sub — never string-keyed events
 - Register pipes from a ServiceProvider, never inside the service class itself
 - `static::class` in all static registries — never `self::class`
+- Cache a multi-model/external-API result with `rememberWithDependencies()` (`HasServiceCache`) and `CacheDependency::onRecord()`/`onRecords()`/`onListing()` — never a second cache class; it shares one tag namespace with repository caching automatically
 
 ### 3. BaseRepository → `rules/base-repository.md`
 
@@ -42,6 +43,8 @@ Before applying any rule, check what the application already does. If a pattern 
 - `fetchAll` and `fetchById` are cached by default; override `cachedMethods()` to change
 - Override `cacheScope()` for tenant-scoped entities — cache isolation is not automatic
 - `update(..., quiet: true)` skips cache flush and model events (same `Model::withoutEvents()` mechanism Eloquent's own `updateQuietly()` uses) — only for columns nothing cached or observed depends on
+- Cache a custom method with `$this->cacheQuery($method)->...->remember(...)` (a `PendingCacheQuery` fluent builder) — never a bare `Cache::remember()` or `$this->cache->remember()` call
+- Listing-tier caches (`fetchAll()`, an unscoped `cacheQuery()`) bust on *any* write to that model — this is correct, not a bug; use `->asRecord($id)` for a genuinely per-item access pattern instead of trying to narrow the listing tier
 
 ### 4. BaseDataObject → `rules/base-data-object.md`
 

@@ -13,6 +13,17 @@ class RelationCachePostRepository extends BaseRepository
     {
         return TestPost::class;
     }
+
+    /**
+     * Fixture proving PendingCacheQuery::with() feeds relation-based
+     * invalidation the same way the built-in fetchAll()->with() does.
+     */
+    public function countWithComments(): int
+    {
+        return $this->cacheQuery(__FUNCTION__)
+            ->with('comments')
+            ->remember(fn () => $this->query()->with('comments')->get()->sum(fn (TestPost $post): int => $post->comments->count()));
+    }
 }
 
 class RelationCacheCommentRepository extends BaseRepository
@@ -92,6 +103,18 @@ class RelationCacheInvalidationTest extends PackageTestCase
 
         $after = $this->postRepository->fetchAll(paginate: false);
         $this->assertFalse($after->first()->relationLoaded('comments'));
+    }
+
+    public function test_cache_query_with_relations_is_busted_by_a_related_write(): void
+    {
+        $post = TestPost::create(['title' => 'Post 1']);
+        TestComment::create(['test_post_id' => $post->id, 'body' => 'First comment']);
+
+        $this->assertSame(1, $this->postRepository->countWithComments());
+
+        $this->commentRepository->create(['test_post_id' => $post->id, 'body' => 'Second comment']);
+
+        $this->assertSame(2, $this->postRepository->countWithComments());
     }
 
     public function test_writes_to_an_unrelated_models_record_cache_stay_isolated(): void
