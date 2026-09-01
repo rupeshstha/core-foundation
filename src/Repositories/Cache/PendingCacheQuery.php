@@ -9,11 +9,16 @@ use Illuminate\Support\Traits\Conditionable;
 /**
  * PendingCacheQuery
  *
- * Fluent builder for caching a custom repository method, returned by
+ * Fluent builder for a cached repository read, returned by
  * BaseRepository::cacheQuery() — same shape as Illuminate\Http\Client\PendingRequest
  * or Illuminate\Mail\PendingMail: a few optional configuration calls, one
  * terminal action. Composes Conditionable for the same reason PendingRequest
  * does — when()/unless() to configure conditionally without breaking the chain.
+ *
+ * This is the ONE place $this->cache->remember() is ever called — every one
+ * of BaseRepository's own fetchAll()/fetchById()/fetchOneByCriteria()/
+ * getByCriteria()/firstByCriteria()/count()/exists() builds one of these and
+ * calls remember() on it, same as a brand new custom method would.
  *
  *   // Listing-tier, no extra key material needed.
  *   public function listPublic(): Collection
@@ -34,9 +39,12 @@ use Illuminate\Support\Traits\Conditionable;
  *           ->remember(fn () => (int) $this->query()->where('shop_id', $shopId)->sum('amount_cents'));
  *   }
  *
- *   // when()/unless(), same as any other Laravel fluent builder.
+ *   // when()/unless(), same as any other Laravel fluent builder — dontCache()
+ *   // is how a method adds a gate cacheQuery() doesn't apply automatically
+ *   // (cacheQuery() already covers withoutCache() and an active pessimistic
+ *   // lock; anything extra, e.g. a config-driven allowlist, is opt-in here).
  *   return $this->cacheQuery(__FUNCTION__)
- *       ->when($liveOnly, fn (PendingCacheQuery $query) => $query->asRecord($shopId))
+ *       ->when($paginated, fn (PendingCacheQuery $query) => $query->dontCache())
  *       ->remember(fn () => ...);
  *
  * Never constructed directly — only reachable via the protected
@@ -45,6 +53,12 @@ use Illuminate\Support\Traits\Conditionable;
 final class PendingCacheQuery
 {
     use Conditionable;
+
+    /** @var array<string, mixed> */
+    private array $criteria = [];
+
+    /** @var array<string> */
+    private array $columns = ['*'];
 
     /** @var array<string, mixed> */
     private array $extra = [];
@@ -61,8 +75,35 @@ final class PendingCacheQuery
         private readonly Model $model,
         private readonly string $method,
         private readonly ?CacheScope $scope,
-        private readonly bool $shouldCache,
+        private bool $shouldCache,
     ) {}
+
+    /**
+     * Filter/sort/scope criteria, threaded through FilterApplicator/
+     * SortApplicator/ScopeApplicator inside the callback and folded into the
+     * cache key here — same $criteria shape fetchAll()/fetchById() accept.
+     *
+     * @param  array<string, mixed>  $criteria
+     */
+    public function criteria(array $criteria): static
+    {
+        $this->criteria = $criteria;
+
+        return $this;
+    }
+
+    /**
+     * Selected columns — part of the cache key, same as fetchAll()/fetchById().
+     * Most custom methods have nothing to vary here; defaults to ['*'].
+     *
+     * @param  array<string>  $columns
+     */
+    public function columns(array $columns): static
+    {
+        $this->columns = $columns;
+
+        return $this;
+    }
 
     /**
      * Extra discriminators baked into the cache key — anything the method's
@@ -107,6 +148,21 @@ final class PendingCacheQuery
     }
 
     /**
+     * Force this call to skip the cache, on top of whatever cacheQuery()
+     * already decided from withoutCache()/lockForUpdate(). Use via when()/
+     * unless() for a gate specific to one method — e.g. a config-driven
+     * allowlist, or "never cache a paginated result":
+     *
+     *   ->when($paginated, fn (PendingCacheQuery $query) => $query->dontCache())
+     */
+    public function dontCache(): static
+    {
+        $this->shouldCache = false;
+
+        return $this;
+    }
+
+    /**
      * Terminal action — run $callback through the cache with everything
      * configured above. Same verb as Cache::remember() on purpose.
      *
@@ -117,9 +173,9 @@ final class PendingCacheQuery
         return $this->cache->remember(
             model: $this->model,
             method: $this->method,
-            criteria: [],
+            criteria: $this->criteria,
             relations: $this->relations,
-            columns: ['*'],
+            columns: $this->columns,
             extra: $this->extra,
             shouldCache: $this->shouldCache,
             queryType: $this->queryType,

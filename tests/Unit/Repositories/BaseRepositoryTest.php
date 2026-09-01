@@ -5,10 +5,30 @@ namespace CoreFoundation\Tests\Unit\Repositories;
 use ReflectionClass;
 use BadMethodCallException;
 use CoreFoundation\Tests\PackageTestCase;
+use CoreFoundation\Repositories\BaseRepository;
 use CoreFoundation\Tests\Stubs\Models\TestPost;
 use CoreFoundation\Exceptions\StaleDataException;
 use CoreFoundation\Tests\Stubs\Models\TestComment;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+
+/**
+ * getByCriteria() isn't cached by default (cachedMethods() only includes
+ * fetchAll/fetchById out of the box) — this repository opts it in so
+ * test_get_by_criteria_skips_cache_while_a_pessimistic_lock_is_pending()
+ * below has something to actually observe.
+ */
+class LockAwareCriteriaPostRepository extends BaseRepository
+{
+    protected function setModel(): string
+    {
+        return TestPost::class;
+    }
+
+    protected function cachedMethods(): array
+    {
+        return ['getByCriteria'];
+    }
+}
 
 class BaseRepositoryTest extends PackageTestCase
 {
@@ -249,6 +269,27 @@ class BaseRepositoryTest extends PackageTestCase
         $property = $reflection->getProperty('lockMode');
         $property->setAccessible(true);
         $this->assertFalse($property->getValue($this->repository));
+    }
+
+    public function test_get_by_criteria_skips_cache_while_a_pessimistic_lock_is_pending(): void
+    {
+        // Regression test for a latent bug closed by routing getByCriteria()
+        // through cacheQuery(): it already called applyLock() on the query,
+        // but never checked lock mode before deciding to cache the result —
+        // a locked read's result could be cached and served to a later,
+        // unlocked call. cacheQuery() gates on lock mode automatically, the
+        // same way fetchAll()/fetchById() already did.
+        $repository = $this->app->make(LockAwareCriteriaPostRepository::class);
+        TestPost::create(['title' => 'A', 'status' => 'active']);
+
+        $locked = $repository->lockForUpdate()->getByCriteria(['filters' => ['__eq_status' => 'active']]);
+        $this->assertCount(1, $locked);
+
+        TestPost::query()->update(['status' => 'archived']);
+
+        // If the locked read above had been cached, this would still return 1.
+        $fresh = $repository->getByCriteria(['filters' => ['__eq_status' => 'active']]);
+        $this->assertCount(0, $fresh);
     }
 
     public function test_it_can_create_model(): void
