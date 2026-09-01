@@ -165,6 +165,89 @@ public function findPending(): Collection
 }
 ```
 
+## When to Cache a Custom Repository Method
+
+`fetchAll()`/`fetchById()` are cached by default (`cachedMethods()`). A custom method added under "Custom Queries Start from `$this->query()`" above is **not** cached automatically — decide deliberately, don't cache by default and don't skip caching by default either.
+
+**Cache it when both are true:**
+1. **Read-heavy relative to writes** — called often, backed by data that changes rarely (a public listing, a per-plan config lookup, anything closer to reference data than to a live ledger).
+2. **Safe to serve briefly stale** — nothing breaks if a caller sees a value that's up to a cache miss away from current.
+
+**Don't cache when either is true:**
+1. **Write-heavy relative to reads** — the query already runs against a small/cheap dataset and isn't actually slow; caching it only adds invalidation surface for no measured win.
+2. **The read feeds a financial or state-changing decision made in the same request** — e.g. reading a balance immediately before deciding how much to deduct from it. A stale read here isn't a UX nitpick, it's a double-spend / race-condition bug. Read live.
+
+```php
+// Cache — public plan listing. Hot (every anonymous pricing-page load),
+// changes only when an admin edits a plan, staleness for an hour is harmless.
+public function listPublic(): Collection
+{
+    return $this->cacheQuery(__FUNCTION__)
+        ->with('entitlements')
+        ->remember(fn () => $this->query()->where('is_public', true)->with('entitlements')->get());
+}
+
+// Don't cache — SUM() over a handful of rows, read immediately before deciding
+// how much credit to apply to an invoice. A stale read here risks over-applying
+// credit that's already been spent. It's also already cheap — nothing to gain.
+public function getBalance(int $shopId): int
+{
+    return (int) $this->query()->where('shop_id', $shopId)->sum('amount_cents');
+}
+```
+
+**When you do cache a custom method, build it with `$this->cacheQuery($method)` — never a bare `Cache::remember()`/`Cache::tags()` call inside a repository, and never `$this->cache->remember(...)` directly either.** `cacheQuery()` returns a `PendingCacheQuery` — a fluent builder (same shape as `Illuminate\Http\Client\PendingRequest`): configure what's unique to the call, then call the terminal `remember()`.
+
+```php
+public function getBalance(int $shopId): int
+{
+    return $this->cacheQuery(__FUNCTION__)
+        ->withKey(['shop_id' => $shopId])   // extra cache-key material
+        ->asRecord($shopId)                  // record tier, keyed by shop_id — see below
+        ->remember(fn () => (int) $this->query()->where('shop_id', $shopId)->sum('amount_cents'));
+}
+```
+
+`cacheQuery()` already handles `withoutCache()` and an active pessimistic lock for you, the same as `fetchAll()`/`fetchById()` — a method built this way is invalidated for free by `create()`/`update()`/`delete()`, which already flush the tags every `cacheQuery()` entry carries. See `PendingCacheQuery`'s own class docblock for the full fluent surface (`with()`, `criteria()`, `columns()`, `asRecord()`, `dontCache()`, `when()`/`unless()`).
+
+## Choosing Invalidation Granularity — Listing Tier vs. Record Tier
+
+Every `cacheQuery()`/`fetchAll()` read lands in one of two tiers, and picking the right one is the difference between correct caching and quietly overloading your cache layer at scale.
+
+**This is not a bug — read before "fixing" it.** A single `update()` on *any* record busts the entire listing tier for that model+scope — every cached `fetchAll()`/listing-shaped `cacheQuery()` result, not just the one page that happened to contain the changed record. This looks like "1 product update invalidates all 1000 cached products," and it is — but it's the correct, necessary behavior, not a design flaw. A listing's cache key is a hash of criteria/relations/columns; there's no way to know in advance which cached listing variants (different filters, sorts, pages) happen to include the record that just changed. The only options are "bust every listing variant" or "risk serving stale data in some of them," and stale data is the worse failure mode. Do not try to make the listing tier smarter — choose the record tier instead when your access pattern is actually per-item, below.
+
+**If your cached read is a listing** (any filter/sort/pagination combination over a model) — accept that any write to that model busts it. This is `fetchAll()`'s default behavior and it's correct. The fix for "this busts too often" is never a cleverer tag — it's asking whether that data needed to be one big cached listing at all (see the service-layer section in `rules/base-service.md` for the alternative: cache the aggregate as its own dependency-scoped entry, not as a side effect of a listing query).
+
+**If your access pattern is actually per-item** (a shop's balance, a single product's detail page, a per-plan config lookup) — use `asRecord($id)` so only writes to *that* `$id` bust it:
+
+```php
+// 1000 products cached individually, each tagged with its own id.
+// Updating product #501 busts ONLY product #501's cache — the other 999
+// stay warm. This is the record tier working as intended.
+public function getProductSummary(int $productId): array
+{
+    return $this->cacheQuery(__FUNCTION__)
+        ->asRecord($productId)
+        ->remember(fn () => $this->computeSummary($productId));
+}
+```
+
+If a write needs to bust one specific `cacheQuery()`-cached entry without also busting the whole model's listing tier, use `flushRecordCache($id)` from a dedicated write method instead of the inherited `create()`'s blanket `flushAllCache()`:
+
+```php
+public function recordCredit(array $attributes): ShopCredit
+{
+    $credit = $this->query()->create($attributes);
+    $this->flushRecordCache($attributes['shop_id']);   // only this shop's cache, not every shop's
+
+    return $credit;
+}
+```
+
+Don't reach for this until the blunt `flushAllCache()`/inherited `create()` is measurably too coarse — same "don't build the granular version until proven necessary" rule as `cacheScope()`.
+
+**A cached computation that genuinely depends on many records at once** (a true aggregate — "average price across all 1000 products," not "these 1000 products individually") is a different problem from either tier above, and belongs at the service layer, not the repository — see `rules/base-service.md`'s "Caching a Service Result" section for how to scope that dependency correctly instead of accidentally busting on every write.
+
 ## Fluent Scopes and Eager Loading
 
 Both are chainable and reset after the next call — they never persist across calls.
