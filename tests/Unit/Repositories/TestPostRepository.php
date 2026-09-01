@@ -65,6 +65,45 @@ class TestPostRepository extends BaseRepository
     }
 
     /**
+     * Fixture for PendingCacheQuery's Conditionable::unless() — same
+     * mechanism as countPossiblyById() above, inverted condition.
+     */
+    public function countUnlessId(?int $id): int
+    {
+        return $this->cacheQuery(__FUNCTION__)
+            ->unless($id === null, fn (PendingCacheQuery $query): PendingCacheQuery => $query->withKey(['id' => $id])->asRecord($id))
+            ->remember(fn () => $id !== null
+                ? $this->query()->where('id', $id)->count()
+                : $this->query()->count());
+    }
+
+    /**
+     * Fixture for cacheQuery()'s criteria() used standalone by a custom
+     * method — proves it feeds the cache key independently of withKey(),
+     * the same way fetchAll()'s $criteria argument does.
+     */
+    public function countByStatus(string $status): int
+    {
+        return $this->cacheQuery(__FUNCTION__)
+            ->criteria(['status' => $status])
+            ->remember(fn () => $this->query()->where('status', $status)->count());
+    }
+
+    /**
+     * Fixture for cacheQuery()'s columns() — proves it feeds the cache key
+     * on its own. The callback ignores $columns deliberately: this fixture
+     * only needs to prove two different column lists produce two different
+     * cache entries, not exercise real column-selection SQL (that's
+     * Eloquent's own concern).
+     */
+    public function cachedCountWithColumns(array $columns): int
+    {
+        return $this->cacheQuery(__FUNCTION__)
+            ->columns($columns)
+            ->remember(fn () => $this->query()->count());
+    }
+
+    /**
      * Fixture for cacheQuery() — Record tier keyed by an explicit argument.
      */
     public function cachedTitle(int $id): ?string

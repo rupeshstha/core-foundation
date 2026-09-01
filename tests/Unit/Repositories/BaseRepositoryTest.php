@@ -476,6 +476,49 @@ class BaseRepositoryTest extends PackageTestCase
         $this->assertSame(1, $this->repository->countPossiblyById($postA->id));
     }
 
+    public function test_pending_cache_query_supports_conditionables_unless(): void
+    {
+        $postA = TestPost::create(['title' => 'A']);
+        TestPost::create(['title' => 'B']);
+
+        // Truthy "skip" condition ($id === null) — unless()'s callback never
+        // runs, stays Listing tier.
+        $this->assertSame(2, $this->repository->countUnlessId(null));
+
+        // Falsy "skip" condition — unless() applies withKey()/asRecord(),
+        // same as when() does with the condition inverted.
+        $this->assertSame(1, $this->repository->countUnlessId($postA->id));
+    }
+
+    public function test_cache_query_criteria_feeds_the_cache_key(): void
+    {
+        TestPost::create(['title' => 'A', 'status' => 'active']);
+        TestPost::create(['title' => 'B', 'status' => 'archived']);
+
+        $this->assertSame(1, $this->repository->countByStatus('active'));
+        $this->assertSame(1, $this->repository->countByStatus('archived'));
+
+        TestPost::create(['title' => 'C', 'status' => 'active']);
+
+        // Still cached under the same criteria() argument as the first call.
+        $this->assertSame(1, $this->repository->countByStatus('active'));
+    }
+
+    public function test_cache_query_columns_feed_the_cache_key(): void
+    {
+        TestPost::create(['title' => 'A']);
+
+        $this->assertSame(1, $this->repository->cachedCountWithColumns(['id']));
+
+        TestPost::create(['title' => 'B']);
+
+        // Same columns() argument as before — still cached, still 1.
+        $this->assertSame(1, $this->repository->cachedCountWithColumns(['id']));
+
+        // Different columns() argument — different cache key, fresh query.
+        $this->assertSame(2, $this->repository->cachedCountWithColumns(['id', 'title']));
+    }
+
     public function test_cache_query_is_invalidated_for_free_by_create(): void
     {
         TestPost::create(['title' => 'A', 'status' => 'active']);
@@ -555,5 +598,67 @@ class BaseRepositoryTest extends PackageTestCase
 
         $this->assertTrue($this->repository->exists(['filters' => ['__eq_status' => 'active']]));
         $this->assertFalse($this->repository->exists(['filters' => ['__eq_status' => 'pending']]));
+    }
+
+    public function test_it_can_fetch_one_by_criteria(): void
+    {
+        TestPost::create(['title' => 'Post 1', 'status' => 'active']);
+        TestPost::create(['title' => 'Post 2', 'status' => 'pending']);
+
+        $result = $this->repository->fetchOneByCriteria(['filters' => ['__eq_status' => 'active']]);
+
+        $this->assertEquals('Post 1', $result->title);
+    }
+
+    public function test_fetch_one_by_criteria_throws_when_nothing_matches(): void
+    {
+        TestPost::create(['title' => 'Post 1', 'status' => 'pending']);
+
+        $this->expectException(ModelNotFoundException::class);
+        $this->repository->fetchOneByCriteria(['filters' => ['__eq_status' => 'active']]);
+    }
+
+    public function test_it_can_get_by_criteria(): void
+    {
+        TestPost::create(['title' => 'Post 1', 'status' => 'active']);
+        TestPost::create(['title' => 'Post 2', 'status' => 'pending']);
+
+        $results = $this->repository->getByCriteria(['filters' => ['__eq_status' => 'active']]);
+
+        $this->assertCount(1, $results);
+        $this->assertEquals('Post 1', $results->first()->title);
+    }
+
+    public function test_it_can_fetch_first_by_criteria(): void
+    {
+        TestPost::create(['title' => 'Post 1', 'status' => 'active']);
+
+        $result = $this->repository->firstByCriteria(['filters' => ['__eq_status' => 'active']]);
+
+        $this->assertNotNull($result);
+        $this->assertEquals('Post 1', $result->title);
+    }
+
+    public function test_first_by_criteria_returns_null_when_nothing_matches(): void
+    {
+        TestPost::create(['title' => 'Post 1', 'status' => 'pending']);
+
+        $result = $this->repository->firstByCriteria(['filters' => ['__eq_status' => 'active']]);
+
+        $this->assertNull($result);
+    }
+
+    public function test_paginated_fetch_all_results_are_never_cached(): void
+    {
+        TestPost::create(['title' => 'Post 1']);
+
+        $before = $this->repository->fetchAll(paginate: true, perPage: 10);
+        $this->assertCount(1, $before->items());
+
+        TestPost::create(['title' => 'Post 2']);
+
+        // If pagination were (incorrectly) cached, this would still show 1 item.
+        $after = $this->repository->fetchAll(paginate: true, perPage: 10);
+        $this->assertCount(2, $after->items());
     }
 }
