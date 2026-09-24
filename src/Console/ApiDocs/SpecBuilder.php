@@ -5,10 +5,9 @@ namespace CoreFoundation\Console\ApiDocs;
 /**
  * SpecBuilder
  *
- * Assembles the full OpenAPI 3.0 document from a collection of operations.
- *
- * Takes the array of ReadResult → OperationBuilder output and wraps it in
- * the top-level OpenAPI envelope: info, servers, paths.
+ * @deprecated Part of the GenerateApiDocs pipeline which is deprecated.
+ *   Use dedoc/scramble instead — it assembles the full OpenAPI 3.1 spec automatically.
+ *   This class will be removed in a future release.
  */
 class SpecBuilder
 {

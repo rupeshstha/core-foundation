@@ -8,11 +8,9 @@ use CoreFoundation\Attributes\BodyParam;
 /**
  * OperationBuilder
  *
- * Converts a ReadResult into an OpenAPI 3.0 "operation" object.
- * One operation per HTTP method + URI combination.
- *
- * Output shape follows OpenAPI 3.0 spec exactly so SpecBuilder can
- * drop it straight into the paths object with no transformation.
+ * @deprecated Part of the GenerateApiDocs pipeline which is deprecated.
+ *   Use dedoc/scramble instead — it builds operations via AST-based inference.
+ *   This class will be removed in a future release.
  */
 class OperationBuilder
 {

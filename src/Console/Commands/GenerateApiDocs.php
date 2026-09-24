@@ -13,18 +13,11 @@ use CoreFoundation\Console\ApiDocs\ReflectionReader;
 /**
  * GenerateApiDocs
  *
- * Generates an OpenAPI 3.0 specification (YAML + JSON) by scanning Laravel
- * routes and reading PHP Attributes from BaseRequest and BaseDataObject classes.
- *
- * USAGE:
- *   php artisan api:docs
- *   php artisan api:docs --output=storage/app/api-docs
- *   php artisan api:docs --format=yaml
- *   php artisan api:docs --format=json
- *
- * CONFIGURATION:
- *   Publish the config file and edit config/api-docs.php:
- *   php artisan vendor:publish --tag=core-foundation-api-docs
+ * @deprecated Use dedoc/scramble with ScrambleCoreFoundationServiceProvider instead.
+ *   Install:   composer require dedoc/scramble the-artisans-foundry/scramble-core-foundation
+ *   Remove:    the api:docs command from your workflow.
+ *   Docs auto-generate from type hints — no per-class annotations needed.
+ *   This command will be removed in a future release.
  */
 class GenerateApiDocs extends Command
 {

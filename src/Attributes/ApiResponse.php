@@ -25,8 +25,9 @@ use Attribute;
  *       public readonly int $orderId;
  *   }
  *
- * This attribute does nothing at runtime. It is metadata only —
- * readable via ReflectionClass for tooling, doc generation, or OpenAPI export.
+ * @deprecated Use dedoc/scramble automatic inference instead.
+ *   Scramble infers response schemas from JsonResource::toArray() via AST analysis — no annotation needed.
+ *   This attribute will be removed in a future release.
  */
 #[Attribute(Attribute::TARGET_CLASS)]
 final class ApiResponse
