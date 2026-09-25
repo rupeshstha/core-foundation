@@ -2,12 +2,12 @@
 
 namespace CoreFoundation\Scramble;
 
-use Dedoc\Scramble\Extensions\OperationExtension;
-use Dedoc\Scramble\Support\Generator\Operation;
-use Dedoc\Scramble\Support\Generator\Response;
-use Dedoc\Scramble\Support\Generator\Schema;
-use Dedoc\Scramble\Support\Generator\Types as OpenApiTypes;
 use Dedoc\Scramble\Support\RouteInfo;
+use Dedoc\Scramble\Support\Generator\Schema;
+use Dedoc\Scramble\Support\Generator\Response;
+use Dedoc\Scramble\Support\Generator\Operation;
+use Dedoc\Scramble\Extensions\OperationExtension;
+use Dedoc\Scramble\Support\Generator\Types as OpenApiTypes;
 
 /**
  * Wraps every inferred 200/201 response body in the CoreFoundation envelope:
