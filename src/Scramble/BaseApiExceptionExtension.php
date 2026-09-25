@@ -4,13 +4,13 @@ namespace CoreFoundation\Scramble;
 
 use ReflectionClass;
 use ReflectionProperty;
-use Dedoc\Scramble\Support\Type\Type;
-use Dedoc\Scramble\Support\Type\ObjectType;
-use Dedoc\Scramble\Support\Generator\Schema;
-use Dedoc\Scramble\Support\Generator\Response;
 use CoreFoundation\Exceptions\BaseApiException;
 use Dedoc\Scramble\Extensions\ExceptionToResponseExtension;
+use Dedoc\Scramble\Support\Generator\Response;
+use Dedoc\Scramble\Support\Generator\Schema;
 use Dedoc\Scramble\Support\Generator\Types as OpenApiTypes;
+use Dedoc\Scramble\Support\Type\ObjectType;
+use Dedoc\Scramble\Support\Type\Type;
 
 /**
  * Maps any class extending CoreFoundation\Exceptions\BaseApiException to the
@@ -36,7 +36,6 @@ class BaseApiExceptionExtension extends ExceptionToResponseExtension
             $className = ltrim($type->name, '\\');
             if (class_exists($className) && is_a($className, BaseApiException::class, true)) {
                 $reflection = new ReflectionProperty($className, 'status');
-                $reflection->setAccessible(true);
                 $instance = (new ReflectionClass($className))->newInstanceWithoutConstructor();
                 $status = (int) $reflection->getValue($instance);
             }
@@ -59,7 +58,7 @@ class BaseApiExceptionExtension extends ExceptionToResponseExtension
                 'exception_id',
                 (new OpenApiTypes\StringType)
                     ->setDescription('UUID present only on fatal 500 errors for tracing.')
-                    ->setNullable(true)
+                    ->nullable(true)
             )
             ->setRequired(['message', 'errors']);
 

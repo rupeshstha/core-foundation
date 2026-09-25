@@ -2,6 +2,7 @@
 
 namespace CoreFoundation\Providers;
 
+use Dedoc\Scramble\Scramble;
 use InvalidArgumentException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\ServiceProvider;
@@ -11,10 +12,12 @@ use CoreFoundation\Exceptions\ExceptionRenderer;
 use Illuminate\Foundation\Configuration\Exceptions;
 use CoreFoundation\Console\Commands\MakeModuleCommand;
 use CoreFoundation\Repositories\Cache\RepositoryCache;
+use CoreFoundation\Scramble\BaseApiExceptionExtension;
 use CoreFoundation\Repositories\Cache\CacheBustCollector;
 use CoreFoundation\Repositories\Cache\CacheReadCollector;
 use CoreFoundation\Support\Maintenance\MaintenanceManager;
 use CoreFoundation\Repositories\Cache\CacheWarmingRegistry;
+use CoreFoundation\Scramble\CoreFoundationEnvelopeTransformer;
 
 class CoreFoundationServiceProvider extends ServiceProvider
 {
@@ -127,13 +130,13 @@ class CoreFoundationServiceProvider extends ServiceProvider
      */
     private function registerScrambleExtensions(): void
     {
-        if (! class_exists(\Dedoc\Scramble\Scramble::class)) {
+        if (! class_exists(Scramble::class)) {
             return;
         }
 
-        \Dedoc\Scramble\Scramble::registerExtensions([
-            \CoreFoundation\Scramble\CoreFoundationEnvelopeTransformer::class,
-            \CoreFoundation\Scramble\BaseApiExceptionExtension::class,
+        Scramble::registerExtensions([
+            CoreFoundationEnvelopeTransformer::class,
+            BaseApiExceptionExtension::class,
         ]);
     }
 
