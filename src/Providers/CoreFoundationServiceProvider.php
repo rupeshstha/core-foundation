@@ -2,6 +2,7 @@
 
 namespace CoreFoundation\Providers;
 
+use Dedoc\Scramble\Scramble;
 use InvalidArgumentException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\ServiceProvider;
@@ -9,13 +10,14 @@ use Illuminate\Foundation\Exceptions\Handler;
 use CoreFoundation\Console\Commands\WarmCache;
 use CoreFoundation\Exceptions\ExceptionRenderer;
 use Illuminate\Foundation\Configuration\Exceptions;
-use CoreFoundation\Console\Commands\GenerateApiDocs;
 use CoreFoundation\Console\Commands\MakeModuleCommand;
 use CoreFoundation\Repositories\Cache\RepositoryCache;
+use CoreFoundation\Scramble\BaseApiExceptionExtension;
 use CoreFoundation\Repositories\Cache\CacheBustCollector;
 use CoreFoundation\Repositories\Cache\CacheReadCollector;
 use CoreFoundation\Support\Maintenance\MaintenanceManager;
 use CoreFoundation\Repositories\Cache\CacheWarmingRegistry;
+use CoreFoundation\Scramble\CoreFoundationEnvelopeTransformer;
 
 class CoreFoundationServiceProvider extends ServiceProvider
 {
@@ -26,6 +28,7 @@ class CoreFoundationServiceProvider extends ServiceProvider
     {
         $this->registerExceptionHandling();
         $this->assertCacheDriverSupportsTags();
+        $this->registerScrambleExtensions();
 
         $this->loadTranslationsFrom(__DIR__.'/../../resources/lang', 'core-foundation');
 
@@ -51,14 +54,9 @@ class CoreFoundationServiceProvider extends ServiceProvider
             ], 'core-foundation-lang');
 
             $this->commands([
-                GenerateApiDocs::class,
                 MakeModuleCommand::class,
                 WarmCache::class,
             ]);
-
-            $this->publishes([
-                __DIR__.'/../../config/api-docs.php' => config_path('api-docs.php'),
-            ], 'core-foundation-api-docs');
         }
     }
 
@@ -120,6 +118,26 @@ class CoreFoundationServiceProvider extends ServiceProvider
                 .'repository caching entirely.'
             ),
         );
+    }
+
+    /**
+     * Register Scramble OpenAPI extensions when dedoc/scramble is installed.
+     *
+     * Opt-in: if the application does not require dedoc/scramble, this is a no-op.
+     * When Scramble IS present, CoreFoundation automatically wires:
+     *  - CoreFoundationEnvelopeTransformer — wraps 200/201 responses in the { message, payload, meta } envelope
+     *  - BaseApiExceptionExtension — maps BaseApiException subclasses to the { message, errors, exception_id } error shape
+     */
+    private function registerScrambleExtensions(): void
+    {
+        if (! class_exists(Scramble::class)) {
+            return;
+        }
+
+        Scramble::registerExtensions([
+            CoreFoundationEnvelopeTransformer::class,
+            BaseApiExceptionExtension::class,
+        ]);
     }
 
     /**

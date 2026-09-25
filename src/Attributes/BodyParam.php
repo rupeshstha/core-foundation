@@ -210,7 +210,9 @@ final class BodyParam
 
     /**
      * Export as an OpenAPI-compatible array.
-     * Future doc generation calls this directly — no transformation needed.
+     *
+     * @deprecated Used only by GenerateApiDocs which is deprecated.
+     *   Use dedoc/scramble instead — no manual OpenAPI export needed.
      */
     public function toOpenApi(): array
     {

@@ -8,13 +8,9 @@ use Illuminate\Support\Facades\Route as RouteFacade;
 /**
  * RouteScanner
  *
- * Scans Laravel's route collection and returns routes eligible for documentation.
- *
- * Eligibility rules (all must pass):
- *  - URI matches the configured prefix filter (default: 'api')
- *  - Route has a controller action (not a closure)
- *  - Route is not in the configured exclude list
- *  - Route HTTP method is one of: GET, POST, PUT, PATCH, DELETE
+ * @deprecated Part of the GenerateApiDocs pipeline which is deprecated.
+ *   Use dedoc/scramble instead — it scans routes automatically via AST analysis.
+ *   This class will be removed in a future release.
  */
 class RouteScanner
 {

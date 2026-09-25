@@ -30,9 +30,11 @@
         "symfony/stopwatch": "^7.0 | ^8.0"
     },
     "suggest": {
-        "laravel/pennant": "Required for BaseFeature and FeatureFlagController (GET /features)."
+        "laravel/pennant": "Required for BaseFeature and FeatureFlagController (GET /features).",
+        "dedoc/scramble": "Required for automatic OpenAPI doc generation. CoreFoundationServiceProvider auto-registers envelope and exception extensions when installed."
     },
     "require-dev": {
+        "dedoc/scramble": "^0.13",
         "laravel/boost": "^2.4",
         "laravel/pennant": "^1.23",
         "laravel/pint": "^1.29",

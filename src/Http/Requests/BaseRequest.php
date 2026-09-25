@@ -305,6 +305,9 @@ abstract class BaseRequest extends FormRequest
      *   }
      *
      * @return array<BodyParam>
+     *
+     * @deprecated Scramble infers request schemas from validation rules automatically.
+     *   Remove this method from your request classes — no replacement needed.
      */
     public function schema(): array
     {
@@ -314,13 +317,8 @@ abstract class BaseRequest extends FormRequest
     /**
      * Read the #[ApiRequest] attribute from this class, if present.
      *
-     * Returns null when no attribute is declared — always check before reading.
-     * Future doc generation calls this for class-level request metadata.
-     *
-     *   $meta = UpsertOrderRequest::getRequestMeta();
-     *   $meta?->description; // 'Place a new order.'
-     *   $meta?->tags;        // ['Orders']
-     *   $meta?->deprecated;  // false
+     * @deprecated Used only by GenerateApiDocs which is deprecated.
+     *   Use dedoc/scramble instead — no manual attribute reading needed.
      */
     public static function getRequestMeta(): ?ApiRequest
     {

@@ -50,8 +50,9 @@ use Attribute;
  * FORMAT VALUES (optional, OpenAPI format hints):
  *   'date-time' | 'date' | 'email' | 'uuid' | 'uri' | 'password' | 'binary'
  *
- * This attribute does nothing at runtime. It is metadata only —
- * readable via ReflectionProperty for tooling, doc generation, or OpenAPI export.
+ * @deprecated Use dedoc/scramble automatic inference instead.
+ *   Scramble infers property types and descriptions from PHP type hints — no annotation needed.
+ *   This attribute will be removed in a future release.
  */
 #[Attribute(Attribute::TARGET_PROPERTY)]
 final class Property

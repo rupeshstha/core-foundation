@@ -13,12 +13,9 @@ use CoreFoundation\Manipulators\BaseDataObject;
 /**
  * ReflectionReader
  *
- * Given a ScannedRoute, uses PHP Reflection to extract:
- *  - The BaseRequest subclass (from controller method parameter type hints)
- *  - The BaseDataObject subclass (from controller method return type hint)
- *  - All attribute metadata from both classes
- *
- * This is the bridge between the route list and the OpenAPI spec builder.
+ * @deprecated Part of the GenerateApiDocs pipeline which is deprecated.
+ *   Use dedoc/scramble instead — it extracts metadata via AST analysis, not runtime reflection.
+ *   This class will be removed in a future release.
  */
 class ReflectionReader
 {
